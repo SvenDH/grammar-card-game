@@ -503,12 +503,17 @@ class Generator:
             logits_all=False,
             vocab_only=False,
             use_mlock=False,
-            max_tokens=256
         )
         self.grammar = Parser(grammar, debug)
 
-    def generate(self, name: str):
-        
+    def generate(self, prompt: str, name: str):
+        g = self.grammar.gbnf.format(name=name)
+        return self.model(
+            prompt=prompt,
+            grammar=g,
+            temperature=1.0,
+            max_tokens=256
+        )
 
 
 parser = Parser(grammar_str)
