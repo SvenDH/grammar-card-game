@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Literal
 from pydantic import BaseModel
-from llama_cpp import LlamaGrammar
+from llama_cpp import Llama, LlamaGrammar
 from langchain.llms import LlamaCpp
 from langchain.callbacks.manager import CallbackManager
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
@@ -206,9 +206,8 @@ class Card(BaseModel):
         )
 
 
-grammar_str = fr'''
-root: card ("\n\n" card)*
-card: name " " cardcosts "\n" types "\n" abilities stats
+grammar_str = '''
+root: {name} " " cardcosts "\n" types "\n" abilities stats
 
 name: /[A-Z][a-z]*(" " [A-Z][a-z]*)*/
 types: maintype (" - " subtype)?
@@ -269,6 +268,7 @@ put: /[pP]/ "ut " objects " " into (" deactivated")? (" and " objects " " into)?
 gaincontrol: /[gG]/ "ain" "s"? " control of " objects
 switchdmghp: /[sS]/ "witch the damage and health of " objects (" " until)?
 addmana: /[aA]/ "dd one essence of any color" | "add " number " essence of any one color" | "add " COLOR (" or " COLOR)?
+
 activate: /[aA]/ "ctivate " objects
 deactivate: /[dD]/ "eactivate " objects
 return: /[rR]/ "eturn " objects (" from " zones)? " to " zones
@@ -376,8 +376,9 @@ refplayer: reference " " pureplayer
 pureplayer: "opponent" | "player" | "players"
 
 objects: object ((", " | "and " | "or " | "and/or ") object)*
-object: it | they | one | other | refobject | specifiedobject | copyof | withoutkeyword | objectwith
+object: this | it | they | one | other | refobject | specifiedobject | copyof | withoutkeyword | objectwith
 
+this: {name}
 refobject: referenceprefix " " pureobject
 specifiedobject: (prefix " ")+ pureobject  (" " suffix)?
 copyof: /[cC]/ "opy" (" of " pureobject)?
@@ -472,25 +473,56 @@ color: "red" | "green" | "blue" | "white" | "colorless"
 
 SNUMBER: /[1]?[0-9]/
 COLOR: "R" | "G" | "B" | "W"
-TYPE: {TypeEnum.to_grammar()}
-KEYWORD: {KeywordEnum.to_grammar()}
+TYPE: {types}
+KEYWORD: {keywords}
 '''
 
-new_grammar = grammar_str.replace(" /", " ").replace("/ ", " ").replace("/\n", "\n").replace("\n|", " |").replace(": ", " ::= ")
-llm_grammar = LlamaGrammar.from_string(new_grammar)
+class Parser:
+    def __init__(self, grammar: str, debug: bool = True) -> None:
+        self.lark = grammar.format(types=TypeEnum.to_grammar(), keywords=KeywordEnum.to_grammar())
+        new_g = self.lark.replace(" /", " ").replace("/ ", " ").replace("/\n", "\n").replace("\n|", " |").replace(": ", " ::= ")
+        self.gbnf = LlamaGrammar.from_string(new_g)
+        self.debug = debug
 
-g = Lark(grammar_str, start="root", debug=True)
+    def parse(self, card: str, name: str | None = None):
+        if name is None:
+            name = " ".join(card.split("\n", 1)[0].split(" ")[:-1])
+        g = Lark(self.lark.format(name=name), start="root", debug=self.debug)
+        return g.parse(card)
 
-p = g.parse("""Soldier {R}{1}
+
+class Generator:
+    def __init__(self, model_path: str, grammar: str, temperature: float = 1.0, debug: bool = True) -> None:
+        self.temperature = temperature
+        self.model = Llama(
+            model_path,
+            n_ctx=512,
+            n_gpu_layers=128,
+            n_batch=512,
+            f16_kv=True,
+            logits_all=False,
+            vocab_only=False,
+            use_mlock=False,
+            max_tokens=256
+        )
+        self.grammar = Parser(grammar, debug)
+
+    def generate(self, name: str):
+        
+
+
+parser = Parser(grammar_str)
+
+p = parser.parse("""Soldier {R}{1}
 Creature
 Flying, Siege
 {2}: Create a 2/2 token with the highest level among all creature cards
 {T}: Draw a card, then you draw an cards for each creature card
 1/1""")
 
-cards = [Card.from_tree(c) for c in p.children]
+card = Card.from_tree(p)
 
-print(cards)
+print(card)
 
 
 n_gpu_layers = 128
