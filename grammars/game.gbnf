@@ -1,0 +1,222 @@
+root: card ("\n\n" card)*
+card: name " " cardcosts "\n" types "\n" abilities stats
+
+name: /[A-Z][a-z]*( [A-Z][a-z]*)*/
+types: maintype (" - " subtype)?
+maintype: TYPE
+subtype: /[ a-zA-Z]+/
+stats: NUMBER "|" NUMBER
+
+cardcosts: essencecost
+abilitycosts: (deactivatecost | essencecost)+
+
+essencecost: "{{" COLOR "}}"* "{{" NUMBER "}}"*
+deactivatecost: "{{T}}"
+
+abilities: (ability "\n")*
+ability: keywords | activated | extracosts
+keywords: keyword (", " keyword)*
+keyword: KEYWORD
+activated: abilitycosts ": " effect
+extracosts: "Extra costs: " + imperative
+acquiredability: "\"" ability "\"" (" and \"" ability "\"")* | "this ability"
+
+effect: s+
+s: ss | "then " ss | ss " and " ss | ss (", " (("then" | "and")? " ")? ss)+ | "otherwise, " ss
+ss: sss (", where X is " numberdefinition)?
+sss: imperative
+| object " " phrase
+| "it's " what
+| player " " playerphrase
+| itspossesion " " numberical " is equal to " numberdefinition
+
+condition: "you've played " object " " duration
+| "it's your turn"
+| numberdefinition " is " numbericalcompare
+| "that essence is spent on " object
+
+imperative: "sacrifice " object
+| "destroy " object
+| "discard " object
+| "return " object (" from " zones)? " to " zones
+| "create " number " " stats ("token" | "tokens") (" with " with)?
+
+phrase: phrase ","? " and " phrase
+| phrase " or " phrase
+| phrase "," (" then")? " " phrase
+| ("has" | "have") " " acquiredability (" as long as " condition)?
+| ("gets " | "get ") mod (" and gains " acquiredability)? (" " until)?
+| ("gets " | "get ") mod (" and gains " acquiredability)? (" " until)?
+| "gains " acquiredability (" and gets " mod)? (" " until)?
+| ("gets " | "get ") mod (" " foreach)? (" " until)?
+| ("enter" | "enters") " the field" " deactivated"? (" under " possesion " control")?
+| ("leave" | "leaves") " the field"
+| ("die" | "dies")
+| "is put " into " from " zone
+| "can't " cant (" " duration)?
+| "deals " deals
+| "is " what
+| ("attacks" | "attack") (" " ("this" | "each") " fight if able")?
+| ("gains " | "gain ") acquiredability (" " until)?
+| "doesn't activate during " moment
+| "blocks or becomes blocked by " object
+| "is countered this way"
+| "targets " object
+| ("cost" | "costs") " " essencecost " less to play"
+| "do so"
+| "does so"
+| "becomes " becomes
+| ("lose" | "loses") " all abilities" (" " until)?
+| ("is" | "are") " created"
+| "causes " player " to discard " object
+| phrase " " foreach
+| phrase " " duration
+| phrase " if " s
+
+into: "onto the field"
+| "into " zone
+| "on top of " orderedzone
+| "on the bottom of " orderedzone " in any order"
+| "on the bottom of " orderedzone " in a random order"
+place: "on the field" | "in " zone
+zones: ((possesion | "a" ) " " (zone "s" | zone " or " zone | zone " and/or " zone | zone (", " "and "? zone)+)) | "the field" | "it"
+zone: orderedzone| "hand" | "discard"
+orderedzone: "deck"
+n: n "s" | (TYPE " ")? "card" | "TOKEN" | "ability"
+
+referenceprefix: "the sacrificed" | "any of" | "the" | reference | countable
+reference: "each" | "all" (" the")? | "this" | "that" | "these" | "an" | "a"
+| "those" | "another" | "the chosen"
+| "at least " number
+| countable (" " reference)?
+| "another "? (countable " ")? "target"
+
+prefix: "deactivated"
+| "non-" TYPE
+| "token" | "nontoken"
+| stats
+| "attacking"
+| "blocking"
+| "attacking or blocking"
+
+suffix: player " " ("control" | "controls" | "don't control" | "doesn't control" | "own" | "owns" | "don't own" | "doesn't own")
+| "in " zone (" and in " zone)?
+| "from " zone
+| "you play"
+| "that targets only " object
+| "deactivated this way"
+| "of the " TYPE " type of " possesion " choice"
+| object " could target"
+| "from among them"
+| "you've played before it this turn"
+
+entity: object | player
+any: object | pureobject | player | pureplayer
+itspossesion: object "'s" | "its" | "their"
+possesion: "your" | "their" | player "'s"
+player: "you"
+| "they"
+| reference " " pureplayer
+| "your " ("opponent" | "opponents")
+| "defending player"
+| "attacking player"
+| itspossesion " " ("controller" | "owner" | "owners" | "controllers")
+| player " who can't"
+pureplayer: "opponent" | "opponents" | "player" | "players"
+
+object: "it"
+| "they"
+| "one"
+| "the rest" | "the other"
+| referenceprefix " " pureobject
+| object
+pureobject: prefix+ " " pureobject
+| "copy" (" of " object)?
+| "copies"
+| pureobject " or " pureobject
+| pureobject ", " (pureobject ", ")+ "or " pureobject
+| pureobject " without " keyword
+| pureobject " " with
+| n
+| pureobject " " suffix
+| pureobject "and/or " pureobject
+
+deals: ("combat ")? "damage to " damagerecipient
+| numberorxorthat " damage to " damagerecipient
+| "damage equal to " numberdefinition " to " damagerecipient
+| "damage to " damagerecipient " equal to " numberdefinition
+| numberorxorthat " damage spread between any target"
+damagerecipient: object | player | "any target" | "itself"
+| "target " damagerecipient " or " damagerecipient
+
+with: numberical " " numbericalcompare
+| "the highest " numberical " among " object
+| "level " numberorxorthat
+| acquiredability
+what: color | object | place | TYPE (" in addition to its other types")?
+becomes: "deactivated" | "activated" | "a copy of " object (", except " copyexception (", " ("and ")? copyexception)*)?
+copyexception: "its name is " name | "it's" what | ss
+cant: "attack"| "block" | "attack or block"
+| "be blocked"
+| "be countered"
+| "be blocked by more than " number (" units" | " unit")
+foreach: "for each " pureobject
+numberical: "damage" | "health" | "level"
+numbericalcompare: numberorx " or greater"
+| numberorx " or less"
+| "less than or equal to " numberdefinition
+| "greater than " numberdefinition
+| numberorx
+numberdefinition: itspossesion " " numberical | "the number of " object
+
+until: "until " (s | "end of turn")
+duration: "this turn" | "for as long as " condition | "until " (s | "end of turn")
+moment: turnqualifier " " phase | "fight on your turn" | "fight"
+turnqualifier: (possesion | "the") (" next")?
+| "the"
+| "each"
+| "this turn's"
+| "that turn's"
+phase: "turn"
+| "activation"
+| "draw step"
+| "main phase"
+| "fight phase"
+| "end step"
+
+playerphrase: ("gain " | "gains ") numberorx " life"
+| ("gain " | "gains ") "life equal to " itspossesion " " numberical
+| playerphrase " for each " pureobject
+| playerphrase " for the first time each turn"
+| ("controls " | "control ") object
+| ("owns " | "own ") object
+| "puts " object " " into
+| "discards " object
+| "sacrifices " object
+| "reveals " possesion " hand"
+| imperative
+| playerphrase ", then " playerphrase
+| "can't " imperative
+| "doesn't" | "don't" | "does" | "do"
+| ("loses" | "lose") " the game"
+| playerphrase " this way"
+
+countable: "exactly " number
+| number " or more"
+| "fewer than " number
+| "any number of"
+| "one of"
+| "up to " number
+| number
+
+mod: plusminus numberorx "|" plusminus numberorx
+plusminus: "+" | "-"
+numberorxorthat: numberorx | "that much"
+numberorx: NUMBER | "X"
+number:  "a" | "an" | "one" | "two" | "three" | "four" | "five" | "six" | "seven" | "eight" | "nine" | "ten" | "X" | "that many" | NUMBER
+color: "red" | "green" | "blue" | "white" | "colorless"
+
+COLOR: "R" | "G" | "B" | "W"
+TYPE: {TypeEnum.to_grammar()}
+KEYWORD: {KeywordEnum.to_grammar()}
+NUMBER: /[0-9]+/
