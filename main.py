@@ -2,13 +2,8 @@ from enum import Enum
 from typing import Literal
 from pydantic import BaseModel
 from llama_cpp import Llama, LlamaGrammar
-from langchain.llms import LlamaCpp
-from langchain.callbacks.manager import CallbackManager
-from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 
-from lark import Lark
-
-callback_manager = CallbackManager([StreamingStdOutCallbackHandler()])
+from lark import Lark, Token
 
 
 NumberOrX = int | Literal["X"]
@@ -24,9 +19,6 @@ class Essence(str, Enum):
 class Activation(str, Enum):
     activate = "Q"
     deactivate = "T"
-
-    def to_text(self):
-        return f"{{{self}}}"
 
 
 class TypeEnum(str, Enum):
@@ -48,18 +40,52 @@ class KeywordEnum(str, Enum):
         return " | ".join([f'( /[{v.value[0].lower()}{v.value[0].upper()}]/ "{v.value[1:]}")' for v in cls])
 
 
+def get_number(tree):
+    if isinstance(tree, Token):
+        return str(tree)
+    match tree.data:
+        case "one":
+            return 1
+        case "two":
+            return 2
+        case "three":
+            return 3
+        case "four":
+            return 4
+        case "five":
+            return 5
+        case "six":
+            return 6
+        case "seven":
+            return 7
+        case "eight":
+            return 8
+        case "nine":
+            return 9
+        case "ten":
+            return 10
+        case "x":
+            return "X"
+        case "thatmany":
+            return "that"
+        case "smallnumber":
+            return tree.children[0]
+        case "number":
+            return get_number(tree.children[0])
+        case "numberorx":
+            return get_number(tree.children[0])
+        case "numberorxorthat":
+            return get_number(tree.children[0])
+        case _:
+            return 1
+
+
 class EssenceCosts(BaseModel):
     costs: list[Essence | NumberOrX]
-    
-    def to_text(self):
-        return "".join([f"{{{c}}}" for c in self.costs])
 
 
 class ImperativeCost(BaseModel):
     costs: list[str] = []
-
-    def to_text(self):
-        return ""
     
     @classmethod
     def from_tree(cls, tree):
@@ -68,9 +94,6 @@ class ImperativeCost(BaseModel):
 
 class Trigger(BaseModel):
     conditions: list[str] = []
-
-    def to_text(self):
-        return ""
     
     @classmethod
     def from_tree(cls, tree):
@@ -80,37 +103,73 @@ class Trigger(BaseModel):
 class Effect(BaseModel):
     effects: list['Abilities'] = []
     optional: bool = False
-
-    def to_text(self):
-        return ""
     
-    @staticmethod
-    def get_effect(tree):
-        print(tree)
-        return 
+    @classmethod
+    def get_effect(cls, tree):
+        match tree.data:
+            case "composedeffect":
+                return [e for c in tree.children for e in cls.get_effect(c)]
+            case "effect":
+                return cls.get_effect(tree.children[0])
+            case "imperatives":
+                return cls.get_effect(tree.children[0])
+            case "imperative":
+                return cls.get_effect(tree.children[0])
+            case "createtoken":
+                print(tree.children[3].children)
+                return [CreateTokenEffect(
+                    number=get_number(tree.children[1]),
+                    damage=get_number(tree.children[2].children[0]),
+                    health=get_number(tree.children[2].children[1]),
+
+                )]
+            case "destroy":
+                return []
+            case _:
+                return []
 
     @classmethod
     def from_tree(cls, tree):
-        print(tree.children[0].children)
+        #print(tree.children[0].children)
         return cls(
-            effects=[cls.get_effect(a) for a in tree.children[0].children],
+            effects=[e for a in tree.children for e in cls.get_effect(a)],
             optional=tree.children[0].data == "may"
         )
 
 
-class ActivatedAbility(BaseModel):
+class Ability(BaseModel):
+
+    @classmethod
+    def from_tree(cls, tree):
+        t = tree.children[0].data
+        c = tree.children[0]
+        match t:
+            case "keywords":
+                return [i.children[0].lower() for i in c.children]
+            case "activated":
+                return [ActivatedAbility.from_tree(c)]
+            case "triggered":
+                return [TriggeredAbility.from_tree(c)]
+            case "extracosts":
+                return [ImperativeCost.from_tree(c)]
+            case "effects":
+                return [Effect.from_tree(c)]
+            case _:
+                raise Exception(f"Unexpected ability type {t}")
+
+
+class ActivatedAbility(Ability):
     costs: list[EssenceCosts | Activation | ImperativeCost]
     effect: Effect
-
-    def to_text(self):
-        costs = ", ".join([c.to_text() for c in self.costs])
-        return f"{costs}: {self.effect.to_text()}"
     
     @staticmethod
     def get_cost(tree):
         match tree.data:
             case "essencecost":
-                return EssenceCosts(costs=tree.children[0].children)
+                if isinstance(tree.children[0], Token):
+                    return EssenceCosts(costs=[get_number(e) for e in tree.children])
+                else:
+                    return EssenceCosts(costs=[get_number(e) for e in tree.children[0].children])
             case "activationcost":
                 if tree.children[0].data == "deactivatecost":
                     return Activation.deactivate
@@ -129,13 +188,9 @@ class ActivatedAbility(BaseModel):
         )
 
 
-class TriggeredAbility(BaseModel):
+class TriggeredAbility(Ability):
     trigger: Trigger
     effect: Effect
-
-    def to_text(self):
-        costs = ", ".join([c.to_text() for c in self.costs])
-        return f"{costs}: {self.effect.to_text()}"
     
     @classmethod
     def from_tree(cls, tree):
@@ -173,47 +228,26 @@ class Card(BaseModel):
     abilities: list[AquiredAbilities] = []
     damage: int = 1
     health: int = 1
-
-    @staticmethod
-    def process_abilities(ability):
-        t = ability.children[0].data
-        c = ability.children[0]
-        match t:
-            case "keywords":
-                return [i.children[0].lower() for i in c.children]
-            case "activated":
-                return [ActivatedAbility.from_tree(c)]
-            case "triggered":
-                return [TriggeredAbility.from_tree(c)]
-            case "extracosts":
-                return [ImperativeCost.from_tree(c)]
-            case "effects":
-                return [Effect.from_tree(c)]
-            case _:
-                raise Exception(f"Unexpected ability type {t}")
     
     @classmethod
     def from_tree(cls, tree):
         types = tree.children[2].children[0].children
         return cls(
-            name=tree.children[0].children[0].value,
-            cost=[c.children[0].value for c in tree.children[1].children],
+            cost=[get_number(c.children[0]) for c in tree.children[1].children],
             type=types[0].lower(),
             subtype=types[1].value if len(types) > 1 else None,
-            abilities=[i for a in tree.children[3].children for i in cls.process_abilities(a)],
-            damage=tree.children[4].children[0],
-            health=tree.children[4].children[1],
+            abilities=[i for a in tree.children[3].children for i in Ability.from_tree(a)],
+            damage=get_number(tree.children[4].children[0]),
+            health=get_number(tree.children[4].children[1]),
         )
 
-
-grammar_str = '''
-root: {name} " " cardcosts "\n" types "\n" abilities stats
-
-name: /[A-Z][a-z]*(" " [A-Z][a-z]*)*/
+grammar_str = r'''
+root: name " " cardcosts "\n" types "\n" abilities stats
+name: {name} 
 types: maintype (" - " subtype)?
 maintype: TYPE
 subtype: /[ a-zA-Z]+/
-stats: SNUMBER "/" SNUMBER
+stats: numberorx "/" numberorx
 
 cardcosts: essencecost
 abilitycosts: essencecost ", " activationcost ", " imperativescost | activationcost ", " imperativescost | essencecost ", " imperativescost | essencecost ", " activationcost | activationcost | essencecost | imperativescost
@@ -252,10 +286,10 @@ objecteffect: objects " " objectphrases
 playereffect: players " " playerphrases
 
 imperatives: imperative (" for each " pureobject)? (", where X is " numberdefinition)? (" unless " condition)?
-imperative: destroy | createtoken | copy | play | search | draw | shuffle | counter | activate | deactivate | extraturn | look | put | gaincontrol | switchdmghp | addmana | return | discard | sacrifice | payessence | paylife
+imperative: createtoken | destroy | copy | play | search | draw | shuffle | counter | activate | deactivate | extraturn | look | put | gaincontrol | switchdmghp | addmana | return | discard | sacrifice | payessence | paylife
 
+createtoken: /[cC]/ "reate " number " " stats (" token" | " tokens") (" with " acquiredability)?
 destroy: /[dD]/ "estroy " objects
-createtoken: /[cC]/ "reate " number " " stats (" token" | " tokens") (" with " with)?
 copy: /[cC]/ "opy " objects
 play: /[pP]/ "lay" "s"? " " objects (" without paying essence")?
 search: /[sS]/ "earch " zone (" for " objects)?
@@ -376,9 +410,8 @@ refplayer: reference " " pureplayer
 pureplayer: "opponent" | "player" | "players"
 
 objects: object ((", " | "and " | "or " | "and/or ") object)*
-object: this | it | they | one | other | refobject | specifiedobject | copyof | withoutkeyword | objectwith
+object: name | it | they | one | other | refobject | specifiedobject | copyof | withoutkeyword | objectwith
 
-this: {name}
 refobject: referenceprefix " " pureobject
 specifiedobject: (prefix " ")+ pureobject  (" " suffix)?
 copyof: /[cC]/ "opy" (" of " pureobject)?
@@ -452,7 +485,6 @@ another: /[aA]/ "nother"
 chosen: /[tT]/ "he chosen"
 atleast: /[aA]/ "t least " number
 it: /[iI]/ "t"
-one: /[oO]/ "ne"
 other: /[tT]/ ("he rest" | "he other")
 you: /[Yy]/ "ou"
 they: /[Tt]/ "hey"
@@ -466,12 +498,25 @@ notyourturn: "it's not your turn"
 
 mod: plusminus numberorx "/" plusminus numberorx
 plusminus: "+" | "-"
-numberorxorthat: numberorx | "that much"
-numberorx: SNUMBER | "X"
-number:  "a" | "an" | "one" | "two" | "three" | "four" | "five" | "six" | "seven" | "eight" | "nine" | "ten" | "X" | "that many" | SNUMBER
+numberorxorthat: numberorx | thatmany
+numberorx: smallnumber | x
+number:  one | two | three | four | five | six | seven | eight | nine | ten | x | thatmany | smallnumber
 color: "red" | "green" | "blue" | "white" | "colorless"
 
-SNUMBER: /[1]?[0-9]/
+thatmany: "that many" | "that much"
+one: "a" | "an" | /[oO]/ "ne"
+two: "two"
+three: "three"
+four: "four"
+five: "five"
+six: "six"
+seven: "seven"
+eight: "eight"
+nine: "nine"
+ten: "ten"
+x: "X"
+
+smallnumber: /[1]?[0-9]/
 COLOR: "R" | "G" | "B" | "W"
 TYPE: {types}
 KEYWORD: {keywords}
@@ -479,16 +524,17 @@ KEYWORD: {keywords}
 
 class Parser:
     def __init__(self, grammar: str, debug: bool = True) -> None:
-        self.lark = grammar.format(types=TypeEnum.to_grammar(), keywords=KeywordEnum.to_grammar())
-        new_g = self.lark.replace(" /", " ").replace("/ ", " ").replace("/\n", "\n").replace("\n|", " |").replace(": ", " ::= ")
-        self.gbnf = LlamaGrammar.from_string(new_g)
+        self.grammar = grammar
         self.debug = debug
 
     def parse(self, card: str, name: str | None = None):
         if name is None:
             name = " ".join(card.split("\n", 1)[0].split(" ")[:-1])
-        g = Lark(self.lark.format(name=name), start="root", debug=self.debug)
-        return g.parse(card)
+        g = Lark(self.grammar.format(name=f'"{name}"', types=TypeEnum.to_grammar(), keywords=KeywordEnum.to_grammar()), start="root", debug=self.debug)
+        t = g.parse(card)
+        card = Card.from_tree(t)
+        card.name = name
+        return card
 
 
 class Generator:
@@ -496,6 +542,7 @@ class Generator:
         self.temperature = temperature
         self.model = Llama(
             model_path,
+            seed=-1,
             n_ctx=512,
             n_gpu_layers=128,
             n_batch=512,
@@ -504,44 +551,49 @@ class Generator:
             vocab_only=False,
             use_mlock=False,
         )
-        self.grammar = Parser(grammar, debug)
+        self.parser = Parser(grammar, debug)
+        self.name_grammar = LlamaGrammar.from_string(r'root ::= [A-Z][a-z]*(" " [A-Z][a-z]*)* " {"')
 
-    def generate(self, prompt: str, name: str):
-        g = self.grammar.gbnf.format(name=name)
-        return self.model(
+    def generate(self, prompt: str, name: str | None = None):
+        if name is None:
+            result = self.model(prompt=prompt, grammar=self.name_grammar, temperature=self.temperature)
+            name = result["choices"][0]["text"].strip(" {")
+        g = self.parser.grammar.format(name=f'"{name}"', types=TypeEnum.to_grammar(), keywords=KeywordEnum.to_grammar())
+        g = g.replace(" /", " ").replace("/ ", " ").replace("/\n", "\n").replace("\n|", " |").replace(": ", " ::= ")
+        g = LlamaGrammar.from_string(g)
+        result = self.model(
             prompt=prompt,
             grammar=g,
-            temperature=1.0,
+            temperature=self.temperature,
             max_tokens=256
         )
+        return result["choices"][0]["text"]
 
 
 parser = Parser(grammar_str)
 
-p = parser.parse("""Soldier {R}{1}
+card = parser.parse("""Soldier {R}{1}
 Creature
 Flying, Siege
-{2}: Create a 2/2 token with the highest level among all creature cards
+{2}: Create a 2/2 token with "Flying" and "Siege"
 {T}: Draw a card, then you draw an cards for each creature card
 1/1""")
 
-card = Card.from_tree(p)
-
-print(card)
+#print(card)
 
 
-n_gpu_layers = 128
-n_batch = 512
+card = parser.parse("""Graverobber {B}{R}{2}
+Creature
+{B}, Sacrifice Graverobber: Return target creature card from your deck or hand to the field, and add 3 essence of any one color unless you've played an ability this turn
+0/1""")
 
-llm = LlamaCpp(
-    model_path="C:\\Users\\denha\\Bureaublad\\oobabooga\\text-generation-webui\\models\\llama-2-7b-chat.ggmlv3.q4_K_M.bin",
-    n_gpu_layers=n_gpu_layers,
-    n_batch=n_batch,
-    f16_kv=True,
-    #callback_manager=callback_manager,
-    temperature=1.0,
-)
-llm.grammar = llm_grammar
+#print(card)
+
+#llm = Generator(
+#    model_path="C:\\Users\\denha\\Bureaublad\\oobabooga\\text-generation-webui\\models\\llama-2-7b-chat.ggmlv3.q4_K_M.bin",
+#    grammar=grammar_str,
+#    temperature=2.0
+#)
 
 prompt = """Soldier {R}{1}
 Creature - Human
@@ -557,14 +609,18 @@ Creature
 Siege
 2/2
 
+Crackleburr {1}{R}{B}
+Creature — Elemental
+{R}{B}, {T}, Tap two untapped red creatures you control: Crackleburr deals 3 damage to any target.
+{R}{B}, {Q}, Untap two tapped blue creatures you control: Return target creature to its owner's hand. ({Q} is the untap symbol.)
+2/2
+
 Advisor {W}{1}
 Creature
 {T}: Activate any target
 0/2
 
 """
-output = llm(prompt)
-for c in output.split("\n\n"):
-    if c:
-        print(c)
-        print(Card.from_tree(g.parse(c).children[0]))
+#output = llm.generate(prompt)
+#print(output)
+#print(parser.parse(output))
