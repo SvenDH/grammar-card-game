@@ -44,6 +44,8 @@ def get_number(tree):
     if isinstance(tree, Token):
         return str(tree)
     match tree.data:
+        case "a":
+            return 1
         case "one":
             return 1
         case "two":
@@ -100,6 +102,70 @@ class Trigger(BaseModel):
         return cls(conditions=[])
 
 
+class ObjectRef(str, Enum):
+    self = "~"
+    it = "it"
+    they = "they"
+    them = "them"
+    one = "one"
+    one_of_them = "one of them"
+    rest = "the rest"
+
+
+class Reference(str, Enum):
+    sac = "the sacrificed"
+    anyof = "any of"
+    the = "the"
+    this = "this"
+    that = "that"
+    another = "another"
+    chosen = "the chosen"
+    atleast = "atleast"
+    each = "each"
+    all = "all"
+    a = "a"
+
+
+class Prefix(str, Enum):
+    activated = "activated"
+    deactivated = "deactivated"
+
+
+
+class PureObject(str, Enum):
+    ability = "ability"
+    token = "token"
+    card = "card"
+
+
+class Object(BaseModel):
+    referenceprefix: Reference
+    object: PureObject
+    type: TypeEnum | None = None
+    without: KeywordEnum | None = None
+    copyof: bool = False
+
+
+class Objects(BaseModel):
+    objects: list[str]
+
+    @classmethod
+    def from_tree(cls, tree):
+        print([i for i in tree.children])
+        print(tree.data)
+        match tree.data:
+            case "NAME":
+                return ObjectRef.self
+            case "refobject":
+                return cls.from_tree(tree.children[0])
+            case "object":
+                return cls.from_tree(tree.children[0])
+            case "objects":
+                return cls(
+                    objects=[cls.from_tree(i) for i in tree.children]
+                )
+
+
 class Effect(BaseModel):
     effects: list['Abilities'] = []
     optional: bool = False
@@ -116,21 +182,14 @@ class Effect(BaseModel):
             case "imperative":
                 return cls.get_effect(tree.children[0])
             case "createtoken":
-                print(tree.children[3].children)
-                return [CreateTokenEffect(
-                    number=get_number(tree.children[1]),
-                    damage=get_number(tree.children[2].children[0]),
-                    health=get_number(tree.children[2].children[1]),
-
-                )]
+                return [CreateTokenEffect.from_tree(tree)]
             case "destroy":
-                return []
+                return [DestroyEffect.from_tree(tree)]
             case _:
                 return []
 
     @classmethod
     def from_tree(cls, tree):
-        #print(tree.children[0].children)
         return cls(
             effects=[e for a in tree.children for e in cls.get_effect(a)],
             optional=tree.children[0].data == "may"
@@ -202,22 +261,34 @@ class TriggeredAbility(Ability):
 TokenAbilities = KeywordEnum | TriggeredAbility | ActivatedAbility
 AquiredAbilities = KeywordEnum | TriggeredAbility | ActivatedAbility | ImperativeCost | Effect
 
+
 class CreateTokenEffect(BaseModel):
     number: NumberOrX = 1
     damage: NumberOrX
     health: NumberOrX
-    with_abilities: list[TokenAbilities] = []
+    abilities: list[TokenAbilities] = []
 
     @classmethod
     def from_tree(cls, tree):
         return cls(
-            number=1,
-            damage=1,
-            health=1,
-            with_abilities=[]
+            number=get_number(tree.children[1]),
+            damage=get_number(tree.children[2].children[0]),
+            health=get_number(tree.children[2].children[1]),
+            abilities=[i for a in tree.children[3].children for i in Ability.from_tree(a)]
         )
 
-Abilities = CreateTokenEffect
+
+class DestroyEffect(BaseModel):
+    objects: Objects
+
+    @classmethod
+    def from_tree(cls, tree):
+        return cls(
+            objects=Objects.from_tree(tree.children[1])
+        )
+
+
+Abilities = CreateTokenEffect | DestroyEffect
 Effect.update_forward_refs()
 
 class Card(BaseModel):
@@ -241,286 +312,6 @@ class Card(BaseModel):
             health=get_number(tree.children[4].children[1]),
         )
 
-grammar_str = r'''
-root: name " " cardcosts "\n" types "\n" abilities stats
-name: {name} 
-types: maintype (" - " subtype)?
-maintype: TYPE
-subtype: /[ a-zA-Z]+/
-stats: numberorx "/" numberorx
-
-cardcosts: essencecost
-abilitycosts: essencecost ", " activationcost ", " imperativescost | activationcost ", " imperativescost | essencecost ", " imperativescost | essencecost ", " activationcost | activationcost | essencecost | imperativescost
-essencecost: ("{{" COLOR "}}")* ("{{" numberorx "}}") | ("{{" COLOR "}}")+ | "{{0}}"
-activationcost: activatecost | deactivatecost
-deactivatecost: "{{T}}"
-activatecost: "{{Q}}"
-
-abilities: (ability "\n")*
-ability: keywords | activated | triggered | extracosts | effects
-keywords: keyword (", " keyword)*
-keyword: KEYWORD
-activated: abilitycosts ":" " " effects
-extracosts: "Extra cost:" " " imperativescost
-acquiredability: "\"" ability "\"" (" and \"" ability "\"")* | "this ability"
-imperativescost: imperativecost (", " imperativecost)*
-imperativecost: return | discard | sacrifice | paylife
-
-triggered: triggerconditions ", " intervening? effects
-triggerconditions: /[wW]/ ("hen " | "henever ") triggercondition | endofturn | beginningofphase
-triggercondition: whenyouplay | whengainlife | whendamaged
-whenyouplay: "you play " objects
-whengainlife: players " gain" "s"? " life"
-whendamaged: objects " is dealt damage"
-intervening: "if " condition ", "
-
-condition: playedwhen | yourturn | notyourturn | compare
-playedwhen: "you've played " objects " " when
-compare: numberdefinition " is " numbericalcompare
-
-effects: composedeffect | may
-may: ( /[yY]/ "ou ")? "may " imperatives (". " ("If" | "When") " you do, " composedeffect)?
-composedeffect: effect (", " (("then" | "and")? " ")? effect)*
-effect: imperatives | objecteffect | playereffect
-objecteffect: objects " " objectphrases
-playereffect: players " " playerphrases
-
-imperatives: imperative (" for each " pureobject)? (", where X is " numberdefinition)? (" unless " condition)?
-imperative: createtoken | destroy | copy | play | search | draw | shuffle | counter | activate | deactivate | extraturn | look | put | gaincontrol | switchdmghp | addmana | return | discard | sacrifice | payessence | paylife
-
-createtoken: /[cC]/ "reate " number " " stats (" token" | " tokens") (" with " acquiredability)?
-destroy: /[dD]/ "estroy " objects
-copy: /[cC]/ "opy " objects
-play: /[pP]/ "lay" "s"? " " objects (" without paying essence")?
-search: /[sS]/ "earch " zone (" for " objects)?
-draw: ( /[yY]/ "ou ")? /[dD]/ ("raw" | "raws") " " ("a card" | number " cards")
-shuffle: /[sS]/ "huffle" "s"? (" " (objects | zone) " into ")? zone
-counter: /[cC]/ "ounter " objects
-extraturn: /[tT]/ "ake an extra turn after this one"
-look: /[lL]/ "ook at the top " number " cards of " zone
-put: /[pP]/ "ut " objects " " into (" deactivated")? (" and " objects " " into)?
-gaincontrol: /[gG]/ "ain" "s"? " control of " objects
-switchdmghp: /[sS]/ "witch the damage and health of " objects (" " until)?
-addmana: /[aA]/ "dd one essence of any color" | "add " number " essence of any one color" | "add " COLOR (" or " COLOR)?
-
-activate: /[aA]/ "ctivate " objects
-deactivate: /[dD]/ "eactivate " objects
-return: /[rR]/ "eturn " objects (" from " zones)? " to " zones
-discard: /[dD]/ "iscard " objects
-sacrifice: /[sS]/ "acrifice " objects
-payessence: /[pP]/ "ay " essencecost
-paylife: /[pP]/ "ay " numberorxorthat " life"
-
-playerphrases: playerphrase
-| playerphrase " for each " object
-| playerphrase " for the first time each turn"
-| playerphrase ", then " playerphrase
-| playerphrase " this way"
-
-playerphrase: ("gain " | "gains ") numberorx " life"
-| ("gain " | "gains ") "life equal to " itspossesion " " numberical
-| ("controls " | "control ") objects
-| ("owns " | "own ") objects
-| "puts " objects " " into
-| "discards " objects
-| "sacrifices " objects
-| "reveals " possesion " hand"
-| imperative
-| "can't " imperative
-| "doesn't" | "don't" | "does" | "do"
-| "lose" "s"? " the game"
-
-objectphrases: objectphrase ","? " and " objectphrase
-| objectphrase " or " objectphrase
-| objectphrase "," (" then")? " " objectphrase
-| objectphrase " " foreach
-| objectphrase " " duration
-| objectphrase " if " condition
-
-objectphrase: ("has" | "have") " " acquiredability (" as long as " condition)?
-| ("gets " | "get ") mod (" and gains " acquiredability)? (" " until)?
-| ("gets " | "get ") mod (" and gains " acquiredability)? (" " until)?
-| "gains " acquiredability (" and gets " mod)? (" " until)?
-| ("gets " | "get ") mod (" " foreach)? (" " until)?
-| ("enter" | "enters") " the field" " deactivated"? (" under " possesion " control")?
-| ("leave" | "leaves") " the field"
-| ("die" | "dies")
-| "is put " into " from " zone
-| "can't " cant (" " duration)?
-| "deals " deals
-| "is " what
-| ("attacks" | "attack") (" " ("this" | "each") " fight if able")?
-| ("gains " | "gain ") acquiredability (" " until)?
-| "doesn't activate during " moment
-| "blocks or becomes blocked by " objects
-| "targets " objects
-| ("cost" | "costs") " " essencecost " less to play"
-| ("lose" | "loses") " all abilities" (" " until)?
-
-
-# "do so"
-# "does so"
-# "becomes " becomes
-# ("is" | "are") " created"
-# "is countered this way"
-# "causes " players " to discard " objects
-
-into: "onto the field"
-| "into " zone
-| "on top of " orderedzone
-| "on the bottom of " orderedzone " in any order"
-| "on the bottom of " orderedzone " in a random order"
-
-place: "on the field" | "in " zone
-zones: ((possesion | "a" ) " " (zone "s" | zone " or " zone | zone " and/or " zone | zone (", " "and "? zone)+)) | "the field" | "it"
-zone: orderedzone | "hand"
-orderedzone: "deck" | "discard"
-
-referenceprefix: refsacrificed | anyof | the | reference | countable
-reference: each | all | a | this | that | another | chosen | atleast | counted | countedtarget
-counted: countable (" " reference)?
-countedtarget: ( /[aA]/ "nother ")? (countable " ")? "target"
-
-prefix: /[dD]/ "eactivated"
-| /[nN]/ "on-" TYPE
-| /[tT]/ "oken" | /[nN]/ "ontoken"
-| stats
-| /[aA]/ "ttacking"
-| /[bB]/ "locking"
-| /[aA]/ "ttacking or blocking"
-
-suffix: player " " ("control" | "controls" | "don't control" | "doesn't control" | "own" | "owns" | "don't own" | "doesn't own")
-| "in " zone (" and in " zone)?
-| "from " zone
-| "you play"
-| "that targets only " objects
-| "deactivated this way"
-| "of the " TYPE " type of " possesion " choice"
-| object " could target"
-| "from among them"
-| "you've played before it this turn"
-
-itspossesion: objects "'s" | /[iI]/ "ts" | /[tT]/ "heir"
-possesion: "your" | "their" | players "'s"
-players: player
-| player " who can't"
-| itspossesion " " ("controller" | "owner" | "owners" | "controllers")
-player: you | they | opponent | defending | attacking | refplayer
-refplayer: reference " " pureplayer
-pureplayer: "opponent" | "player" | "players"
-
-objects: object ((", " | "and " | "or " | "and/or ") object)*
-object: name | it | they | one | other | refobject | specifiedobject | copyof | withoutkeyword | objectwith
-
-refobject: referenceprefix " " pureobject
-specifiedobject: (prefix " ")+ pureobject  (" " suffix)?
-copyof: /[cC]/ "opy" (" of " pureobject)?
-withoutkeyword: pureobject " without " keyword
-objectwith: pureobject " " with
-pureobject: /[cC]/ "opies" | n
-n: nn "s"?
-nn: (TYPE " ")? "card" | /[tT]/ "oken" | /[aA]/ "bility"
-
-deals: ("combat ")? "damage to " damagerecipient
-| numberorxorthat " damage to " damagerecipient
-| "damage equal to " numberdefinition " to " damagerecipient
-| "damage to " damagerecipient " equal to " numberdefinition
-| numberorxorthat " damage spread between any target"
-damagerecipient: objects | players | "any target" | "itself"
-| "target " damagerecipient " or " damagerecipient
-
-with: numberical " " numbericalcompare
-| "the highest " numberical " among " objects
-| "level " numberorxorthat
-| acquiredability
-what: color | objects | place | TYPE (" in addition to its other types")?
-becomes: "deactivated" | "activated" | "a copy of " objects (", except " copyexception (", " ("and ")? copyexception)*)?
-copyexception: "its name is " name | "it is " what
-cant: "attack"| "block" | "attack or block"
-| "be blocked"
-| "be countered"
-| "be blocked by more than " number (" units" | " unit")
-foreach: "for each " object
-numberical: "damage" | "health" | "level"
-numbericalcompare: numberorx " or greater"
-| numberorx " or less"
-| "less than or equal to " numberdefinition
-| "greater than " numberdefinition
-| numberorx
-numberdefinition: itspossesion " " numberical | /[Tt]/ "he number of " objects
-countable: /[Ee]/ "xactly " number
-| number " or more"
-| /[Ff]/ "ewer than " number
-| /[Aa]/ "ny number of"
-| /[Oo]/ "ne of"
-| /[Uu]/ "p to " number
-| number
-
-until: "until " (condition | "end of turn")
-duration: thisturn | "for as long as " condition | until
-when: thisturn
-thisturn: "this turn"
-moment: turnqualifier " " phase | "fight on your turn" | "fight"
-turnqualifier: (possesion | "the") (" next")?
-| "the"
-| "each"
-| "this turn's"
-| "that turn's"
-phase: "turn"
-| "activation"
-| "draw step"
-| "main phase"
-| "fight phase"
-| "end step"
-
-refsacrificed: /[tT]/ "he sacrificed"
-anyof: "any of"
-the: /[tT]/ "he"
-each: /[eE]/ "ach"
-all: /[aA]/ "ll" (" the")?
-this: /[tT]/ "his"
-that: /[tT]/ ("hat" | "hese"| "hose")
-a: /[aA]/ "n"?
-another: /[aA]/ "nother"
-chosen: /[tT]/ "he chosen"
-atleast: /[aA]/ "t least " number
-it: /[iI]/ "t"
-other: /[tT]/ ("he rest" | "he other")
-you: /[Yy]/ "ou"
-they: /[Tt]/ "hey"
-opponent: /[Yy]/ "our " ("opponent" | "opponents")
-defending: /[Dd]/ "efending player"
-attacking: /[Aa]/ "ttacking player"
-beginningofphase: /[Aa]/ "t the beginning of " moment
-endofturn: /[Aa]/ "t end of the turn"
-yourturn: "it's your turn"
-notyourturn: "it's not your turn"
-
-mod: plusminus numberorx "/" plusminus numberorx
-plusminus: "+" | "-"
-numberorxorthat: numberorx | thatmany
-numberorx: smallnumber | x
-number:  one | two | three | four | five | six | seven | eight | nine | ten | x | thatmany | smallnumber
-color: "red" | "green" | "blue" | "white" | "colorless"
-
-thatmany: "that many" | "that much"
-one: "a" | "an" | /[oO]/ "ne"
-two: "two"
-three: "three"
-four: "four"
-five: "five"
-six: "six"
-seven: "seven"
-eight: "eight"
-nine: "nine"
-ten: "ten"
-x: "X"
-
-smallnumber: /[1]?[0-9]/
-COLOR: "R" | "G" | "B" | "W"
-TYPE: {types}
-KEYWORD: {keywords}
-'''
 
 class Parser:
     def __init__(self, grammar: str, debug: bool = True) -> None:
@@ -570,6 +361,7 @@ class Generator:
         return result["choices"][0]["text"]
 
 
+grammar_str = open("grammars/game.lark", "r").read()
 parser = Parser(grammar_str)
 
 card = parser.parse("""Soldier {R}{1}
@@ -577,6 +369,7 @@ Creature
 Flying, Siege
 {2}: Create a 2/2 token with "Flying" and "Siege"
 {T}: Draw a card, then you draw an cards for each creature card
+{Q}: Destroy target card
 1/1""")
 
 #print(card)
