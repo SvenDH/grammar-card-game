@@ -1,15 +1,15 @@
 from enum import Enum
-from typing import Literal
+from typing import Literal, Any
 from pydantic import BaseModel
 from llama_cpp import Llama, LlamaGrammar
 
 from lark import Lark, Tree, Token
 
 
-NumberOrX = int | Literal["X"] | Literal["that"]
+NumberOrX = int | Literal["X"] | Literal["-X"] | Literal["that"]
+Stats = tuple[NumberOrX, NumberOrX]
 
-
-class Essence(str, Enum):
+class ColorEnum(str, Enum):
     white = "W"
     red = "R"
     green = "G"
@@ -40,29 +40,23 @@ class KeywordEnum(str, Enum):
         return " | ".join([f'( /[{v.value[0].lower()}{v.value[0].upper()}]/ "{v.value[1:]}")' for v in cls])
 
 
+class ObjectActionEnum(str, Enum):
+    attack = "attack"
+    block = "block"
+    attackorblock = "attack or block"
+    beblocked = "be blocked"
+    becountered = "be countered"
+    activateability = "activate abilities"
+
+
 class ConditonEnum(str, Enum):
     playedwhen = "played when"
     yourturn = "your turn"
     notyourturn = "not your turn"
     compare = "number compare"
-    playereffect = "player effect"
-    objecteffect = "object effect"
-
-
-class BaseEffect(BaseModel):
-    pass
-
-
-class Condition(BaseModel):
-    condition: ConditonEnum
-
-
-class EssenceCosts(BaseModel):
-    costs: list[Essence | NumberOrX] = []
-
-
-class ImperativeCost(BaseModel):
-    cost: list[BaseEffect] = []
+    playercond = "player condition"
+    objectcond = "object condition"
+    thisturn = "thisturn"
 
 
 class ObjectRef(str, Enum):
@@ -71,6 +65,8 @@ class ObjectRef(str, Enum):
     they = "they"
     them = "them"
     one = "one"
+    your = "your"
+    their = "their"
     one_of_them = "one of them"
     rest = "the rest"
 
@@ -86,7 +82,6 @@ class Reference(str, Enum):
     atleast = "atleast"
     each = "each"
     all = "all"
-    a = "a"
     target = "target"
     exactly = "exactly"
     ormore = "or more"
@@ -96,9 +91,28 @@ class Reference(str, Enum):
     oneof = "one of"
 
 
-class Prefix(str, Enum):
+class PrefixEnum(str, Enum):
     activated = "activated"
-    deactivated = "deactivated"
+    token = "token"
+    attacking = "attacking"
+    blocking = "blocking"
+    attackingorblocking = "attackingorblocking"
+
+
+class SuffixEnum(str, Enum):
+    control = "control"
+    nocontrol = "no control"
+    own = "own"
+    noown = "no own"
+    inzone = "in zone"
+    youplay = "you play"
+    targets = "targets"
+    targetsonly = "targets only"
+    couldtarget = "could target"
+    activatedthisway = "activated this way"
+    deactivatedthisway = "deactivated this way"
+    chosentype = "chosen type"
+    amongthem = "among them"
 
 
 class PureObject(str, Enum):
@@ -120,11 +134,7 @@ class OperatorEnum(str, Enum):
     AND = "and"
     OR = "or"
     XOR = "xor"
-
-
-class OwnerEnum(str, Enum):
-    your = "your"
-    their = "their"
+    OPTIONAL = "optional"
 
 
 class PlaceEnum(str, Enum):
@@ -138,71 +148,12 @@ class PlayerEnum(str, Enum):
     you = "you"
     they = "they"
     owner = "owner"
+    controller = "controller"
     defending = "defending"
     attacking = "attacking"
 
 
-class Player(BaseModel):
-    player: PlayerEnum
-    who_cant: bool = False
-
-
-class Zone(BaseModel):
-    ref: OwnerEnum | Player | None = None
-    zones: list[ZoneEnum] = []
-    op: OperatorEnum | None = None
-
-
-class Into(Zone):
-    place: PlaceEnum | None = None
-    random: bool = False
-
-
-class Object(BaseModel):
-    object: PureObject | TypeEnum | ObjectRef
-    ref: Reference | NumberOrX | None = None
-    type: TypeEnum | None = None
-    without: KeywordEnum | None = None
-    copyof: bool = False
-
-
-class Objects(BaseModel):
-    objects: list[Object]
-    op: OperatorEnum | None = None
-    each: bool = False
-
-
-class Effect(BaseModel):
-    effects: list[BaseEffect] = []
-    optional: bool = False
-
-
-class PlayedCondition(Condition):
-    object: Objects
-    duration: str   # TODO: implement duration
-
-
-class NumberCondition(Condition):
-    number: str
-    compare: str   # TODO: implement compare
-
-
-class PlayerCondition(Condition):
-    player: Player
-    phrase: str   # TODO: implement playerphrase
-
-
-class ObjectCondition(Condition):
-    object: Objects
-    phrase: str   # TODO: implement objectphrase
-
-
-class ActivatedAbility(BaseModel):
-    costs: list[EssenceCosts | Activation | ImperativeCost]
-    effect: Effect
-
-
-class TriggerEnum(BaseModel):
+class TriggerEnum(str, Enum):
     whenplay = "whenplay"
     whengainlife = "whengainlife"
     whenloselife = "whengainlife"
@@ -227,8 +178,98 @@ class TurnQualifierEnum(str, Enum):
     the = "the"
 
 
+class Prefix(BaseModel):
+    prefix: PrefixEnum | TypeEnum | Stats
+    non: bool = False
+
+
+class Suffix(BaseModel):
+    suffix: SuffixEnum
+    subj: Any = None
+
+
+class Condition(BaseModel):
+    condition: ConditonEnum
+    until: bool = False
+
+
+class EssenceCosts(BaseModel):
+    costs: list[ColorEnum | NumberOrX] = []
+
+
+class Object(BaseModel):
+    object: PureObject | TypeEnum | ObjectRef
+    ref: Reference | NumberOrX | None = None
+    prefixes: list[Prefix] = []
+    suffix: Suffix | None = None
+    type: TypeEnum | None = None
+    without: KeywordEnum | None = None
+    copyof: bool = False
+
+
+class Objects(BaseModel):
+    objects: list[Object] = []
+    op: OperatorEnum | None = None
+    each: bool = False
+
+
+class Player(BaseModel):
+    player: PlayerEnum
+    ref: Reference | Objects | ObjectRef | None = None
+    who_cant: bool = False
+
+
+class Zone(BaseModel):
+    zones: list[ZoneEnum] = []
+    ref: Object | Player | None = None
+    op: OperatorEnum | None = None
+
+
+class Into(Zone):
+    place: PlaceEnum | None = None
+    random: bool = False
+
+
+class BaseEffect(BaseModel):
+    pass
+
+
+class Effect(BaseEffect):
+    effects: list[BaseEffect] = []
+    op: OperatorEnum = OperatorEnum.AND
+
+
+class ActionCost(BaseModel):
+    cost: list[BaseEffect] = []
+
+
+class PlayedCondition(Condition):
+    object: Objects
+    duration: Condition
+
+
+class NumberCondition(Condition):
+    number: str
+    compare: str   # TODO: implement compare
+
+
+class PlayerCondition(Condition):
+    player: Player
+    phrase: str   # TODO: implement playerphrase
+
+
+class ObjectCondition(Condition):
+    object: Objects
+    phrase: str   # TODO: implement objectphrase
+
+
+class ActivatedAbility(BaseModel):
+    costs: list[EssenceCosts | Activation | ActionCost] = []
+    effect: Effect
+
+
 class Phase(BaseModel):
-    ref: TurnQualifierEnum | OwnerEnum | Player | None = None
+    ref: TurnQualifierEnum | ObjectRef | Player | None = None
     phase: PhaseEnum
     
 
@@ -243,62 +284,68 @@ class TriggeredAbility(BaseModel):
     condition: Condition | None = None
 
 
-TokenAbilities = KeywordEnum | TriggeredAbility | ActivatedAbility
-AquiredAbilities = KeywordEnum | TriggeredAbility | ActivatedAbility | ImperativeCost | Effect
+AquiredAbilities = KeywordEnum | TriggeredAbility | ActivatedAbility | ActionCost | Effect | Literal["this"]
 
 
-class CreateTokenEffect(BaseEffect):
+class PlayerEffect(BaseEffect):
+    subj: Player = Player(player=PlayerEnum.you)
+
+
+class ObjectEffect(BaseEffect):
+    subj: Object = Object(object=ObjectRef.it)
+
+
+class CreateTokenEffect(PlayerEffect):
     number: NumberOrX = 1
-    damage: NumberOrX = 1
-    health: NumberOrX = 1
-    abilities: list[TokenAbilities] = []
+    stats: Stats = (1, 1)
+    abilities: list[AquiredAbilities] = []
 
 
-class DestroyEffect(BaseEffect):
+class DestroyEffect(PlayerEffect):
     objects: Objects
 
 
-class CopyEffect(BaseEffect):
+class CopyEffect(PlayerEffect):
     objects: Objects
 
 
-class PlayEffect(BaseEffect):
+class PlayEffect(PlayerEffect):
     objects: Objects
     free: bool = False
 
 
-class DrawEffect(BaseEffect):
+class DrawEffect(PlayerEffect):
     number: NumberOrX = 1
 
 
-class DiscardEffect(BaseEffect):
+class DiscardEffect(PlayerEffect):
     objects: Objects
 
 
-class SearchEffect(BaseEffect):
+class SearchEffect(PlayerEffect):
     zones: Zone
     objects: Objects | None = None
 
 
-class ShuffleEffect(BaseEffect):
+class ShuffleEffect(PlayerEffect):
     what: Zone | Objects | None = None
     zones: Zone
 
 
-class CounterEffect(BaseEffect):
+class CounterEffect(PlayerEffect):
     objects: Objects
 
 
-class ExtraTurnEffect(BaseEffect):
+class ExtraTurnEffect(PlayerEffect):
     turns: int = 1
 
 
-class LookEffect(BaseEffect):
+class LookEffect(PlayerEffect):
     number: NumberOrX = 1
     zones: Zone
 
 
-class PutEffect(BaseEffect):
+class PutEffect(PlayerEffect):
     objects: Objects
     into: Into
     deactivated: bool = False
@@ -306,42 +353,81 @@ class PutEffect(BaseEffect):
     second_into: Into | None = None
 
 
-class GainControlEffect(BaseEffect):
+class GainControlEffect(PlayerEffect):
     objects: Objects
     until: Condition | None = None
 
 
-class SwitchHpDmgEffect(BaseEffect):
+class SwitchHpDmgEffect(PlayerEffect):
     objects: Objects
     until: Condition | None = None
 
 
-class AddEssenceEffect(BaseEffect):
+class AddEssenceEffect(PlayerEffect):
     colors: list[str] = []
     amount: NumberOrX = 1
 
 
-class ActivationEffect(BaseEffect):
+class ActivationEffect(PlayerEffect):
     objects: Objects
     deactivate: bool = True
 
 
-class ReturnEffect(BaseEffect):
+class SacrificeEffect(PlayerEffect):
+    objects: Objects
+
+
+class PayessenceEffect(PlayerEffect):
+    costs: EssenceCosts
+
+
+class PaylifeEffect(PlayerEffect):
+    costs: NumberOrX
+
+
+class MoveEffect(PlayerEffect):
     objects: Objects
     tozone: Zone
     fromzone: Zone | None = None
 
 
-class SacrificeEffect(BaseEffect):
-    objects: Objects
+class ModAbility(ObjectEffect):
+    stats: Stats = (0, 0)
+    foreach: Objects | None = None
 
 
-class PayessenceEffect(BaseEffect):
+class GetAbility(ObjectEffect):
+    abilities: list[AquiredAbilities | ModAbility] = []
+    until: Condition | None = None
+
+
+class CantAbility(ObjectEffect):
+    actions: list[ObjectActionEnum] = []
+    until: Condition | None = None
+
+
+class NoActivationAbility(ObjectEffect):
+    moment: Phase
+
+
+class LoseAbilitiesAbility(ObjectEffect):
+    until: Condition | None = None
+
+
+class CostsAbility(ObjectEffect):
     costs: EssenceCosts
+    more: bool = False
+    foreach: Objects | None = None
 
 
-class PaylifeEffect(BaseEffect):
-    costs: NumberOrX
+class EntersAbility(ObjectEffect):
+    deactivate: bool = False
+    control: Player | ObjectRef | None = None
+
+
+class BecomesAbility(ObjectEffect):
+    what: list[ColorEnum | TypeEnum | Stats] = []
+    additional: bool = False
 
 
 def from_tree(tree: Tree | Token):
@@ -390,6 +476,78 @@ def from_tree(tree: Tree | Token):
                     object=from_tree(tree.children[1])
                 )
             return Object(ref=r, object=from_tree(tree.children[1]))
+        case "specifiedobject":
+            suffix = from_tree(tree.children[-1]) if tree.children[-1].data == "suffix" else None
+            return Object(
+                object=from_tree(tree.children[-2] if suffix else tree.children[-1]),
+                suffix=suffix,
+                prefixes=[from_tree(c) for c in tree.children if c.data == "prefix"]
+            )
+        case "prefix":
+            if tree.children[0].data == "stats":
+                return Prefix(prefix=from_tree(tree.children[0]))
+            t = from_tree(tree.children[0])
+            return Prefix(prefix=t[0], non=t[1])
+        case "suffix":
+            return from_tree(tree.children[0])
+        case "playercontrol":
+            return Suffix(
+                suffix=SuffixEnum.control,
+                subj=from_tree(tree.children[0])
+            )
+        case "playernocontrol":
+            return Suffix(
+                suffix=SuffixEnum.nocontrol,
+                subj=from_tree(tree.children[0])
+            )
+        case "playerown":
+            return Suffix(
+                suffix=SuffixEnum.own,
+                subj=from_tree(tree.children[0])
+            )
+        case "playernoown":
+            return Suffix(
+                suffix=SuffixEnum.noown,
+                subj=from_tree(tree.children[0])
+            )
+        case "inzones":
+            return Suffix(
+                suffix=SuffixEnum.inzone,
+                subj=[from_tree(c) for c in tree.children if isinstance(c, Tree) and c.data == "zones"]
+            )
+        case "fromzones":
+            return Suffix(
+                suffix=SuffixEnum.inzone,
+                subj=[from_tree(tree.children[0])]
+            )
+        case "thattargets":
+            return Suffix(
+                suffix=SuffixEnum.targets,
+                subj=from_tree(tree.children[0])
+            )
+        case "thattargetsonly":
+            return Suffix(
+                suffix=SuffixEnum.targetsonly,
+                subj=from_tree(tree.children[0])
+            )
+        case "couldtarget":
+            return Suffix(
+                suffix=SuffixEnum.couldtarget,
+                subj=from_tree(tree.children[0])
+            )
+        case "chosentype":
+            return Suffix(
+                suffix=SuffixEnum.chosentype,
+                subj=(from_tree(tree.children[0]), from_tree(tree.children[0]))
+            )
+        case "activatedthisway":
+            return Suffix(suffix=SuffixEnum.activatedthisway)
+        case "deactivatedthisway":
+            return Suffix(suffix=SuffixEnum.deactivatedthisway)
+        case "amongthem":
+            return Suffix(suffix=SuffixEnum.amongthem)
+        case "youplay":
+            return Suffix(suffix=SuffixEnum.youplay)
         case "possesion":
             return from_tree(tree.children[0])
         case "ability":
@@ -442,7 +600,17 @@ def from_tree(tree: Tree | Token):
                     ref=from_tree(tree.children[0]),
                     phase=from_tree(tree.children[1])
                 )
-            return Phase(ref=OwnerEnum.your, phase=PhaseEnum.fight)
+            return Phase(ref=ObjectRef.your, phase=PhaseEnum.fight)
+        case "foreach":
+            return from_tree(tree.children[0])
+        case "mod":
+            return ModAbility(
+                stats=(
+                    from_tree(tree.children[0])(from_tree(tree.children[1])),
+                    from_tree(tree.children[2])(from_tree(tree.children[3]))
+                ),
+                foreach=from_tree(tree.children[4]) if len(tree.children) > 4 else None
+            )
         case "beginningofphase":
             return from_tree(tree.children[1])
         case "phase":
@@ -460,39 +628,116 @@ def from_tree(tree: Tree | Token):
         case "cleanup":
             return PhaseEnum.cleanup
         case "turnqualifier":
-            if tree.children[0].data == "each":
+            t = tree.children[0]
+            if t.data == "each":
                 return (TurnQualifierEnum.each, False)
-            elif tree.children[0].data == "this":
+            elif t.data == "this":
                 return (TurnQualifierEnum.this, False)
-            elif tree.children[0].data == "that":
+            elif t.data == "that":
                 return (TurnQualifierEnum.that, False)
-            elif tree.children[0].data == "the":
+            elif t.data == "the":
                 return (TurnQualifierEnum.the, len(tree.children) > 1)
-            return (from_tree(tree.children[0]), len(tree.children) > 1)
+            return (from_tree(t), len(tree.children) > 1)
         case "extracosts":
-            return ImperativeCost(costs=[from_tree(c) for c in tree.children[0].children])
+            return ActionCost(costs=[from_tree(c) for c in tree.children[0].children])
         case "imperativescost":
-            return ImperativeCost(costs=[from_tree(c) for c in tree.children])
+            return ActionCost(costs=[from_tree(c) for c in tree.children])
         case "imperativecost":
             return from_tree(tree.children[0])
+        case "acquiredability":
+            return [i for c in tree.children for i in from_tree(c)] if tree.children else ["this"]
+        case "tokenability":
+            return from_tree(tree.children[0])
         case "effects":
-            if tree.children[0].data == "may":
-                return Effect(
-                    effects=[e for a in tree.children[0].children for e in from_tree(a)],
-                    optional=True
-                )
+            return from_tree(tree.children[0])
+        case "may":
             return Effect(
                 effects=[e for a in tree.children for e in from_tree(a)],
-                optional=False
+                op=OperatorEnum.OPTIONAL
             )
         case "composedeffect":
-            return [e for c in tree.children for e in from_tree(c)]
+            return Effect(
+                effects=[from_tree(c) for c in tree.children if isinstance(c, Tree) and c.data == "effect"],
+                op=OperatorEnum.AND
+            )
         case "effect":
             return from_tree(tree.children[0])
-        case "imperatives":
-            return from_tree(tree.children[0])
         case "imperative":
-            return [from_tree(tree.children[0])]
+            return Effect(
+                effects=[from_tree(tree.children[0])]
+            )  # TODO: add for each, conditional and where X
+        case "i":
+            return from_tree(tree.children[0])
+        case "objecteffect":
+            p = from_tree(tree.children[1])
+            p.subj = from_tree(tree.children[0])
+            return p
+        case "playereffect":
+            p = from_tree(tree.children[1])
+            p.subj = from_tree(tree.children[0])
+            return p
+        case "objectphrase":
+            p = [from_tree(c) for c in tree.children if isinstance(c, Tree) and c.data == "op"]
+            o = [from_tree(c) for c in tree.children if isinstance(c, Tree) and c.data == "opandorthen"]
+            return Effect(effects=p, op=o[0] if o else None)  # TODO: add condition
+        case "playerphrase":
+            return Effect(
+                effects=[from_tree(c) for c in tree.children if isinstance(c, Tree) and c.data == "pp"]
+            )  # TODO: add for each
+        case "hasability":
+            return GetAbility(
+                abilities=from_tree(tree.children[0]),
+                until=from_tree(tree.children[1]) if len(tree.children) > 1 else None
+            )
+        case "getsability":
+            m = [from_tree(c) for c in tree.children if c.data == "mod"]
+            u = [from_tree(c) for c in tree.children if c.data == "until"]
+            return GetAbility(
+                abilities=from_tree(tree.children[0]) + m,
+                until=u[0] if u else None
+            )
+        case "getsmod":
+            m = [from_tree(c) for c in tree.children if c.data == "acquiredability"]
+            u = [from_tree(c) for c in tree.children if c.data == "until"]
+            return GetAbility(
+                abilities=from_tree(tree.children[0]) + m,
+                until=u[0] if u else None
+            )
+        case "objectcantdo":
+            return CantAbility(
+                actions=from_tree(tree.children[0]),
+                until=from_tree(tree.children[1]) if len(tree.children) > 1 else None
+            )
+        case "noactivate":
+            return NoActivationAbility(moment=from_tree(tree.children[0]))
+        case "losesabilities":
+            return LoseAbilitiesAbility(until=from_tree(tree.children[0]) if tree.children else None)
+        case "costsless":
+            return CostsAbility(
+                costs=from_tree(tree.children[0]),
+                foreach=from_tree(tree.children[1]) if len(tree.children) > 1 else None
+            )
+        case "costsmore":
+            return CostsAbility(
+                costs=from_tree(tree.children[0]),
+                more=True,
+                foreach=from_tree(tree.children[1]) if len(tree.children) > 1 else None
+            )
+        case "entersdeactivated":
+            return EntersAbility(
+                deactivate=True,
+                control=from_tree(tree.children[0]) if tree.children else None
+            )
+        case "becomeswhat":
+            return BecomesAbility(
+                what=from_tree(tree.children[0]),
+                additional=len(tree.children) > 1
+            )
+        case "objectcant":
+            a = from_tree(tree.children[0])
+            if not isinstance(a, tuple):
+                a = (a, )
+            return a
         case "into":
             if tree.children[0].data == "field":
                 return Into(zones=[ZoneEnum.field])
@@ -504,13 +749,14 @@ def from_tree(tree: Tree | Token):
                 random=len(tree.children) > 2 and tree.children[2].data == "random"
             )
         case "zones":
-            if tree.children[0].data == "it":
+            t = tree.children[0]
+            if t.data == "it":
                 return Zone(zones=[ZoneEnum.it])
-            elif tree.children[0].data == "field":
+            elif t.data == "field":
                 return Zone(zones=[ZoneEnum.field])
-            op = [i for i in tree.children if i.data == "op"]
+            op = [c for c in tree.children if isinstance(c, Tree) and c.data == "op"]
             return Zone(
-                ref=from_tree(tree.children[0]) if tree.children[0].data == "possesion" else None,
+                ref=from_tree(t) if t.data == "possesion" else None,
                 zones=[from_tree(i) for i in tree.children if i.data == "zone"],
                 op=from_tree(op[0]) if op else None
             )
@@ -521,9 +767,8 @@ def from_tree(tree: Tree | Token):
         case "createtoken":
             return CreateTokenEffect(
                 number=from_tree(tree.children[1]),
-                damage=from_tree(tree.children[2].children[0]),
-                health=from_tree(tree.children[2].children[1]),
-                abilities=[i for a in tree.children[3].children for i in from_tree(a)]
+                stats=from_tree(tree.children[2]),
+                abilities=from_tree(tree.children[3]) if len(tree.children) > 3 else []
             )
         case "destroy":
             return DestroyEffect(objects=from_tree(tree.children[1]))
@@ -559,8 +804,8 @@ def from_tree(tree: Tree | Token):
                 zones=from_tree(tree.children[2])
             )
         case "put":
-            objs = [c for c in tree.children if c.data == "objects"]
-            intos = [c for c in tree.children if c.data == "into"]
+            objs = [c for c in tree.children if isinstance(c, Tree) and c.data == "objects"]
+            intos = [c for c in tree.children if isinstance(c, Tree) and c.data == "into"]
             return PutEffect(
                 objects=from_tree(objs[0]),
                 into=from_tree(intos[0]),
@@ -581,7 +826,7 @@ def from_tree(tree: Tree | Token):
         case "addessence":
             a = [from_tree(c) for c in tree.children if isinstance(c, Tree) and c.data == "number"]
             return AddEssenceEffect(
-                colors=[c.children[0] for c in tree.children if isinstance(c, Tree) and c.data == "colort"],
+                colors=[c.children[0] for c in tree.children if isinstance(c, Tree) and c.data == "esscolor"],
                 amount=a[0] if a else 1
             )
         case "activate":
@@ -589,7 +834,7 @@ def from_tree(tree: Tree | Token):
         case "deactivate":
             return ActivationEffect(objects=from_tree(tree.children[1]), deactivate=True)
         case "return":
-            return ReturnEffect(
+            return MoveEffect(
                 objects=from_tree(tree.children[1]),
                 tozone=from_tree(tree.children[-1]),
                 fromzone=from_tree(tree.children[-2]) if len(tree.children) > 3 else None,
@@ -600,38 +845,120 @@ def from_tree(tree: Tree | Token):
             return PayessenceEffect(costs=from_tree(tree.children[1]))
         case "paylife":
             return PaylifeEffect(costs=from_tree(tree.children[1]))
-        case "condition":
+        case "players":
+            p = from_tree(tree.children[0])
+            if isinstance(p, tuple):
+                return Player(
+                    player=p[1],
+                    ref=p[0],
+                    who_cant=len(tree.children) > 1
+                )
+            return Player(player=p, who_cant=len(tree.children) > 1)
+        case "p":
             t = tree.children[0]
-            if t == "playedwhen":
-                return PlayedCondition(
-                    condition=ConditonEnum.playedwhen,
-                    object=from_tree(t.children[0]),
-                    duration=from_tree(t.children[1])
-                )
-            if t == "yourturn":
-                return Condition(condition=ConditonEnum.yourturn)
-            elif t == "notyourturn":
-                return Condition(condition=ConditonEnum.notyourturn)
-            elif t == "compare":
-                return NumberCondition(
-                    condition=ConditonEnum.compare,
-                    number=from_tree(t.children[0]),
-                    compare=from_tree(t.children[1])
-                )
-            elif t == "playereffect":
-                return PlayerCondition(
-                    condition=ConditonEnum.playereffect,
-                    player=from_tree(t.children[0]),
-                    phrase=from_tree(t.children[1])
-                )
-            elif t == "objecteffect":
-                return ObjectCondition(
-                    condition=ConditonEnum.objecteffect,
-                    object=from_tree(t.children[0]),
-                    phrase=from_tree(t.children[1])
-                )
+            if t.data == "defending":
+                return PlayerEnum.defending
+            elif t.data == "attacking":
+                return PlayerEnum.attacking
+            elif t.data == "itspossesion":
+                return (from_tree(tree.children[0], from_tree(tree.children[1])))
+            return from_tree(t)
+        case "owners":
+            return PlayerEnum.owner
+        case "controllers":
+            return PlayerEnum.controller
+        case "itspossesion":
+            return from_tree(tree.children[0])
+        case "refplayer":
+            return (from_tree(tree.children[0]), from_tree(tree.children[1]))
+        case "pureplayer":
+            return from_tree(tree.children[0])
+        case "opponent":
+            return PlayerEnum.opponent
+        case "player":
+            return PlayerEnum.player
+        case "condition":
+            return from_tree(tree.children[0])
+        case "playedwhen":
+            return PlayedCondition(
+                condition=ConditonEnum.playedwhen,
+                object=from_tree(tree.children[0]),
+                duration=from_tree(tree.children[1])
+            )
+        case "compare":
+            return NumberCondition(
+                condition=ConditonEnum.compare,
+                number=from_tree(tree.children[0]),
+                compare=from_tree(tree.children[1])
+            )
+        case "playercondition":
+            return PlayerCondition(
+                condition=ConditonEnum.playercond,
+                player=from_tree(tree.children[0]),
+                phrase=from_tree(tree.children[1])
+            )
+        case "objectcondition":
+            return ObjectCondition(
+                condition=ConditonEnum.objectcond,
+                object=from_tree(tree.children[0]),
+                phrase=from_tree(tree.children[1])
+            )
+        case "pc":
+            return from_tree(tree.children[0])
+        case "oc":
+            return from_tree(tree.children[0])
+        case "pp":
+            return from_tree(tree.children[0])
+        case "op":
+            return from_tree(tree.children[0])
+        case "yourturn":
+            return Condition(condition=ConditonEnum.yourturn)
+        case "notyourturn":
+            return Condition(condition=ConditonEnum.notyourturn)
+        case "duration":
+            return from_tree(tree.children[0])
+        case "thisturn":
+            return Condition(condition=ConditonEnum.thisturn)
         case "until":
-            return Condition()  # TODO: implement until
+            if len(tree.children):
+                c = from_tree(tree.children[0])
+                c.until = True
+                return c
+            return Condition(condition=ConditonEnum.thisturn)
+        case "attack":
+            return ObjectActionEnum.attack
+        case "block":
+            return ObjectActionEnum.block
+        case "attackorblock":
+            return ObjectActionEnum.attack, ObjectActionEnum.block
+        case "beblocked":
+            return ObjectActionEnum.beblocked
+        case "becountered":
+            return ObjectActionEnum.becountered
+        case "activateability":
+            return ObjectActionEnum.activateability
+        case "activated":
+            return (PrefixEnum.activated, False)
+        case "deactivated":
+            return (PrefixEnum.activated, True)
+        case "token":
+            return (PrefixEnum.token, False)
+        case "nontoken":
+            return (PrefixEnum.token, True)
+        case "attacking":
+            return (PrefixEnum.attacking, False)
+        case "blocking":
+            return (PrefixEnum.blocking, False)
+        case "attackingorblocking":
+            return (PrefixEnum.attackingorblocking, False)
+        case "nontype":
+            return (from_tree(tree.children[1], True))
+        case "stats":
+            return (from_tree(tree.children[0]), from_tree(tree.children[1]))
+        case "you":
+            return PlayerEnum.you
+        case "they":
+            return PlayerEnum.they
         case "copies":
             return PureObject.copies
         case "tokencard":
@@ -664,22 +991,22 @@ def from_tree(tree: Tree | Token):
             return Reference.all
         case "another":
             return Reference.another
-        case "atleast":
-            return Reference.atleast
         case "chosen":
             return Reference.chosen
         case "anynumberof":
             return Reference.anynumberof
         case "oneof":
             return Reference.oneof
+        case "atleast":
+            return (Reference.atleast, from_tree(tree.children[1]))
         case "exactly":
-            return (Reference.exactly, from_tree(tree.children[0]))
+            return (Reference.exactly, from_tree(tree.children[1]))
         case "ormore":
             return (Reference.ormore, from_tree(tree.children[0]))
         case "fewerthan":
-            return (Reference.fewerthan, from_tree(tree.children[0]))
+            return (Reference.fewerthan, from_tree(tree.children[1]))
         case "upto":
-            return (Reference.upto, from_tree(tree.children[0]))
+            return (Reference.upto, from_tree(tree.children[1]))
         case "counted":
             return [from_tree(c) for c in tree.children]
         case "target":
@@ -688,16 +1015,22 @@ def from_tree(tree: Tree | Token):
             return from_tree(tree.children[0])
         case "reference":
             return from_tree(tree.children[0])
-        case "op":
+        case "opandorthen":
             return from_tree(tree.children[0])
-        case "your":
-            return OwnerEnum.your
+        case "opandor":
+            return from_tree(tree.children[0])
+        case "its":
+            return ObjectRef.their
         case "their":
-            return OwnerEnum.their
+            return ObjectRef.their
+        case "your":
+            return ObjectRef.your
         case "and":
             return OperatorEnum.AND
         case "or":
             return OperatorEnum.XOR
+        case "then":
+            return OperatorEnum.AND
         case "andor":
             return OperatorEnum.OR
         case "smallnumber":
@@ -734,6 +1067,8 @@ def from_tree(tree: Tree | Token):
             return "X"
         case "thatmany":
             return "that"
+        case "plusminus":
+            return (lambda x: -x if isinstance(x, int) else "-" + x) if tree.children[0] == "-" else (lambda x: x)
         case _:
             print(tree.data)
             return ""
@@ -741,7 +1076,7 @@ def from_tree(tree: Tree | Token):
 
 class Card(BaseModel):
     name: str = ''
-    cost: list[Essence | NumberOrX] = [0]
+    cost: list[ColorEnum | NumberOrX] = [0]
     type: TypeEnum = ''
     subtype: str | None = None
     abilities: list[AquiredAbilities] = []
@@ -770,8 +1105,8 @@ class Parser:
     def parse(self, card: str, name: str | None = None):
         if name is None:
             name = " ".join(card.split("\n", 1)[0].split(" ")[:-1])
-        t = self.lark.parse(card.replace(name, "~"))
-        c = Card.from_tree(t.children[0])
+        t = self.lark.parse(card.split("\n\n", 1)[0].replace(name, "~"))
+        c = Card.from_tree(t)
         c.name = name
         return c
 
@@ -827,29 +1162,38 @@ Flying, Siege
 1/1""")
 
 #print(card)
+#card = parser.parse("""Jacks Steadfast Pendant {W}{B}
+#Creature
+#{2}: Attacking creature cards in your hand get -3/-3 until end of turn
+#{B}: Attacking creature cards in your deck get -2/-2 until end of turn
+#{1}, Sacrifice Jacks Steadfast Pendant: Draw two cards, then each player discards two cards, exactly one at least one creature card, tokens, they or the other creature and loses all abilities
+#2/0""")
 
-
-card = parser.parse("""Graverobber {B}{R}{2}
-Creature
-{T}: Destroy Graverobber and target card
-{B}, Sacrifice Graverobber: Return target creature card from your deck or hand to the field, and add 3 essence of any one color unless you've played an ability this turn
-0/1""")
+#card = parser.parse("""Looking Glass {B}{1}
+#Sorcery
+#Look at the top five cards of your deck. If you control more creatures than each other player, put two of those cards into your hand. Otherwise, put one of them into your hand. Then put the rest on the bottom of your library in any order.
+#0/0""")
 
 #print(card)
 
 llm = Generator(
     model_path="C:\\Users\\denha\\Bureaublad\\oobabooga\\text-generation-webui\\models\\llama-2-7b-chat.ggmlv3.q4_K_M.bin",
     grammar=grammar_str,
-    temperature=2.0
+    temperature=10.0
 )
 
 prompt = """Soldier {R}{1}
 Creature - Human
 1/1
 
+Looking Glass {B}
+Sorcery
+Look at the top five cards of your deck. If you control more creatures than each other player, put two of those cards into your hand. Otherwise, put one of them into your hand. Then put the rest on the bottom of your library in any order.
+0/0
+
 Wizard {B}{2}
 Creature
-{T}: Deals 1 damage to any target
+{T}: Wizard deals 1 damage to any target
 1/2
 
 Knight {R}{2}
@@ -867,6 +1211,15 @@ Advisor {W}{1}
 Creature
 {T}: Activate any target
 0/2
+
+Dark Council {B}{3}
+Creature
+Flying, Siege
+{2}: Create a 2/2 token with "Flying" and "Siege"
+{1}: Play creature cards without paying essence
+{T}: Draw a card, then you draw a card for each creature card
+{Q}: Destroy target card
+1/1
 
 """
 output = llm.generate(prompt)
