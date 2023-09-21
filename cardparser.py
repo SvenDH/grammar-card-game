@@ -249,10 +249,7 @@ def from_tree(tree: Tree | Token):
                 op=OperatorEnum.OPTIONAL
             )
         case "composedeffect":
-            return Effect(
-                effects=[from_tree(c) for c in tree.children if isinstance(c, Tree) and c.data == "effect"],
-                op=OperatorEnum.AND
-            )
+            return Effect(effects=[from_tree(c) for c in tree.children if isinstance(c, Tree) and c.data == "effect"])
         case "effect":
             return from_tree(tree.children[0])
         case "imperative":

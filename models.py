@@ -26,8 +26,8 @@ class Activation(str, GrammarEnum):
 
 
 class TypeEnum(str, GrammarEnum):
-    UNIT = "creature"
-    SPELL = "sorcery"
+    UNIT = "unit"
+    SPELL = "spell"
 
 
 class KeywordEnum(str, GrammarEnum):
@@ -396,7 +396,7 @@ class ModAbility(ObjectEffect):
 
 
 class GetAbility(ObjectEffect):
-    abilities: list[AquiredAbilities | ModAbility] = []
+    abilities: list[AquiredAbilities | ModAbility | Literal["this"]] = []
     until: Condition | None = None
 
 
@@ -453,6 +453,9 @@ class PlayerState(BaseModel):
     life: int = 25
     subscribed: dict[str, list[CardInstance]] = {}
 
+    class Config:
+        arbitrary_types_allowed = True
+
     @classmethod
     def from_cards(cls, cards: list[Card]):
         return cls(deck=[CardInstance(card=c) for c in cards])
@@ -473,3 +476,6 @@ class PlayerState(BaseModel):
 
 class Game(BaseModel):
     playerstates: list[PlayerState]
+
+    class Config:
+        arbitrary_types_allowed = True
