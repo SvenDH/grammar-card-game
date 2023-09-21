@@ -29,13 +29,16 @@ whengainlife: players " gain" "s"? " life"
 whenloselife: players " lose" "s"? " life"
 whendamaged: objects " is dealt damage"
 
-effects: composedeffect | may
+effects: (composedeffect | may) "."
 may: (Y "ou ")? "may " imperative (". " ("If" | "When") " you do, " composedeffect)?
-composedeffect: effect (", " (("then" | "and")? " ")? effect)*
-effect: imperative | objecteffect | playereffect
+composedeffect: effect ((", " | ". ") (opandthen " ")? effect)*
+effect: imperative | objecteffect | playereffect | conditionaleffect
 objecteffect: objects " " objectphrase
 playereffect: players " " playerphrase
+conditionaleffect: I "f " (playercondition | objectcondition) (imperative | objecteffect | playereffect)
+
 imperative: i (" for each " pureobject)? (", where X is " numberdefinition)? (" unless " condition)?
+
 
 objectphrase: op (("," op)* opandorthen op)? (" if " condition)?
 playerphrase: pp
@@ -50,8 +53,8 @@ createtoken: C "reate " number " " stats (" token" | " tokens") (" with " acquir
 destroy: D "estroy " objects
 copy: C "opy " objects
 play: P "lay" "s"? " " objects (" " free)?
-draw: (Y "ou ")? D ("raw" | "raws") " " ("a card" | number " cards")
-discard: D "iscard" "s"? " " objects
+draw: D "raw" "s"? " " ("a card" | number " cards")
+discard: D "iscard" "s"? " " ("a card" | number " cards" | number " " objects)
 search: S "earch " zones (" for " objects)?
 shuffle: S "huffle" "s"? (" " (objects | zones) " into ")? zones
 counter: C "ounter " objects
@@ -75,7 +78,7 @@ gainseqlife: "gain" "s"? " life equal to " itspossesion " " numberical
 loseaction: "can't " imperative
 losethegame: "lose" "s"? " the game"
 
-playercondition: player pc
+playercondition: players " " pc
 pc: conditionaction | controls | gainslife | doesnt | does
 conditionaction: sacrifice | put | look | counter | search | discard | draw | play
 controls: ("own" | "control") "s"? " " objects
@@ -93,7 +96,7 @@ costsmore: "cost" "s"? " " essencecost " more to play" (" " foreach)?
 entersdeactivated: "enter" "s"? " the field deactivated" (" under " possesion " control")?
 becomeswhat: "is " color (" " coloraddition)? | stats | type (" " typeaddition)?
 
-objectcondition: object oc
+objectcondition: objects " " oc
 oc: blocked | attacked | targets | leaves | dies | moveszone | whenenters | dealswhat
 blocked: "blocks or becomes blocked by " objects
 attacked: "attack" "s"?
@@ -287,6 +290,7 @@ x: "X"
 
 opandorthen: " " (and | or | then) " "
 opandor: " " (and | or | andor) " "
+opandthen: (and | then)
 and: "and"
 or: "or"
 andor: "and/or"
