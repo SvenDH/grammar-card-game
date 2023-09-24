@@ -1,12 +1,18 @@
 root: NAME " " cardcosts "\n" types "\n" abilities stats "\n\n"?
-types: maintype (" - " subtype)?
+types: maintype (" " maintype)* (" - " subtype (" " subtype)*)?
 maintype: TYPE
 subtype: /[ a-zA-Z]+/
 stats: numberorx "/" numberorx
 
 cardcosts: essencecost
-abilitycosts: essencecost ", " activationcost ", " imperativescost | activationcost ", " imperativescost | essencecost ", " imperativescost | essencecost ", " activationcost | activationcost | essencecost | imperativescost
-essencecost: ("{{" COLOR "}}")* ("{{" numberorx "}}") | ("{{" COLOR "}}")+ | "{{0}}"
+abilitycosts: essencecost ", " activationcost ", " imperativescost 
+| activationcost ", " imperativescost 
+| essencecost ", " imperativescost 
+| essencecost ", " activationcost 
+| activationcost 
+| essencecost 
+| imperativescost
+essencecost: ("{{" numberorx "}}") ("{{" COLOR "}}")* | ("{{" COLOR "}}")+ | "{{0}}"
 activationcost: activatecost | deactivatecost
 deactivatecost: "{{T}}"
 activatecost: "{{Q}}"
@@ -20,10 +26,10 @@ activatedability: abilitycosts ":" " " effects
 extracosts: "Extra cost:" " " imperativescost
 acquiredability: "\"" tokenability "\"" (" and \"" tokenability "\"")* | "this ability"
 imperativescost: imperativecost (", " imperativecost)*
-imperativecost: return | discard | sacrifice | paylife
+imperativecost: return | discard | sacrifice | paylife | activate | deactivate
 
 triggeredability: triggercondition ", " ("if " condition ", ")? effects
-triggercondition: W ("hen " | "henever ") (whenyouplay | whengainlife | whenloselife | whendamaged) | endofturn | beginningofphase
+triggercondition: W ("hen " | "henever ") (whenyouplay | whengainlife | whenloselife | whendamaged | condition) | endofturn | beginningofphase
 whenyouplay: "you play " objects
 whengainlife: players " gain" "s"? " life"
 whenloselife: players " lose" "s"? " life"
@@ -79,12 +85,13 @@ loseaction: "can't " imperative
 losethegame: "lose" "s"? " the game"
 
 playercondition: players " " pc
-pc: conditionaction | controls | gainslife | doesnt | does
+pc: conditionaction | controls | owns | gainslife | doesnt | does
 conditionaction: sacrifice | put | look | counter | search | discard | draw | play
-controls: ("own" | "control") "s"? " " objects
+controls: "control" "s"? " " objects
+owns: "own" "s"? " " objects
 gainslife: "gain" "s"? " life"
 
-op: hasability | getsability | getsmod | objectcantdo | noactivate | losesabilities | costsless | costsmore | entersdeactivated | becomeswhat
+op: hasability | getsability | getsmod | objectcantdo | noactivate | losesabilities | costsless | costsmore | entersdeactivated | becomeswhat | dealswhat
 hasability: ("has " | "have ") acquiredability (" as long as " condition)?
 getsability: "gain" "s"? " " acquiredability (" and gets " mod)? (" " until)?
 getsmod: "get" "s"? " " mod (" and gains " acquiredability)? (" " until)?
@@ -95,9 +102,10 @@ costsless: "cost" "s"? " " essencecost " less to play" (" " foreach)?
 costsmore: "cost" "s"? " " essencecost " more to play" (" " foreach)?
 entersdeactivated: "enter" "s"? " the field deactivated" (" under " possesion " control")?
 becomeswhat: "is " color (" " coloraddition)? | stats | type (" " typeaddition)?
+dealswhat: "deals " deals
 
 objectcondition: objects " " oc
-oc: blocked | attacked | targets | leaves | dies | moveszone | whenenters | dealswhat
+oc: blocked | attacked | targets | leaves | dies | moveszone | whenenters | dealsdamage
 blocked: "blocks or becomes blocked by " objects
 attacked: "attack" "s"?
 targets: "targets " objects
@@ -105,7 +113,7 @@ leaves: "leave" "s"? " the field"
 dies: "die" "s"?
 moveszone: "is put " into (" from " zones)?
 whenenters: "enter" "s"? " the field" (" under " possesion " control")?
-dealswhat: "deals " deals
+dealsdamage: "combat "? "damage to " damagerecipients
 
 # "do so"
 # "does so"
@@ -138,15 +146,16 @@ owners: "owner" | "owners"
 controllers: "controller" | "controllers"
 
 objects: object ((", " object)* opandor object)? | each " of " object
-object: selfref | it | they | one | other | refobject | specifiedobject | copyof | withoutkeyword | objectwith | pureobject
+object: selfref | it | they | one | other | specifiedobject
 
-referenceprefix: refsacrificed | anyof | the | reference | countable
-reference: each | all | a | this | that | another | chosen | atleast | counted | target
-counted: countable (" " reference)?
+referenceprefix: refsacrificed | anyof | reference | countable
+reference: each | all | a | this | that | another | chosen | atleast | countable | target
 target: (another " ")? (countable " ")? "target"
 countable: exactly | ormore | fewerthan | upto | anynumberof | oneof  | number
-prefix: activated | deactivated | nontype | token | nontoken | attacking | blocking | attackingorblocking | stats
+
+prefix: color | noncolor | activated | deactivated | nontype | token | nontoken | attacking | blocking | attackingorblocking | stats
 nontype: N "on-" type
+noncolor: N "on-" color
 
 suffix: playercontrol | playernocontrol | playerown | playernoown | inzones | youplay | thattargets | thattargetsonly | activatedthisway | deactivatedthisway | chosentype | couldtarget | amongthem
 playercontrol: players " " ("control" | "controls")
@@ -163,28 +172,24 @@ deactivatedthisway: "deactivated this way"
 amongthem: "from among them"
 youplay: "you play"
 
-refobject: referenceprefix " " pureobject
-specifiedobject: (prefix " ")+ pureobject  (" " suffix)?
-copyof: C "opy" (" of " pureobject)?
-withoutkeyword: pureobject " without " keyword
-objectwith: pureobject " " with
+specifiedobject: (referenceprefix " ")? (prefix " ")* pureobject (" without " keyword)? (" " with)? (" " suffix)?
 pureobject: copies | typecard | tokencard | abilityref
-typecard: (type " ")? "card" "s"?
+typecard: (type " ")? ("card" | "unit") "s"?
 
-deals: "combat "? "damage to " damagerecipient
-| numberorxorthat " damage to " damagerecipient
-| "damage equal to " numberdefinition " to " damagerecipient
-| "damage to " damagerecipient " equal to " numberdefinition
-| numberorxorthat " damage spread between any target"
-damagerecipient: objects | players | "any target" | "itself"
-| "target " damagerecipient " or " damagerecipient
+deals: numberorxorthat " damage to " damagerecipients
+| "damage equal to " numberdefinition " to " damagerecipients
+| "damage to " damagerecipients " equal to " numberdefinition
+| numberorxorthat " damage spread between " anytarget
+damagerecipients: damagerecipient | "target " damagerecipient " or " damagerecipient
+damagerecipient: objects | players | anytarget | itself
 
-with: numberical " " numbericalcompare
-| "the highest " numberical " among " objects
-| "level " numberorxorthat
-| acquiredability
+with: "with " (numbercompare | highestnumber | whatlevel | acquiredability)
+numbercompare: numberical " " numbericalcompare
+highestnumber: "the highest " numberical " among " objects
+whatlevel: "level " numberorxorthat
+
 what: color | objects | place | type
-becomes: "deactivated" | "activated" | "a copy of " objects (", except " copyexception (", " ("and ")? copyexception)*)?
+becomes: deactivated | activated | "a copy of " objects (", except " copyexception (", " ("and ")? copyexception)*)?
 copyexception: "its name is " NAME | "it is " what
 objectcant: attack | block | attackorblock | becountered
 attack: "attack"
@@ -194,7 +199,7 @@ beblocked: "be blocked"
 becountered: "be countered"
 activateability: "activate abilities"
 foreach: "for each " object
-numberical: "damage" | "health" | "level"
+numberical: damage | health | level
 numbericalcompare: numberorx " or greater"
 | numberorx " or less"
 | "less than or equal to " numberdefinition
@@ -224,7 +229,11 @@ fightphase: "fight phase"
 cleanup: "cleanup"
 beginningofphase: A "t the beginning of " moment
 next: "next"
-
+itself: "itself"
+anytarget: "any target"
+damage: "damage"
+health: "health"
+level: "level"
 copies: C "opies"
 tokencard: T "oken" "s"?
 abilityref: A "bilit" ("y" | "ies")
@@ -238,7 +247,6 @@ blocking: B "locking"
 attackingorblocking: A "ttacking or blocking"
 refsacrificed: T "he sacrificed"
 anyof: A "ny of"
-the: T "he"
 each: E "ach"
 all: A "ll" (" the")?
 this: T "his"
@@ -247,6 +255,7 @@ a: A "n"?
 another: A "nother"
 chosen: T "he chosen"
 it: I "t"
+the: T "he"
 other: T ("he rest" | "he other")
 you: Y "ou"
 they: T "hey"
@@ -296,13 +305,19 @@ or: "or"
 andor: "and/or"
 then: T "hen" ","?
 
-color: "red" | "green" | "blue" | "white" | "colorless"
+color: red | green | blue | yellow | colorless | multicolored
+red: "red"
+green: "green"
+blue: "blue"
+yellow: "yellow"
+colorless: "colorless"
+multicolored: "multicolored"
 selfref: NAME
 type: TYPE
 esscolor: COLOR
 smallnumber: /[1]?[0-9]/
 
-COLOR: "R" | "G" | "B" | "W"
+COLOR: "R" | "G" | "B" | "Y"
 TYPE: {types}
 KEYWORD: {keywords}
 NAME: {name}

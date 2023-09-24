@@ -5,7 +5,7 @@ from cardparser import Parser
 
 
 class Generator:
-    def __init__(self, model_path: str, grammar: str, temperature: float = 1.0, debug: bool = True) -> None:
+    def __init__(self, model_path: str, temperature: float = 1.0, debug: bool = True) -> None:
         self.temperature = temperature
         self.model = Llama(
             model_path,
@@ -18,7 +18,7 @@ class Generator:
             vocab_only=False,
             use_mlock=False,
         )
-        self.parser = Parser(grammar, debug)
+        self.parser = Parser(debug=debug)
         self.name_grammar = LlamaGrammar.from_string(r'root ::= [A-Z][a-z]*(" " [A-Z][a-z]*)* " {"')
 
     def generate(self, prompt: str, name: str | None = None):

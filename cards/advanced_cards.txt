@@ -1,0 +1,9 @@
+Looking Glass {B}{1}
+Spell
+Look at the top five cards of your deck. If you control more unit than each other player, put two of those cards into your hand. Otherwise, put one of them into your hand. Then put the rest on the bottom of your library in any order.
+0/0
+
+Astral Dragon {R}{1}
+Unit
+When Astral Dragon enters the field, create two tokens that are copies of target non-unit card, except they're 3/3 Dragon units in addition to their other types, and they have flying.
+2/1

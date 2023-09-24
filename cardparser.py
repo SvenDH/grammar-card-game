@@ -10,6 +10,24 @@ def to_numberorx(x):
         return str(x)
 
 
+def from_pureobject(
+    o: PureObject,
+    ref: Reference | ObjectRef | NumberOrX | None = None,
+    prefixes: list[Prefix] = [],
+    suffix: Suffix | None = None,
+    extra: Any = None,
+    withwhat: Any = None,
+    without: Any = None
+):
+    if o == PureObject.ability:
+        return AbilityObject(ref=ref, prefixes=prefixes, suffix=suffix, extra=extra)
+    elif o == PureObject.copies:
+        return CardObject(ref=ref, prefixes=prefixes, suffix=suffix, extra=extra, copies=True, without=without, withwhat=withwhat)
+    elif o == PureObject.token:
+        return CardObject(ref=ref, prefixes=prefixes, suffix=suffix, type=TypeEnum.TOKEN, extra=extra, without=without, withwhat=withwhat)
+    return CardObject(ref=ref, prefixes=prefixes, extra=extra, without=without, withwhat=withwhat)
+
+
 def from_tree(tree: Tree | Token):
     if isinstance(tree, Token):
         t = tree
@@ -22,8 +40,8 @@ def from_tree(tree: Tree | Token):
             types = tree.children[2].children[0].children
             return Card(
                 cost=[from_tree(c.children[0]) for c in tree.children[1].children],
-                type=types[0].lower(),
-                subtype=types[1].value if len(types) > 1 else None,
+                type=[types[0].lower()],   # TODO: add more types and subtypes
+                subtype=[types[1].lower()] if len(types) > 1 else [],
                 abilities=[i for a in tree.children[3].children for i in from_tree(a)],
                 damage=from_tree(tree.children[4].children[0]),
                 health=from_tree(tree.children[4].children[1]),
@@ -37,40 +55,55 @@ def from_tree(tree: Tree | Token):
                 return Activation.deactivate
             return Activation.activate
         case "referenceprefix":
-            return from_tree(tree.children[0])
+            r = from_tree(tree.children[0])
+            print(r)
+            if isinstance(r, int):
+                return (Reference.exactly, r)
+            return r
         case "pureobject":
             return from_tree(tree.children[0])
         case "object":
             r = from_tree(tree.children[0])
-            if isinstance(r, (TypeEnum, PureObject)):
-                return Object(object=r)
+            if isinstance(r, PureObject):
+                return from_pureobject(r)
+            elif isinstance(r, TypeEnum):
+                return CardObject(type=r)
             return r
         case "selfref":
-            return Object(object=ObjectRef.self)
+            return CardObject(ref=ObjectRef.self)
         case "objects":
-            op = None
             each = False
             objs = [from_tree(i) for i in tree.children]
-            if len(objs) > 1:
-                if objs[0] == Reference.each:
-                    objs = objs[1:]
-                    each = True
-                else:
-                    op = objs.pop(len(objs) - 2)
-            return Objects(objects=objs, each=each, op=op)
-        case "refobject":
-            r = from_tree(tree.children[0])  # TODO: add more complex references
-            o = from_tree(tree.children[1])
-            if isinstance(r, tuple):
-                return Object(ref=r[0], object=o)
-            return Object(ref=r, object=o)
+            if len(objs) > 1 and objs[0] == Reference.each:
+                objs = objs[1:]
+                each = True
+            return Objects(objects=objs, each=each)
         case "specifiedobject":
+            r = from_tree(tree.children[0]) if tree.children[0].data == "referenceprefix" else None
+            e = None
+            if r and isinstance(r, tuple):
+                if len(r) > 1:
+                    e = r[1]
+                r = r[0]
             suffix = from_tree(tree.children[-1]) if tree.children[-1].data == "suffix" else None
-            return Object(
-                object=from_tree(tree.children[-2] if suffix else tree.children[-1]),
+            prefixes = [from_tree(c) for c in tree.children if c.data == "prefix"]
+            w = [from_tree(c) for c in tree.children if c.data == "with"]
+            wo = [from_tree(c) for c in tree.children if c.data == "keyword"]
+            o = from_tree(tree.children[-2] if suffix else tree.children[-1])
+            return from_pureobject(
+                o,
+                ref=r,
+                prefixes=prefixes,
                 suffix=suffix,
-                prefixes=[from_tree(c) for c in tree.children if c.data == "prefix"]
+                extra=e,
+                withwhat=w[0] if w else None,
+                without=wo[0] if wo else None
             )
+        case "with":
+            # TODO: implement more with clauses (numbercompare, highestnumber, whatlevel)
+            return from_tree(tree.children[0])
+        case "keyword":
+            return from_tree(tree.children[0])
         case "prefix":
             if tree.children[0].data == "stats":
                 return Prefix(prefix=from_tree(tree.children[0]))
@@ -140,7 +173,7 @@ def from_tree(tree: Tree | Token):
             t = from_tree(tree.children[0])
             if isinstance(t, Player):
                 return t
-            elif t == ObjectRef.their:
+            elif t == PlayerRef.their:
                 return Player(player=PlayerEnum.they)
             return Player(player=PlayerEnum.you)
         case "ability":
@@ -150,12 +183,12 @@ def from_tree(tree: Tree | Token):
         case "activatedability":
             return [ActivatedAbility(
                 costs=[from_tree(t) for t in tree.children[0].children],
-                effect=from_tree(tree.children[1])
+                effect=Effect(effects=from_tree(tree.children[1]))
             )]
         case "triggeredability":
             return [TriggeredAbility(
                 trigger=from_tree(tree.children[0]),
-                effect=from_tree(tree.children[-1]),
+                effect=Effect(effects=from_tree(tree.children[-1])),
                 condition=from_tree(tree.children[1]) if len(tree.children) > 2 else None
             )]
         case "triggercondition":
@@ -204,6 +237,22 @@ def from_tree(tree: Tree | Token):
                 ),
                 foreach=from_tree(tree.children[4]) if len(tree.children) > 4 else None
             )
+        case "noncolor":
+            return (from_tree(tree.children[0].children[0]), True)
+        case "color":
+            return (from_tree(tree.children[0]), False)
+        case "red":
+            return ColorEnum.red
+        case "green":
+            return ColorEnum.green
+        case "blue":
+            return ColorEnum.blue
+        case "yellow":
+            return ColorEnum.yellow
+        case "colorless":
+            return ColorEnum.colorless
+        case "multicolored":
+            return ColorEnum.multicolored
         case "beginningofphase":
             return from_tree(tree.children[1])
         case "phase":
@@ -249,11 +298,11 @@ def from_tree(tree: Tree | Token):
                 op=OperatorEnum.OPTIONAL
             )
         case "composedeffect":
-            return Effect(effects=[from_tree(c) for c in tree.children if isinstance(c, Tree) and c.data == "effect"])
+            return [from_tree(c) for c in tree.children if isinstance(c, Tree) and c.data == "effect"]
         case "effect":
             return from_tree(tree.children[0])
         case "imperative":
-            return Effect(
+            return PlayerEffect(
                 effects=[from_tree(tree.children[0])]
             )  # TODO: add for each, conditional and where X
         case "i":
@@ -276,7 +325,7 @@ def from_tree(tree: Tree | Token):
             )  # TODO: add for each
         case "hasability":
             return GetAbility(
-                abilities=[from_tree(tree.children[0])],
+                abilities=from_tree(tree.children[0]),
                 until=from_tree(tree.children[1]) if len(tree.children) > 1 else None
             )
         case "getsability":
@@ -323,6 +372,37 @@ def from_tree(tree: Tree | Token):
                 what=from_tree(tree.children[0]),
                 additional=len(tree.children) > 1
             )
+        case "dealswhat":
+            return from_tree(tree.children[0])
+        case "deals":
+            r = [i for c in tree.children if c.data == "damagerecipients" for i in from_tree(c)]
+            n = [from_tree(c) for c in tree.children if c.data == "numberorxorthat" or c.data == "numberdefinition"]
+            return DealsAbility(
+                amount=n[0],
+                recipients=r if r else [DamageRef.anytarget],
+                spread=len(r) == 0
+            )
+        case "damagerecipients":
+            return [from_tree(c) for c in tree.children if c.data == "damagerecipient"]
+        case "numberdefinition":
+            o = [from_tree(c) for c in tree.children if c.data == "objects"]
+            n = [from_tree(c) for c in tree.children if c.data == "numberical"]
+            return NumberDef(
+                amount=o[0] if len(o) > 0 else from_tree(tree.children[0]),
+                property=n[0] if len(n) > 0 else None
+            )
+        case "numberical":
+            return from_tree(tree.children[0])
+        case "damage":
+            return NumbericalEnum.damage
+        case "health":
+            return NumbericalEnum.health
+        case "level":
+            return NumbericalEnum.level
+        case "anytarget":
+            return DamageRef.anytarget
+        case "itself":
+            return DamageRef.itself
         case "objectcant":
             a = from_tree(tree.children[0])
             if not isinstance(a, tuple):
@@ -440,13 +520,15 @@ def from_tree(tree: Tree | Token):
             return PaylifeEffect(costs=from_tree(tree.children[1]))
         case "players":
             p = from_tree(tree.children[0])
+            ref = None
             if isinstance(p, tuple):
-                return Player(
-                    player=p[1],
-                    ref=p[0],
-                    who_cant=len(tree.children) > 1
-                )
-            return Player(player=p, who_cant=len(tree.children) > 1)
+                ref = p[0]
+                p = p[1]
+            return Player(
+                player=p,
+                ref=ref,
+                who_cant=len(tree.children) > 1
+            )
         case "p":
             t = tree.children[0]
             if t.data == "defending":
@@ -454,7 +536,7 @@ def from_tree(tree: Tree | Token):
             elif t.data == "attacking":
                 return PlayerEnum.attacking
             elif t.data == "itspossesion":
-                return (from_tree(tree.children[0], from_tree(tree.children[1])))
+                return (from_tree(tree.children[0]), from_tree(tree.children[1]))
             return from_tree(t)
         case "owners":
             return PlayerEnum.owner
@@ -535,9 +617,9 @@ def from_tree(tree: Tree | Token):
         case "deactivated":
             return (PrefixEnum.activated, True)
         case "token":
-            return (PrefixEnum.token, False)
+            return (TypeEnum.TOKEN, False)
         case "nontoken":
-            return (PrefixEnum.token, True)
+            return (TypeEnum.TOKEN, True)
         case "attacking":
             return (PrefixEnum.attacking, False)
         case "blocking":
@@ -545,7 +627,7 @@ def from_tree(tree: Tree | Token):
         case "attackingorblocking":
             return (PrefixEnum.attackingorblocking, False)
         case "nontype":
-            return (from_tree(tree.children[1], True))
+            return (from_tree(tree.children[1]), True)
         case "stats":
             return (to_numberorx(from_tree(tree.children[0])), to_numberorx(from_tree(tree.children[1])))
         case "you":
@@ -560,7 +642,7 @@ def from_tree(tree: Tree | Token):
             return PureObject.ability
         case "typecard":
             if tree.children:
-                return TypeEnum(tree.children[0].children[0])
+                return TypeEnum(tree.children[0].children[0].lower())
             return PureObject.card
         case "hand":
             return ZoneEnum.hand
@@ -569,11 +651,9 @@ def from_tree(tree: Tree | Token):
         case "discardzone":
             return ZoneEnum.discard
         case "refsacrificed":
-            return Reference.sac
+            return ObjectRef.sac
         case "anyof":
-            return Reference.anyof
-        case "the":
-            return Reference.the
+            return ObjectRef.any
         case "this":
             return Reference.this
         case "that":
@@ -600,10 +680,8 @@ def from_tree(tree: Tree | Token):
             return (Reference.fewerthan, from_tree(tree.children[1]))
         case "upto":
             return (Reference.upto, from_tree(tree.children[1]))
-        case "counted":
-            return [from_tree(c) for c in tree.children]
         case "target":
-            return tuple([from_tree(c) for c in tree.children] + [Reference.target])
+            return tuple([Reference.target] + [from_tree(c) for c in tree.children])
         case "countable":
             return from_tree(tree.children[0])
         case "reference":
@@ -613,11 +691,11 @@ def from_tree(tree: Tree | Token):
         case "opandor":
             return from_tree(tree.children[0])
         case "its":
-            return ObjectRef.their
+            return PlayerRef.their
         case "their":
-            return ObjectRef.their
+            return PlayerRef.their
         case "your":
-            return ObjectRef.your
+            return PlayerRef.your
         case "and":
             return OperatorEnum.AND
         case "or":
@@ -668,15 +746,17 @@ def from_tree(tree: Tree | Token):
 
 
 class Parser:
-    def __init__(self, grammar: str, debug: bool = True) -> None:
-        self.grammar = grammar
-        self.lark = Lark(grammar.format(name=f'"~"', types=TypeEnum.to_grammar(), keywords=KeywordEnum.to_grammar()), start="root", debug=debug)
+    def __init__(self, grammar_path: str = "grammars/game.lark", debug: bool = True) -> None:
+        self.grammar = open(grammar_path, "r").read()
+        self.lark = Lark(self.grammar.format(name=f'"~"', types=TypeEnum.to_grammar(), keywords=KeywordEnum.to_grammar()), start="root", debug=debug)
         self.debug = debug
 
     def parse(self, card: str, name: str | None = None):
         if name is None:
             name = " ".join(card.split("\n", 1)[0].split(" ")[:-1])
-        t = self.lark.parse(card.split("\n\n", 1)[0].replace(name, "~"))
+        card_txt = card.split("\n\n", 1)[0].replace(name, "~")
+        t = self.lark.parse(card_txt)
         c = from_tree(t)
         c.name = name
+        c.rule_texts = card_txt.split("\n")[2:-1]
         return c

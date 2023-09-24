@@ -1,0 +1,54 @@
+Soldier {1}{R}
+Unit - Human
+1/1
+
+Super Soldier {1}{R}
+Unit
+Flying, Siege
+{2}: Create a 2/2 token with "Flying" and "Siege".
+{1}: Play unit cards without paying essence.
+{T}: Draw a card, then you draw a card for each unit card.
+{Q}: Destroy target card.
+1/1
+
+Jacks Steadfast Pendant {Y}{B}
+Unit
+{2}: Attacking unit cards in your hand get -3/-3 until end of turn.
+{B}: Attacking unit cards in your deck get -2/-2 until end of turn.
+{1}, Sacrifice Jacks Steadfast Pendant: Draw two cards, then each player discards two cards.
+2/0
+
+Dwarven Strike {1}{R}
+Spell
+Unit cards without flying have this ability.
+2/0
+
+Wizard {2}{B}
+Unit
+{T}: Wizard deals 1 damage to any target.
+1/2
+
+Knight {2}{R}
+Unit
+Siege
+2/2
+
+Crackleburr {1}{R}{B}
+Unit - Elemental
+{R}{B}, {T}, Deactivate two activated red units you control: Crackleburr deals 3 damage to any target.
+{R}{B}, {Q}, Activate two deactivated blue units you control: Return target unit to its owner's hand.
+2/2
+
+Advisor {1}{Y}
+Unit
+{T}: Activate target unit.
+0/2
+
+Dark Council {3}{B}
+Unit
+Flying, Siege
+{2}: Create a 2/2 token with "Flying" and "Siege".
+{1}: Play unit cards without paying essence.
+{T}: Draw a card, then you draw a card for each unit card.
+{Q}: Destroy target card.
+1/1
