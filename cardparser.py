@@ -56,7 +56,6 @@ def from_tree(tree: Tree | Token):
             return Activation.activate
         case "referenceprefix":
             r = from_tree(tree.children[0])
-            print(r)
             if isinstance(r, int):
                 return (Reference.exactly, r)
             return r

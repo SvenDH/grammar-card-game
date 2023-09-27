@@ -1,6 +1,7 @@
 import random
 from enum import Enum
-from typing import Literal, Any
+from typing import Literal, Any, Union
+from dataclasses import dataclass, field
 from pydantic import BaseModel
 
 
@@ -192,7 +193,7 @@ class TurnQualifierEnum(str, GrammarEnum):
 
 
 class BaseEffect(BaseModel):
-    def activate(self, ctx: dict):
+    async def activate(self, ctx: dict):
         raise NotImplementedError("Subclass BaseEffect and implement activate")
 
 
@@ -353,10 +354,10 @@ class Effect(BaseEffect):
     effects: list[BaseEffect] = []
     op: OperatorEnum = OperatorEnum.AND
 
-    def activate(self, ctx: dict):
+    async def activate(self, ctx: dict):
         # TODO: add op == Operator.optional check
         for e in self.effects:
-            e.activate(ctx)
+            await e.activate(ctx)
 
 
 class ActionCost(BaseModel):
@@ -408,14 +409,14 @@ class ActivatedAbility(BaseModel):
     costs: list[EssenceCosts | Activation | ActionCost] = []
     effect: Effect
 
-    def pay_costs(self, ctx: dict):
+    async def pay_costs(self, ctx: dict):
         # TODO: check if costs can be paid and pay costs
         # TODO: add pyed costs to ctx including sacrificed units
         pass
 
-    def activate(self, ctx: dict):
-        self.pay_costs(ctx)
-        self.effect.activate(ctx)
+    async def activate(self, ctx: dict):
+        await self.pay_costs(ctx)
+        await self.effect.activate(ctx)
 
 
 AquiredAbilities = KeywordEnum | TriggeredAbility | ActivatedAbility | ActionCost | Effect | Literal["this"]
@@ -425,22 +426,22 @@ class PlayerEffect(BaseEffect):
     subj: Player = Player(player=PlayerEnum.you)
     effects: list[BaseEffect] = []
 
-    def activate(self, ctx: dict):
+    async def activate(self, ctx: dict):
         for player in ctx["game"].query(ctx, self.subj):
             ctx["subject"] = player
             for e in self.effects:
-                e.activate(ctx)
+                await e.activate(ctx)
 
 
 class ObjectEffect(BaseEffect):
     subj: Object = Object(object=ObjectRef.it)
     effects: list[BaseEffect] = []
     
-    def activate(self, ctx: dict):
+    async def activate(self, ctx: dict):
         for player in ctx["game"].query(ctx, self.subj):
             ctx["subject"] = player
             for e in self.effects:
-                e.activate(ctx)
+                await e.activate(ctx)
 
 
 class CreateTokenEffect(BaseEffect):
@@ -448,35 +449,90 @@ class CreateTokenEffect(BaseEffect):
     stats: Stats = (1, 1)
     abilities: list[AquiredAbilities] = []
 
-    def activate(self, ctx: dict):
+    async def activate(self, ctx: dict):
+        game = ctx["game"]
         player = ctx["subject"]
-        # TODO: prompt for field place
+        fields = [i for i in enumerate(player.board) if player.board[i] is None]
+        if not fields:
+            raise RuntimeError("No field places available")
+        
+        index = player.callback.choose("Place token at:", fields)
+        player.board[index] = CardInstance(
+            owner=player,
+            controller=player,
+            card=Card(
+                name="Token",
+                damage=self.stats[0],
+                health=self.stats[1],
+                type=[TypeEnum.UNIT],
+            ),
+            field_index=index
+        )
 
 
 class DestroyEffect(BaseEffect):
     objects: Objects
 
-    def activate(self, ctx: dict):
-        for d in ctx["game"].query(ctx, self.objects):
-            d.destroy(ctx)
+    async def activate(self, ctx: dict):
+        game = ctx["game"]
+        player = ctx["subject"]
+        for d in game.query(ctx, self.objects):
+            game.enqueue(player, "destroy", d)
 
 
 class CopyEffect(BaseEffect):
     objects: Objects
 
+    async def activate(self, ctx: dict):
+        game = ctx["game"]
+        player = ctx["subject"]
+        for d in game.query(ctx, self.objects):
+            game.enqueue(player, "copy", d)
+
 
 class PlayEffect(BaseEffect):
     objects: Objects
     free: bool = False
+    
+    async def activate(self, ctx: dict):
+        game = ctx["game"]
+        player = ctx["subject"]
+        for d in game.query(ctx, self.objects):
+            game.enqueue(player, "play", d, self.free)
 
 
 class DrawEffect(BaseEffect):
     number: NumberOrX = 1
+    
+    async def activate(self, ctx: dict):
+        game = ctx["game"]
+        player = ctx["subject"]
+        if isinstance(self.number, int):
+            n = self.number
+        elif self.number == "X":
+            n = ctx["X"]
+        else:
+            raise RuntimeError(F"n can't be {self.name}")
+        game.enqueue(player, "draw", n)
 
 
 class DiscardEffect(BaseEffect):
     number: NumberOrX = 1
     objects: Objects
+
+    async def activate(self, ctx: dict):
+        game = ctx["game"]
+        player = ctx["subject"]
+        if isinstance(self.number, int):
+            n = self.number
+        elif self.number == "X":
+            n = ctx["X"]
+        else:
+            raise RuntimeError(F"n can't be {self.name}")
+        
+        choices = game.query(ctx, self.objects)
+        # TODO: prompt user for which card
+        game.enqueue(player, "discard", n)
 
 
 class SearchEffect(BaseEffect):
@@ -687,13 +743,22 @@ class Card(BaseModel):
         elif len(colors) == 1:
             return set(colors + [ColorEnum.monocolored])
         return set(colors + [ColorEnum.multicolored])
+    
+    def __str__(self) -> str:
+        costs = "}{".join([str(c) for c in self.cost])
+        t = " ".join([t.capitalize() for t in self.type])
+        if self.subtype:
+            t += " - " + " ".join([t.capitalize() for t in self.subtype])
+        a = "\n".join(self.rule_texts)
+        return f"{self.name} {{{costs}}}\n{t}\n{a}\n{self.damage}/{self.health}"
 
 
-class CardInstance(BaseModel):
-    owner: 'PlayerState'
-    controller: 'PlayerState' | None = None
+@dataclass
+class CardInstance:
     card: Card
-    mods: list = []
+    owner: 'PlayerState'
+    controller: Union['PlayerState', None] = None
+    mods: list = field(default_factory=list)
     damage: int = 1
     health: int = 1
     activated: bool = True
@@ -701,6 +766,10 @@ class CardInstance(BaseModel):
     blocking: bool = False
     side: bool = False
     field_index: int = -1
+
+    @property
+    def name(self) -> list[TypeEnum]:
+        return self.card.name  # TODO: add modified name
 
     @property
     def type(self) -> list[TypeEnum]:
@@ -711,24 +780,31 @@ class CardInstance(BaseModel):
         return self.card.abilities  # TODO: add modifiers
     
     @property
+    def activated_abilities(self) -> list[ActivatedAbility]:
+        return [c for c in self.card.abilities if isinstance(c, ActivatedAbility)]  # TODO: add modifiers
+    
+    @property
     def color(self) -> set[ColorEnum]:
         # TODO: add modifiers
         return self.card.color
     
-    def activate(self, ctx: dict, ability_index: int):
-        ability = self.abilities[ability_index]
-        assert isinstance(ability, ActivatedAbility)
+    def __str__(self) -> str:
+        return str(self.card)
+    
+    async def activate(self, ctx: dict, index: int):
+        ability = self.activated_abilities[index]
         ctx["self"] = self
         ctx["owner"] = self.owner
         ctx["controller"] = self.controller
-        ability.activate(ctx)
+        await ability.activate(ctx)
 
     def destroy(self, ctx: dict):
         assert self.field_index >= 0
         player = self.controller
-        place = player.field[self.field_index]
-        assert self in place
-        player.pile.append(place.pop(place.index(self)))
+        place = player.board[self.field_index]
+        assert self == place
+        player.board[self.field_index] = None
+        player.pile.append(self)
         self.on_destroy(ctx)
         self.on_exit(ctx)
     
@@ -753,27 +829,44 @@ class CardInstance(BaseModel):
         self.blocking = False
 
 
-class PlayerState(BaseModel):
+class CallbackManager:
+    def confirm(self) -> bool:
+        pass
+
+    def choose(self, options: list) -> int:
+        pass
+
+    def order(self, options: list) -> list:
+        pass
+
+
+@dataclass
+class PlayerState:
+    name: str
     game: 'Game'
-    deck: list[CardInstance] = []
-    field: list[list[CardInstance]] = [[], [], [], [], []]
-    pile: list[CardInstance] = []
-    hand: list[CardInstance] = []
-    side: list[Card] = []
+    deck: list[CardInstance] = field(default_factory=list)
+    board: list[CardInstance] = field(default_factory=list)
+    pile: list[CardInstance] = field(default_factory=list)
+    hand: list[CardInstance] = field(default_factory=list)
+    side: list[Card] = field(default_factory=list)
     life: int = 20
 
-    subscribed: dict[str, list[CardInstance]] = {}
+    callback: CallbackManager | None = None
+    subscribed: dict[str, list[CardInstance]] = field(default_factory=dict)
 
     class Config:
         arbitrary_types_allowed = True
 
     @classmethod
-    def from_cards(cls, game: 'Game', cards: list[Card], side_cards: list[Card]):
-        p = cls(game=game, side=side_cards)
+    def from_cards(cls, name: str, game: 'Game', cards: list[Card], side_cards: list[Card]):
+        p = cls(name=name, game=game, side=side_cards)
         p.deck=[CardInstance(owner=p, card=c) for c in cards]
+        p.board = [None] * 5
         return p
 
     def draw(self, ctx: dict, n: int = 1, side: bool = False):
+        # TODO: draw specific matched card
+        # TODO: lose game when deck is empty
         assert side or n <= len(self.deck)
         cards = []
         for _ in range(n):
@@ -790,51 +883,119 @@ class PlayerState(BaseModel):
         self.pile.append(self.hand.pop(index))
 
     def place(self, ctx: dict, from_index: int, to_index: int):
-        assert to_index >= 0 and to_index < len(self.field)
+        assert to_index >= 0 and to_index < len(self.board)
         assert from_index >= 0 and from_index < len(self.hand)
+        assert self.board[to_index] is None  # TODO: should this be allowed?
         card = self.hand.pop(from_index)
-        self.field[to_index].append(card)
+        self.board[to_index] = card
         card.controller = self
         card.field_index = to_index
         card.on_enter(ctx)
         return card
-    
-    def activate(self, index: int, ability_index: int, sub_index: int = 0):
-        # TODO: add ability to activate from pile or hand or opponents field
-        card = self.field[index][sub_index]
-        ctx = {
-            "game": self.game,
-            "activator": self,
-        }
-        card.activate(ctx=ctx, ability_index=ability_index)
 
     def query(self, ctx: dict, obj: Player | Objects):
         found = []
         if obj.match(ctx, self):
             found.append(self)
-        for place in self.field:
-            for card in place:
-                if obj.match(ctx, self):
-                    found.append(card)
+        for card in self.board:
+            if card and obj.match(ctx, self):
+                found.append(card)
         # TODO: find in pile, deck, or hand?
         return found
 
-class Game(BaseModel):
-    players: list[PlayerState] = []
-    turn: tuple[int, int] = (0, 0)
+
+@dataclass
+class Game:
+    players: list[PlayerState] = field(default_factory=list)
+    start_cards: int = 5
+    turn: int = 0
     phase: PhaseEnum = PhaseEnum.activation
+    queue: list[tuple[PlayerState, PlayerState| CardInstance, str, list]] = field(default_factory=list)
 
     class Config:
         arbitrary_types_allowed = True
 
-    @classmethod
-    def from_cards(cls, *decks: list[tuple[list[Card], list[Card]]]):
-        g = cls()
-        g.players = [PlayerState.from_cards(g, d[0], d[1]) for d in decks]
-        return g
+    def add_player(self, name: str, deck: list[Card], side: list[Card] | None = None):
+        player = PlayerState.from_cards(name, self, deck, side or [])
+        self.players.append(player)
+        return player
     
+    async def start(self):
+        # TODO: add muligan callbacks
+        for player in self.players:
+            for _ in range(self.start_cards):
+                player.draw({})
+        
+        while True:
+            # TODO: decide turn order
+            player = self.players[self.turn % len(self.players)]
+
+            await self.next_turn(player)
+
+            self.turn += 1
+        
+    async def next_turn(self, player: PlayerState):
+        ctx = {
+            "game": self,
+            "turn": self.turn,
+            "current_player": player
+        }
+        player.draw(ctx)
+
+        done = False
+        options = ["play", "activate", "endturn"]
+        while not done:
+            # TODO: get possible actions
+            idx = player.callback.choose("Choose action:", options)
+            match options[idx]:
+                case "play":
+                    from_index = player.callback.choose("Play from hand:", [o.name for o in player.hand])
+                    positions = range(5)
+                    # TODO: get possible board positions
+                    to_index = player.callback.choose("Place on board position:", positions)
+                    player.place(ctx, from_index, to_index)
+                case "activate":
+                    # TODO: get payable abilities
+                    # TODO: include enemy abilities
+                    card_options = [o.name for o in player.board if o and o.activated_abilities]
+                    index = player.callback.choose("Activate ability of:", card_options)
+                    card = player.board[index]
+                    abilities = list(reversed(card.abilities))
+                    abilities = [abilities.index(a) for a in card.activated_abilities]
+                    print(abilities, card.abilities)
+                    texts = list(reversed(card.card.rule_texts))
+                    abilities = [texts[a] for a in abilities]
+                    index = player.callback.choose("Activate ability:", abilities)
+                    await card.activate(ctx, index)
+                case "endturn":
+                    done = True
+        
+        # TODO: combat
+        
+        self.on_endturn(ctx)
+
     def query(self, ctx: dict, obj: Player | Objects):
         found = []
         for player in self.players:
             found.extend(player.query(ctx, obj))
         return found
+
+    def enqueue(self, controller: PlayerState, subject: PlayerEffect, effect: str, *args: Any):
+        self.queue.append((controller, subject, effect, args))
+    
+    def flush(self):
+        while len(self.queue) > 0:
+            pl, sub, eff, arg = self.queue.pop()
+            ctx = {
+                "game": self,
+                "controller": pl,
+                "subject": sub
+            }
+            match eff:
+                case "draw":
+                    sub.draw(ctx, arg[0])
+                case "discard":
+                    sub.discard(ctx, sub.hand.index(arg[0]))
+
+    def on_endturn(self, ctx: dict):
+        pass
