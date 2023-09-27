@@ -454,7 +454,7 @@ def from_tree(tree: Tree | Token):
         case "discard":
             return DiscardEffect(
                 number=from_tree(tree.children[1]) if len(tree.children) > 1 else 1,
-                objects=from_tree(tree.children[1]) if len(tree.children) > 2 else Objects(objects=[Object(object=PureObject.card)])
+                objects=from_tree(tree.children[1]) if len(tree.children) > 2 else Objects(objects=[CardObject()])
             )
         case "search":
             return SearchEffect(

@@ -427,10 +427,12 @@ class PlayerEffect(BaseEffect):
     effects: list[BaseEffect] = []
 
     async def activate(self, ctx: dict):
-        for player in ctx["game"].query(ctx, self.subj):
+        game = ctx["game"]
+        for player in game.query(ctx, self.subj):
             ctx["subject"] = player
             for e in self.effects:
                 await e.activate(ctx)
+        game.flush(ctx)
 
 
 class ObjectEffect(BaseEffect):
@@ -438,10 +440,12 @@ class ObjectEffect(BaseEffect):
     effects: list[BaseEffect] = []
     
     async def activate(self, ctx: dict):
-        for player in ctx["game"].query(ctx, self.subj):
+        game = ctx["game"]
+        for player in game.query(ctx, self.subj):
             ctx["subject"] = player
             for e in self.effects:
                 await e.activate(ctx)
+        game.flush(ctx)
 
 
 class CreateTokenEffect(BaseEffect):
@@ -450,12 +454,11 @@ class CreateTokenEffect(BaseEffect):
     abilities: list[AquiredAbilities] = []
 
     async def activate(self, ctx: dict):
-        game = ctx["game"]
         player = ctx["subject"]
         fields = [i for i in enumerate(player.board) if player.board[i] is None]
         if not fields:
             raise RuntimeError("No field places available")
-        
+        # TODO: find value of X
         index = player.callback.choose("Place token at:", fields)
         player.board[index] = CardInstance(
             owner=player,
@@ -476,7 +479,7 @@ class DestroyEffect(BaseEffect):
     async def activate(self, ctx: dict):
         game = ctx["game"]
         player = ctx["subject"]
-        for d in game.query(ctx, self.objects):
+        for d in game.query(ctx, self.objects, place="board"):
             game.enqueue(player, "destroy", d)
 
 
@@ -486,7 +489,7 @@ class CopyEffect(BaseEffect):
     async def activate(self, ctx: dict):
         game = ctx["game"]
         player = ctx["subject"]
-        for d in game.query(ctx, self.objects):
+        for d in game.query(ctx, self.objects, place="board"):
             game.enqueue(player, "copy", d)
 
 
@@ -529,10 +532,8 @@ class DiscardEffect(BaseEffect):
             n = ctx["X"]
         else:
             raise RuntimeError(F"n can't be {self.name}")
-        
-        choices = game.query(ctx, self.objects)
-        # TODO: prompt user for which card
-        game.enqueue(player, "discard", n)
+        # TODO: find value of X
+        game.enqueue(player, "discard", n, self.objects)
 
 
 class SearchEffect(BaseEffect):
@@ -788,7 +789,7 @@ class CardInstance:
         # TODO: add modifiers
         return self.card.color
     
-    def __str__(self) -> str:
+    def __repr__(self) -> str:
         return str(self.card)
     
     async def activate(self, ctx: dict, index: int):
@@ -857,6 +858,9 @@ class PlayerState:
     class Config:
         arbitrary_types_allowed = True
 
+    def __repr__(self) -> str:
+        return self.name
+
     @classmethod
     def from_cards(cls, name: str, game: 'Game', cards: list[Card], side_cards: list[Card]):
         p = cls(name=name, game=game, side=side_cards)
@@ -868,19 +872,27 @@ class PlayerState:
         # TODO: draw specific matched card
         # TODO: lose game when deck is empty
         assert side or n <= len(self.deck)
-        cards = []
         for _ in range(n):
             if side:
                 card = CardInstance(owner=self, card=random.choice(self.side), side=True)
             else:
                 card = self.deck.pop()
             self.hand.append(card)
-            cards.append(card)
-        return cards
+            self.on_draw(ctx)
     
-    def discard(self, ctx: dict, index: int = 0):
-        assert index >= 0 and index < len(self.hand)
-        self.pile.append(self.hand.pop(index))
+    def discard(self, ctx: dict, n: int = 1, match: Objects | None = None):
+        print(ctx, n, match)
+        for _ in range(n):
+            if len(self.hand) == 0:
+                return
+            if match:
+                choices = self.query(ctx, match, place="hand")
+            else:
+                choices = self.hand
+            index = self.callback.choose("Discard a card:", choices)
+            index = self.hand.index(choices[index])
+            self.pile.append(self.hand.pop(index))
+            self.on_discard(ctx)
 
     def place(self, ctx: dict, from_index: int, to_index: int):
         assert to_index >= 0 and to_index < len(self.board)
@@ -893,15 +905,34 @@ class PlayerState:
         card.on_enter(ctx)
         return card
 
-    def query(self, ctx: dict, obj: Player | Objects):
+    def query(self, ctx: dict, obj: Player | Objects, place: str = "any"):
         found = []
-        if obj.match(ctx, self):
-            found.append(self)
-        for card in self.board:
-            if card and obj.match(ctx, self):
-                found.append(card)
-        # TODO: find in pile, deck, or hand?
+        if place == "board" or place == "any":
+            for card in self.board:
+                if card and obj.match(ctx, card):
+                    found.append(card)
+        if place == "hand" or place == "any":
+            for card in self.hand:
+                if obj.match(ctx, card):
+                    found.append(card)
+        if place == "pile" or place == "any":
+            for card in self.pile:
+                if obj.match(ctx, card):
+                    found.append(card)
+        if place == "deck" or place == "any":
+            for card in self.deck:
+                if obj.match(ctx, card):
+                    found.append(card)
         return found
+    
+    def on_draw(self, ctx: dict):
+        pass
+    
+    def on_discard(self, ctx: dict):
+        pass
+
+    def on_endturn(self, ctx: dict):
+        pass
 
 
 @dataclass
@@ -941,6 +972,7 @@ class Game:
             "current_player": player
         }
         player.draw(ctx)
+        print(len(player.hand))
 
         done = False
         options = ["play", "activate", "endturn"]
@@ -950,19 +982,18 @@ class Game:
             match options[idx]:
                 case "play":
                     from_index = player.callback.choose("Play from hand:", [o.name for o in player.hand])
-                    positions = range(5)
+                    positions = [f"Position {i+1}" for i in range(5) if player.board[i] is None]
                     # TODO: get possible board positions
                     to_index = player.callback.choose("Place on board position:", positions)
                     player.place(ctx, from_index, to_index)
                 case "activate":
-                    # TODO: get payable abilities
+                    # TODO: get payable and playable abilities
                     # TODO: include enemy abilities
                     card_options = [o.name for o in player.board if o and o.activated_abilities]
                     index = player.callback.choose("Activate ability of:", card_options)
                     card = player.board[index]
                     abilities = list(reversed(card.abilities))
                     abilities = [abilities.index(a) for a in card.activated_abilities]
-                    print(abilities, card.abilities)
                     texts = list(reversed(card.card.rule_texts))
                     abilities = [texts[a] for a in abilities]
                     index = player.callback.choose("Activate ability:", abilities)
@@ -972,30 +1003,25 @@ class Game:
         
         # TODO: combat
         
-        self.on_endturn(ctx)
+        player.on_endturn(ctx)
 
-    def query(self, ctx: dict, obj: Player | Objects):
+    def query(self, ctx: dict, obj: Player | Objects, place: str = "any"):
         found = []
         for player in self.players:
-            found.extend(player.query(ctx, obj))
+            if obj.match(ctx, player):
+                found.append(player)
+            found.extend(player.query(ctx, obj, place))
         return found
 
-    def enqueue(self, controller: PlayerState, subject: PlayerEffect, effect: str, *args: Any):
-        self.queue.append((controller, subject, effect, args))
+    def enqueue(self, subject: PlayerEffect, effect: str, *args: Any):
+        self.queue.append((subject, effect, args))
     
-    def flush(self):
+    def flush(self, ctx: dict):
         while len(self.queue) > 0:
-            pl, sub, eff, arg = self.queue.pop()
-            ctx = {
-                "game": self,
-                "controller": pl,
-                "subject": sub
-            }
+            sub, eff, arg = self.queue.pop()
+            ctx["subject"] = sub
             match eff:
                 case "draw":
-                    sub.draw(ctx, arg[0])
+                    sub.draw(ctx, *arg)
                 case "discard":
-                    sub.discard(ctx, sub.hand.index(arg[0]))
-
-    def on_endturn(self, ctx: dict):
-        pass
+                    sub.discard(ctx, *arg)
