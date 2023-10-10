@@ -982,10 +982,10 @@ class Game:
             match options[idx]:
                 case "play":
                     from_index = player.callback.choose("Play from hand:", [o.name for o in player.hand])
-                    positions = [f"Position {i+1}" for i in range(5) if player.board[i] is None]
+                    positions = [i for i in range(5) if player.board[i] is None]
                     # TODO: get possible board positions
-                    to_index = player.callback.choose("Place on board position:", positions)
-                    player.place(ctx, from_index, to_index)
+                    to_index = player.callback.choose("Place on board position:", [f"Position {i+1}" for i in positions])
+                    player.place(ctx, from_index, positions[to_index])
                 case "activate":
                     # TODO: get payable and playable abilities
                     # TODO: include enemy abilities
