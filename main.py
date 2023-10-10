@@ -2,8 +2,8 @@ import typer
 import asyncio
 
 from cardparser import Parser
-from generator import Generator
-from models import Game, CallbackManager
+#from generator import Generator
+from game import Game, CallbackManager
 
 
 parser = Parser()
@@ -27,17 +27,17 @@ print(parser.parse(output))
 
 class CliManager(CallbackManager):
     def confirm(self, msg: str) -> bool:
-        return typer.confirm(msg + "\nAre you sure you want to do this action?")
+        return typer.confirm("\n" + msg + "\nAre you sure you want to do this action?")
 
     def choose(self, msg: str, options: list) -> int:
-        typer.echo(msg + "\n" + "".join([f"[{i+1}]: {o}\n" for i, o in enumerate(options)]))
+        typer.echo("\n" + msg + "\n" + "".join([f"[{i+1}]: {o}\n" for i, o in enumerate(options)]))
         while True:
             index = int(typer.prompt(f"Choose one option [1-{len(options)}]")) - 1
             if 0 <= index < len(options):
                 return index
 
     def order(self, msg: str, options: list) -> list:
-        typer.echo(msg + "\n" + "".join([f"[{i+1}]: {o}\n" for i, o in enumerate(options)]))
+        typer.echo("\n" + msg + "\n" + "".join([f"[{i+1}]: {o}\n" for i, o in enumerate(options)]))
         ordered = []
         result = typer.prompt(f"Choose order from resolving first to last [1-{len(options)}] or press 's' to keep order of remaining options")
         while result != "s":
