@@ -27,7 +27,7 @@ print(parser.parse(output))
 
 class CliManager(CallbackManager):
     def confirm(self, msg: str) -> bool:
-        return typer.confirm("\n" + msg + "\nAre you sure you want to do this action?")
+        return typer.confirm("\n" + msg + "\nConfirm?")
 
     def choose(self, msg: str, options: list) -> int:
         typer.echo("\n" + msg + "\n" + "".join([f"[{i+1}]: {o}\n" for i, o in enumerate(options)]))
@@ -37,6 +37,7 @@ class CliManager(CallbackManager):
                 return index
 
     def order(self, msg: str, options: list) -> list:
+        assert len(options) > 0
         typer.echo("\n" + msg + "\n" + "".join([f"[{i+1}]: {o}\n" for i, o in enumerate(options)]))
         ordered = []
         result = typer.prompt(f"Choose order from resolving first to last [1-{len(options)}] or press 's' to keep order of remaining options")

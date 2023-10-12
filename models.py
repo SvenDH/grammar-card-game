@@ -281,7 +281,7 @@ class Suffix(BaseModel):
         elif self.suffix == SuffixEnum.couldtarget:
             # TODO: implement couldtarget
             return False
-        elif self.suffix == Suffix.chosentype:
+        elif self.suffix == SuffixEnum.chosentype:
             # TODO: implement chosentype
             return False
         elif self.suffix == SuffixEnum.amongthem:
@@ -300,6 +300,9 @@ class EssenceCosts(BaseModel):
 
 
 class Object(BaseModel):
+    def targets(self, ctx: dict) -> int:
+        return -1
+    
     def match(self, ctx: dict, other: Any) -> bool:
         pass
 
@@ -307,6 +310,13 @@ class Object(BaseModel):
 class Objects(BaseModel):
     objects: list[Object] = []
     each: bool = False
+
+    def targets(self, ctx: dict) -> int:
+        for obj in self.objects:
+            n = obj.targets(ctx)
+            if n > 0:
+                return n
+        return -1
 
     def match(self, ctx: dict, other: Any) -> bool:
         for o in self.objects:
@@ -318,10 +328,19 @@ class Objects(BaseModel):
 class Player(BaseModel):
     player: PlayerEnum
     ref: Reference | Objects | PlayerRef | None = None
+    extra: NumberOrX | None = None  # TODO: implement player extra (target count etc)
     who_cant: bool = False
 
+    def targets(self, ctx: dict) -> int:
+        if self.ref == Reference.target:
+            if self.extra is not None:
+                # TODO: implement get X
+                return self.extra
+            return 1
+        return -1
+
     def match(self, ctx: dict, other: Any) -> bool:
-        if type(other).__name__ != 'PlayerState':
+        if type(other).__name__ != "PlayerState":
             return False
         elif self.player == PlayerEnum.you and ctx["controller"] != other:
             return False
@@ -426,7 +445,7 @@ class PlayerEffect(BaseEffect):
 
     async def activate(self, ctx: dict):
         game = ctx["game"]
-        for player in game.query(ctx, self.subj):
+        for player in game.pick(ctx, self.subj):
             ctx["subject"] = player
             for e in self.effects:
                 await e.activate(ctx)
@@ -439,7 +458,7 @@ class ObjectEffect(BaseEffect):
     
     async def activate(self, ctx: dict):
         game = ctx["game"]
-        for player in game.query(ctx, self.subj):
+        for player in game.pick(ctx, self.subj):
             ctx["subject"] = player
             for e in self.effects:
                 await e.activate(ctx)
@@ -475,7 +494,7 @@ class DestroyEffect(BaseEffect):
     async def activate(self, ctx: dict):
         game = ctx["game"]
         player = ctx["subject"]
-        for d in game.query(ctx, self.objects, place="board"):
+        for d in game.pick(ctx, self.objects, place="board"):
             game.enqueue(player, "destroy", d)
 
 
@@ -485,7 +504,7 @@ class CopyEffect(BaseEffect):
     async def activate(self, ctx: dict):
         game = ctx["game"]
         player = ctx["subject"]
-        for d in game.query(ctx, self.objects, place="board"):
+        for d in game.pick(ctx, self.objects, place="board"):
             game.enqueue(player, "copy", d)
 
 
@@ -496,7 +515,7 @@ class PlayEffect(BaseEffect):
     async def activate(self, ctx: dict):
         game = ctx["game"]
         player = ctx["subject"]
-        for d in game.query(ctx, self.objects):
+        for d in game.pick(ctx, self.objects):
             game.enqueue(player, "play", d, self.free)
 
 
@@ -536,6 +555,11 @@ class DiscardEffect(BaseEffect):
 class SearchEffect(BaseEffect):
     zones: Zone
     objects: Objects | None = None
+
+    async def activate(self, ctx: dict):
+        game = ctx["game"]
+        player = ctx["subject"]
+        game.enqueue(player, "search", self.objects, self.zones)
 
 
 class ShuffleEffect(BaseEffect):
@@ -657,6 +681,14 @@ class CardObject(Object):
     without: KeywordEnum | None = None
     copies: bool = False
 
+    def targets(self, ctx: dict) -> int:
+        if self.ref == Reference.target:
+            if self.extra is not None:
+                # TODO: get X
+                return self.extra
+            return 1
+        return -1
+
     def match(self, ctx: dict, other: Any) -> bool:
         if type(other).__name__ != 'CardInstance':
             return False
@@ -668,25 +700,31 @@ class CardObject(Object):
             r = self.ref
             if r == ObjectRef.self and ctx["self"] != other:
                 return False
-            elif r in [ObjectRef.it, Reference.this, Reference.that] and ctx["this"] != other:
-                return False
+            elif r in [ObjectRef.it, Reference.this, Reference.that]:
+                if ctx["this"] != other:
+                    return False
             elif r in [ObjectRef.rest, Reference.another]:
                 if ctx["this"] == other:
                     return False
                 elif "these" in ctx and other not in ctx["these"]:
                     return False
-            elif r == ObjectRef.any and other not in ctx["these"]:
-                return False
-            elif r == ObjectRef.sac and other not in ctx["sacrificed"]:
-                return False
+            elif r == ObjectRef.any:
+                if other not in ctx["these"]:
+                    return False
+            elif r == ObjectRef.sac:
+                if other not in ctx["sacrificed"]:
+                    return False
             if r in [Reference.each, Reference.all]:
                 if "these" in ctx and other not in ctx["these"]:
                     return False
-            elif r == Reference.chosen and other not in ctx["chosen"]:
-                return False
-            elif r == Reference.target and other not in ctx["targets"]:
-                # TODO: add test for "another"
-                return False
+            elif r == Reference.chosen:
+                if other in ctx["chosen"]:
+                    # TODO: add choose action
+                    return False
+            elif r == Reference.target:
+                if other in ctx["targets"]:
+                    # TODO: add test for "another"
+                    return False
             elif r in Countables and other in ctx["selected"]:
                 return False
             else:

@@ -5,6 +5,9 @@ from dataclasses import dataclass, field
 from models import *
 
 
+NUM_FIELDS = 5
+
+
 class CallbackManager:
     def confirm(self) -> bool:
         pass
@@ -81,6 +84,7 @@ class CardInstance:
         # TODO: trigger on exit effects
 
     def on_destroy(self, ctx: dict):
+        self.on_exit(ctx)
         # TODO: trigger on destory effects
         pass
 
@@ -91,6 +95,7 @@ class CardInstance:
         self.activated = True
         self.attacking = False
         self.blocking = False
+        self.field_index = -1
 
 
 @dataclass
@@ -119,8 +124,13 @@ class PlayerState:
     def print_field(self) -> str:
         print(self.repr_stack(self.board))
 
+    def print_pile(self) -> str:
+        print(self.repr_stack(self.pile))
+
     @staticmethod
     def repr_stack(cards: list):
+        if len(cards) == 0:
+            return "No cards"
         n = 26
         line = ""
         card_text = [[s[i:i+n] for s in str(t).split("\n") for i in range(0, len(s), n)] for t in cards]
@@ -141,7 +151,7 @@ class PlayerState:
     def from_cards(cls, name: str, game: 'Game', cards: list[Card], side_cards: list[Card]):
         p = cls(name=name, game=game, side=side_cards)
         p.deck=[CardInstance(owner=p, card=c) for c in cards]
-        p.board = [None] * 5
+        p.board = [None] * NUM_FIELDS
         return p
 
     def draw(self, ctx: dict, n: int = 1, side: bool = False):
@@ -155,6 +165,10 @@ class PlayerState:
                 card = self.deck.pop()
             self.hand.append(card)
             self.on_draw(ctx)
+
+    def search(self, ctx: dict, zones: Zone, match: Objects | None = None):
+        index = self.callback.choose("Discard a card:", choices)
+        self.hand.append(card)
     
     def discard(self, ctx: dict, n: int = 1, match: Objects | None = None):
         for _ in range(n):
@@ -172,10 +186,15 @@ class PlayerState:
     def create(self, ctx: dict, card: Card, to_index: int):
         assert to_index >= 0 and to_index < len(self.board)
         assert self.board[to_index] is None  # TODO: should this be allowed?
-        card = CardInstance(card=card, controller=self, owner=self, field_index=to_index)
-        self.board[to_index] = card
-        card.on_enter(ctx)
-        return card
+        inst = CardInstance(card=card, controller=self, owner=self, field_index=to_index)
+        self.board[to_index] = inst
+        inst.on_enter(ctx)
+    
+    def destroy(self, ctx: dict, card: CardInstance):
+        assert card in self.board
+        self.board[self.board.index(card)] = None
+        self.pile.append(card)
+        card.on_destroy(ctx)
 
     def play(self, ctx: dict, card: CardInstance, to_index: int):
         assert to_index >= 0 and to_index < len(self.board)
@@ -186,7 +205,6 @@ class PlayerState:
         card.controller = self
         card.field_index = to_index
         card.on_enter(ctx)
-        return card
 
     def query(self, ctx: dict, obj: Player | Objects, place: str = "any"):
         found = []
@@ -258,16 +276,17 @@ class Game:
         player.print_hand()
 
         done = False
-        options = ["play", "activate", "hand", "field", "endturn"]
+        options = ["play", "activate", "hand", "field", "pile", "endturn"]
         while not done:
             # TODO: get possible actions
             idx = player.callback.choose("Choose action:", options)
             match options[idx]:
                 case "hand":
                     player.print_hand()
-                
                 case "field":
                     player.print_field()
+                case "pile":
+                    player.print_pile()
                 
                 case "play":
                     from_index = player.callback.choose("Play from hand:", [o.name for o in player.hand])
@@ -296,7 +315,21 @@ class Game:
         
         player.on_endturn(ctx)
 
-    def query(self, ctx: dict, obj: Player | Objects, place: str = "any"):
+    def pick(self, ctx: dict, obj: Player | Objects, place: str = "any") -> list:
+        n = obj.targets(ctx)
+        if n > 0:
+            player = ctx["controller"]
+            ctx["targets"] = []
+            for _ in range(n):
+                found = self.query(ctx, obj, place)
+                if len(found) == 0:
+                    return ctx["targets"]
+                i = player.callback.choose("Activate ability of:", found)
+                ctx["targets"].append(found[i])
+            return ctx["targets"]
+        return self.query(ctx, obj, place)
+
+    def query(self, ctx: dict, obj: Player | Objects, place: str = "any") -> list:
         found = []
         for player in self.players:
             if obj.match(ctx, player):
@@ -308,6 +341,9 @@ class Game:
         self.queue.append((subject, effect, args))
     
     def flush(self, ctx: dict):
+        player = ctx["controller"]
+        player.callback.confirm("Are you sure you want to do this action?")
+
         while len(self.queue) > 0:
             sub, eff, arg = self.queue.pop()
             ctx["subject"] = sub
@@ -318,6 +354,10 @@ class Game:
                     sub.discard(ctx, *arg)
                 case "create":
                     sub.create(ctx, *arg)
+                case "destroy":
+                    sub.destroy(ctx, *arg)
+                case "search":
+                    sub.search(ctx, *arg)
                 case "play":
                     sub.create(ctx, *arg)
                 case "copy":
