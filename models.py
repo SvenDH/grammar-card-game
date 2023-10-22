@@ -290,15 +290,6 @@ class Suffix(BaseModel):
         return True
 
 
-class Condition(BaseModel):
-    condition: ConditonEnum
-    until: bool = False
-
-
-class EssenceCosts(BaseModel):
-    costs: list[ColorEnum | NumberOrX] = []
-
-
 class Object(BaseModel):
     def targets(self, ctx: dict) -> int:
         return -1
@@ -377,6 +368,15 @@ class Effect(BaseEffect):
             await e.activate(ctx)
 
 
+class Condition(BaseModel):
+    condition: ConditonEnum
+    until: bool = False
+
+
+class EssenceCosts(BaseModel):
+    costs: list[ColorEnum | NumberOrX] = []
+
+
 class ActionCost(BaseModel):
     cost: list[BaseEffect] = []
 
@@ -439,30 +439,114 @@ class ActivatedAbility(BaseModel):
 AquiredAbilities = KeywordEnum | TriggeredAbility | ActivatedAbility | ActionCost | Effect | Literal["this"]
 
 
-class PlayerEffect(BaseEffect):
+class CardObject(Object):
+    type: TypeEnum | None = None
+    ref: Reference | ObjectRef | None = None
+    extra: NumberOrX | None = None
+    prefixes: list[Prefix] = []
+    suffix: Suffix | None = None
+    withwhat: AquiredAbilities | None = None
+    without: KeywordEnum | None = None
+    copies: bool = False
+
+    def targets(self, ctx: dict) -> int:
+        if self.ref == Reference.target:
+            if self.extra is not None:
+                # TODO: get X
+                return self.extra
+            return 1
+        return -1
+
+    def match(self, ctx: dict, other: Any) -> bool:
+        if type(other).__name__ != 'CardInstance':
+            return False
+        
+        if self.type is not None and self.type not in other.card.type:
+            return False
+        
+        if self.ref is not None:
+            r = self.ref
+            if r == ObjectRef.self and ctx["self"] != other:
+                return False
+            elif r in [ObjectRef.it, Reference.this, Reference.that]:
+                if ctx["this"] != other:
+                    return False
+            elif r in [ObjectRef.rest, Reference.another]:
+                if ctx["this"] == other:
+                    return False
+                elif "these" in ctx and other not in ctx["these"]:
+                    return False
+            elif r == ObjectRef.any:
+                if other not in ctx["these"]:
+                    return False
+            elif r == ObjectRef.sac:
+                if other not in ctx["sacrificed"]:
+                    return False
+            if r in [Reference.each, Reference.all]:
+                if "these" in ctx and other not in ctx["these"]:
+                    return False
+            elif r == Reference.chosen:
+                if other in ctx["chosen"]:
+                    # TODO: add choose action
+                    return False
+            elif r == Reference.target:
+                if other in ctx["targets"]:
+                    # TODO: add test for "another"
+                    return False
+            elif r in Countables and other in ctx["selected"]:
+                return False
+            else:
+                raise RuntimeError(f"Unknown object reference: {r}")
+        
+        for prefix in self.prefixes:
+            if not prefix.match(ctx, other.card):
+                return False
+
+        if self.suffix is not None and not self.suffix.match(ctx, other.card):
+            return False
+        
+        if self.withwhat is not None:
+            # TODO: implement more "with"
+            if isinstance(self.without, AquiredAbilities) and r not in other.abilities:
+                return False
+        
+        if self.without is not None and self.without in other.card.abilities:
+            return False
+        
+        return True
+
+
+class AbilityObject(Object):
+    ref: Reference | ObjectRef | NumberOrX | None = None
+    extra: NumberOrX | None = None
+    prefixes: list[Prefix] = []
+    suffix: Suffix | None = None
+
+    def match(self, ctx: dict, other: Any) -> bool:
+        if not isinstance(other, AquiredAbilities):
+            return False
+        # TODO: add prefixes, suffix and ref checks
+        return True
+
+
+class SubjEffect(BaseEffect):
+    effects: list[BaseEffect] = []
+
+    async def activate(self, ctx: dict):
+        game = ctx["game"]
+        for player in game.pick(ctx, self.subj):
+            ctx["subject"] = player
+            for e in self.effects:
+                await e.activate(ctx)
+        game.flush(ctx)
+
+
+class PlayerEffect(SubjEffect):
     subj: Player = Player(player=PlayerEnum.you)
-    effects: list[BaseEffect] = []
-
-    async def activate(self, ctx: dict):
-        game = ctx["game"]
-        for player in game.pick(ctx, self.subj):
-            ctx["subject"] = player
-            for e in self.effects:
-                await e.activate(ctx)
-        game.flush(ctx)
-
-
-class ObjectEffect(BaseEffect):
-    subj: Object = Object(object=ObjectRef.it)
-    effects: list[BaseEffect] = []
     
-    async def activate(self, ctx: dict):
-        game = ctx["game"]
-        for player in game.pick(ctx, self.subj):
-            ctx["subject"] = player
-            for e in self.effects:
-                await e.activate(ctx)
-        game.flush(ctx)
+
+class ObjectEffect(SubjEffect):
+    subj: Object = Object(object=ObjectRef.it)
 
 
 class CreateTokenEffect(BaseEffect):
@@ -475,17 +559,17 @@ class CreateTokenEffect(BaseEffect):
         player = ctx["subject"]
         # TODO: find value of X
         for _ in range(self.number):
-            fields = [i + 1 for i in range(len(player.board)) if player.board[i] is None]
-            if not fields:
+            index = player.pick_free_field()
+            if index == -1:
                 # TODO: No field places available, should it stop creeating tokens?
                 return
-            index = player.callback.choose("Place token at:", fields)
+
             game.enqueue(player, "create", Card(
                 name="Token",
                 damage=self.stats[0],
                 health=self.stats[1],
                 type=[TypeEnum.UNIT],
-            ), fields[index]-1)
+            ), index)
 
 
 class DestroyEffect(BaseEffect):
@@ -505,6 +589,10 @@ class CopyEffect(BaseEffect):
         game = ctx["game"]
         player = ctx["subject"]
         for d in game.pick(ctx, self.objects, place="board"):
+            index = player.pick_free_field()
+            if index == -1:
+                # TODO: No field places available, should it stop creeating tokens?
+                return
             game.enqueue(player, "copy", d)
 
 
@@ -669,96 +757,6 @@ class DealsAbility(BaseEffect):
     amount: NumberOrX | NumberDef = 1
     recipients: list[Player | Objects | DamageRef] = []
     spread: bool = False
-
-
-class CardObject(Object):
-    type: TypeEnum | None = None
-    ref: Reference | ObjectRef | None = None
-    extra: NumberOrX | None = None
-    prefixes: list[Prefix] = []
-    suffix: Suffix | None = None
-    withwhat: AquiredAbilities | None = None
-    without: KeywordEnum | None = None
-    copies: bool = False
-
-    def targets(self, ctx: dict) -> int:
-        if self.ref == Reference.target:
-            if self.extra is not None:
-                # TODO: get X
-                return self.extra
-            return 1
-        return -1
-
-    def match(self, ctx: dict, other: Any) -> bool:
-        if type(other).__name__ != 'CardInstance':
-            return False
-        
-        if self.type is not None and self.type not in other.card.type:
-            return False
-        
-        if self.ref is not None:
-            r = self.ref
-            if r == ObjectRef.self and ctx["self"] != other:
-                return False
-            elif r in [ObjectRef.it, Reference.this, Reference.that]:
-                if ctx["this"] != other:
-                    return False
-            elif r in [ObjectRef.rest, Reference.another]:
-                if ctx["this"] == other:
-                    return False
-                elif "these" in ctx and other not in ctx["these"]:
-                    return False
-            elif r == ObjectRef.any:
-                if other not in ctx["these"]:
-                    return False
-            elif r == ObjectRef.sac:
-                if other not in ctx["sacrificed"]:
-                    return False
-            if r in [Reference.each, Reference.all]:
-                if "these" in ctx and other not in ctx["these"]:
-                    return False
-            elif r == Reference.chosen:
-                if other in ctx["chosen"]:
-                    # TODO: add choose action
-                    return False
-            elif r == Reference.target:
-                if other in ctx["targets"]:
-                    # TODO: add test for "another"
-                    return False
-            elif r in Countables and other in ctx["selected"]:
-                return False
-            else:
-                raise RuntimeError(f"Unknown object reference: {r}")
-        
-        for prefix in self.prefixes:
-            if not prefix.match(ctx, other.card):
-                return False
-
-        if self.suffix is not None and not self.suffix.match(ctx, other.card):
-            return False
-        
-        if self.withwhat is not None:
-            # TODO: implement more "with"
-            if isinstance(self.without, AquiredAbilities) and r not in other.abilities:
-                return False
-        
-        if self.without is not None and self.without in other.card.abilities:
-            return False
-        
-        return True
-
-
-class AbilityObject(Object):
-    ref: Reference | ObjectRef | NumberOrX | None = None
-    extra: NumberOrX | None = None
-    prefixes: list[Prefix] = []
-    suffix: Suffix | None = None
-
-    def match(self, ctx: dict, other: Any) -> bool:
-        if not isinstance(other, AquiredAbilities):
-            return False
-        # TODO: add prefixes, suffix and ref checks
-        return True
 
 
 class Card(BaseModel):

@@ -31,6 +31,7 @@ class CardInstance:
     attacking: bool = False
     blocking: bool = False
     side: bool = False
+    location: ZoneEnum = ZoneEnum.deck
     field_index: int = -1
 
     @property
@@ -73,10 +74,10 @@ class CardInstance:
         player.board[self.field_index] = None
         player.pile.append(self)
         self.on_destroy(ctx)
-        self.on_exit(ctx)
     
     def on_enter(self, ctx: dict):
         self.reset()
+        self.location = ZoneEnum.field
         # TODO: trigger on enter effects
 
     def on_exit(self, ctx: dict):
@@ -85,6 +86,7 @@ class CardInstance:
 
     def on_destroy(self, ctx: dict):
         self.on_exit(ctx)
+        self.location = ZoneEnum.discard
         # TODO: trigger on destory effects
         pass
 
@@ -96,6 +98,9 @@ class CardInstance:
         self.attacking = False
         self.blocking = False
         self.field_index = -1
+
+    def copy(self, new_owner: 'PlayerState'):
+        return CardInstance(card=self.card, owner=new_owner)
 
 
 @dataclass
@@ -154,6 +159,12 @@ class PlayerState:
         p.board = [None] * NUM_FIELDS
         return p
 
+    def pick_free_field(self):
+        fields = [i + 1 for i in range(len(self.board)) if self.board[i] is None]
+        if not fields:
+            return -1
+        return fields[self.callback.choose("Choose field:", fields)]-1
+
     def draw(self, ctx: dict, n: int = 1, side: bool = False):
         # TODO: draw specific matched card
         # TODO: lose game when deck is empty
@@ -164,11 +175,15 @@ class PlayerState:
             else:
                 card = self.deck.pop()
             self.hand.append(card)
+            card.location = ZoneEnum.hand
             self.on_draw(ctx)
 
     def search(self, ctx: dict, zones: Zone, match: Objects | None = None):
-        index = self.callback.choose("Discard a card:", choices)
+        choices = self.game.query(ctx, match, place=zones)
+        index = self.callback.choose("Choose a card:", choices)
+        card = choices[index]
         self.hand.append(card)
+        card.location = ZoneEnum.hand
     
     def discard(self, ctx: dict, n: int = 1, match: Objects | None = None):
         for _ in range(n):
@@ -180,7 +195,9 @@ class PlayerState:
                 choices = self.hand
             index = self.callback.choose("Discard a card:", choices)
             index = self.hand.index(choices[index])
-            self.pile.append(self.hand.pop(index))
+            card = self.hand.pop(index)
+            self.pile.append(card)
+            card.location = ZoneEnum.discard
             self.on_discard(ctx)
 
     def create(self, ctx: dict, card: Card, to_index: int):
@@ -192,9 +209,7 @@ class PlayerState:
     
     def destroy(self, ctx: dict, card: CardInstance):
         assert card in self.board
-        self.board[self.board.index(card)] = None
-        self.pile.append(card)
-        card.on_destroy(ctx)
+        card.destroy(ctx)
 
     def play(self, ctx: dict, card: CardInstance, to_index: int):
         assert to_index >= 0 and to_index < len(self.board)
@@ -206,21 +221,29 @@ class PlayerState:
         card.field_index = to_index
         card.on_enter(ctx)
 
-    def query(self, ctx: dict, obj: Player | Objects, place: str = "any"):
+    def copy(self, ctx: dict, card: CardInstance, to_index: int):
+        assert to_index >= 0 and to_index < len(self.board)
+        assert self.board[to_index] is None  # TODO: should this be allowed?
+        # TODO: add 'token' and 'copy' modifier
+        inst = CardInstance(card=card.card, controller=self, owner=self, field_index=to_index)
+        self.board[to_index] = inst
+        inst.on_enter(ctx)
+
+    def query(self, ctx: dict, obj: Player | Objects, place: ZoneEnum | None = None):
         found = []
-        if place == "board" or place == "any":
+        if place == ZoneEnum.field or place is None:
             for card in self.board:
                 if card and obj.match(ctx, card):
                     found.append(card)
-        if place == "hand" or place == "any":
+        if place == ZoneEnum.hand or place is None:
             for card in self.hand:
                 if obj.match(ctx, card):
                     found.append(card)
-        if place == "pile" or place == "any":
+        if place == ZoneEnum.discard or place is None:
             for card in self.pile:
                 if obj.match(ctx, card):
                     found.append(card)
-        if place == "deck" or place == "any":
+        if place == ZoneEnum.deck or place is None:
             for card in self.deck:
                 if obj.match(ctx, card):
                     found.append(card)
@@ -315,7 +338,7 @@ class Game:
         
         player.on_endturn(ctx)
 
-    def pick(self, ctx: dict, obj: Player | Objects, place: str = "any") -> list:
+    def pick(self, ctx: dict, obj: Player | Objects, place: ZoneEnum | Zone | None= None) -> list:
         n = obj.targets(ctx)
         if n > 0:
             player = ctx["controller"]
@@ -324,12 +347,12 @@ class Game:
                 found = self.query(ctx, obj, place)
                 if len(found) == 0:
                     return ctx["targets"]
-                i = player.callback.choose("Activate ability of:", found)
+                i = player.callback.choose("Target one of:", found)
                 ctx["targets"].append(found[i])
             return ctx["targets"]
         return self.query(ctx, obj, place)
 
-    def query(self, ctx: dict, obj: Player | Objects, place: str = "any") -> list:
+    def query(self, ctx: dict, obj: Player | Objects, place: ZoneEnum | Zone | None = None) -> list:
         found = []
         for player in self.players:
             if obj.match(ctx, player):
@@ -359,6 +382,6 @@ class Game:
                 case "search":
                     sub.search(ctx, *arg)
                 case "play":
-                    sub.create(ctx, *arg)
-                case "copy":
                     sub.play(ctx, *arg)
+                case "copy":
+                    sub.copy(ctx, *arg)
