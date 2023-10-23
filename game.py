@@ -66,30 +66,6 @@ class CardInstance:
         ctx["controller"] = self.controller
         await ability.activate(ctx)
 
-    def destroy(self, ctx: dict):
-        assert self.field_index >= 0
-        player = self.controller
-        place = player.board[self.field_index]
-        assert self == place
-        player.board[self.field_index] = None
-        player.pile.append(self)
-        self.on_destroy(ctx)
-    
-    def on_enter(self, ctx: dict):
-        self.reset()
-        self.location = ZoneEnum.field
-        # TODO: trigger on enter effects
-
-    def on_exit(self, ctx: dict):
-        self.reset()
-        # TODO: trigger on exit effects
-
-    def on_destroy(self, ctx: dict):
-        self.on_exit(ctx)
-        self.location = ZoneEnum.discard
-        # TODO: trigger on destory effects
-        pass
-
     def reset(self):
         self.damage = self.card.damage
         self.health = self.card.health
@@ -99,16 +75,13 @@ class CardInstance:
         self.blocking = False
         self.field_index = -1
 
-    def copy(self, new_owner: 'PlayerState'):
-        return CardInstance(card=self.card, owner=new_owner)
-
 
 @dataclass
 class PlayerState:
     name: str
     game: 'Game'
     deck: list[CardInstance] = field(default_factory=list)
-    board: list[CardInstance] = field(default_factory=list)
+    board: list[CardInstance | None] = field(default_factory=list)
     pile: list[CardInstance] = field(default_factory=list)
     hand: list[CardInstance] = field(default_factory=list)
     side: list[Card] = field(default_factory=list)
@@ -174,85 +147,145 @@ class PlayerState:
                 card = CardInstance(owner=self, card=random.choice(self.side), side=True)
             else:
                 card = self.deck.pop()
-            self.hand.append(card)
-            card.location = ZoneEnum.hand
-            self.on_draw(ctx)
+            self.put(ctx, card, ZoneEnum.hand)
+            self.on_draw(ctx, card)
 
     def search(self, ctx: dict, zones: Zone, match: Objects | None = None):
         choices = self.game.query(ctx, match, place=zones)
+        # TODO: search own fields if not otherwise specified
         index = self.callback.choose("Choose a card:", choices)
         card = choices[index]
-        self.hand.append(card)
-        card.location = ZoneEnum.hand
+        self.pop(ctx, card)
+        self.put(ctx, card, ZoneEnum.hand)
     
     def discard(self, ctx: dict, n: int = 1, match: Objects | None = None):
         for _ in range(n):
             if len(self.hand) == 0:
                 return
             if match:
-                choices = self.query(ctx, match, place="hand")
+                choices = self.query(ctx, match, place=ZoneEnum.hand)
             else:
                 choices = self.hand
             index = self.callback.choose("Discard a card:", choices)
             index = self.hand.index(choices[index])
             card = self.hand.pop(index)
             self.pile.append(card)
-            card.location = ZoneEnum.discard
-            self.on_discard(ctx)
+            card.location = ZoneEnum.pile
+            self.on_discard(ctx, card)
 
     def create(self, ctx: dict, card: Card, to_index: int):
         assert to_index >= 0 and to_index < len(self.board)
         assert self.board[to_index] is None  # TODO: should this be allowed?
         inst = CardInstance(card=card, controller=self, owner=self, field_index=to_index)
-        self.board[to_index] = inst
-        inst.on_enter(ctx)
+        self.put(ctx, inst, ZoneEnum.board, to_index)
     
     def destroy(self, ctx: dict, card: CardInstance):
-        assert card in self.board
-        card.destroy(ctx)
+        self.pop(ctx, card)
+        self.put(ctx, card, ZoneEnum.pile)
+        self.on_destroy(ctx, card)
 
     def play(self, ctx: dict, card: CardInstance, to_index: int):
-        assert to_index >= 0 and to_index < len(self.board)
-        assert self.board[to_index] is None  # TODO: should this be allowed?
-        assert card in self.hand
-        self.hand.remove(card)
-        self.board[to_index] = card
-        card.controller = self
-        card.field_index = to_index
-        card.on_enter(ctx)
+        self.pop(ctx, card)
+        self.put(ctx, card, ZoneEnum.board, to_index)
 
     def copy(self, ctx: dict, card: CardInstance, to_index: int):
-        assert to_index >= 0 and to_index < len(self.board)
-        assert self.board[to_index] is None  # TODO: should this be allowed?
         # TODO: add 'token' and 'copy' modifier
         inst = CardInstance(card=card.card, controller=self, owner=self, field_index=to_index)
-        self.board[to_index] = inst
-        inst.on_enter(ctx)
+        self.put(ctx, inst, ZoneEnum.board, to_index)
 
-    def query(self, ctx: dict, obj: Player | Objects, place: ZoneEnum | None = None):
+    def shuffle(self, ctx: dict, cards: list[CardInstance], zone: ZoneEnum):
+        for card in cards:
+            self.pop(ctx, card)
+            self.put(ctx, card, zone)
+    
+    def put(self, ctx: dict, card: CardInstance, place: ZoneEnum, to_index: int | None = None, relative: PlaceEnum | None = None):
+        if place == ZoneEnum.deck:
+            if relative is None or relative == PlaceEnum.top:
+                if to_index is None:
+                    self.deck.append(card)
+                else:
+                    self.deck.insert(len(self.deck) - to_index, card)
+            else:
+                if to_index is None:
+                    self.deck.insert(0, card)
+                else:
+                    self.deck.insert(to_index, card)
+            card.location = ZoneEnum.deck
+            card.field_index = -1
+        elif place == ZoneEnum.pile:
+            self.pile.append(card)
+            card.location = ZoneEnum.pile
+            card.field_index = -1
+            self.on_discard(ctx, card)
+        elif place == ZoneEnum.hand:
+            self.hand.append(card)
+            card.location = ZoneEnum.hand
+            card.field_index = -1
+        elif place == ZoneEnum.board:
+            assert to_index is not None and 0 <= to_index < NUM_FIELDS
+            assert self.board[to_index] is None     # TODO: should this be allowed?
+            self.board[to_index] = card
+            card.location = ZoneEnum.board
+            card.field_index = to_index
+            card.controller = self
+            self.on_enter(ctx, card)
+
+    def pop(self, ctx: dict, card: CardInstance):
+        card.reset()
+        if card.location == ZoneEnum.deck:
+            assert card in self.deck
+            self.deck.remove(card)
+        elif card.location == ZoneEnum.pile:
+            assert card in self.pile
+            self.pile.remove(card)
+        elif card.location == ZoneEnum.hand:
+            assert card in self.hand
+            self.hand.remove(card)
+        elif card.location == ZoneEnum.board:
+            assert card in self.board
+            self.board[self.board.index(card)] = None
+            self.on_exit(ctx, card)
+
+    def query(self, ctx: dict, obj: Player | Objects | None = None, place: Zone | ZoneEnum | None = None) -> list[CardInstance]:
         found = []
-        if place == ZoneEnum.field or place is None:
+        if self._match_field(ctx, ZoneEnum.board, place):
             for card in self.board:
-                if card and obj.match(ctx, card):
+                if card and (obj is None or obj.match(ctx, card)):
                     found.append(card)
-        if place == ZoneEnum.hand or place is None:
+        if self._match_field(ctx, ZoneEnum.hand, place):
             for card in self.hand:
-                if obj.match(ctx, card):
+                if obj is None or obj.match(ctx, card):
                     found.append(card)
-        if place == ZoneEnum.discard or place is None:
+        if self._match_field(ctx, ZoneEnum.pile, place):
             for card in self.pile:
-                if obj.match(ctx, card):
+                if obj is None or obj.match(ctx, card):
                     found.append(card)
-        if place == ZoneEnum.deck or place is None:
+        if self._match_field(ctx, ZoneEnum.deck, place):
             for card in self.deck:
-                if obj.match(ctx, card):
+                if obj is None or obj.match(ctx, card):
                     found.append(card)
         return found
     
-    def on_draw(self, ctx: dict):
+    def _match_field(self, ctx: dict, place: ZoneEnum, match: ZoneEnum | Zone | None) -> bool:
+        if match is None:
+            return True
+        if isinstance(match, Zone):
+            return match.match(ctx, place, self)
+        return place == match
+
+    def on_enter(self, ctx: dict, card: CardInstance):
+        pass
+
+    def on_exit(self, ctx: dict, card: CardInstance):
+        pass
+
+    def on_draw(self, ctx: dict, card: CardInstance):
+        pass
+
+    def on_discard(self, ctx: dict, card: CardInstance):
         pass
     
-    def on_discard(self, ctx: dict):
+    def on_destroy(self, ctx: dict, card: CardInstance):
         pass
 
     def on_endturn(self, ctx: dict):
@@ -328,7 +361,7 @@ class Game:
                     abilities = [abilities.index(a) for a in card.activated_abilities]
                     texts = list(reversed(card.card.rule_texts))
                     abilities = [texts[a] for a in abilities]
-                    index = player.callback.choose("Activate ability:", abilities)
+                    index = player.callback.choose("Choose ability:", abilities)
                     await card.activate(ctx, index)
                 
                 case "endturn":
@@ -385,3 +418,5 @@ class Game:
                     sub.play(ctx, *arg)
                 case "copy":
                     sub.copy(ctx, *arg)
+                case "shuffle":
+                    sub.shuffle(ctx, *arg)

@@ -136,9 +136,10 @@ class PureObject(str, GrammarEnum):
 
 class ZoneEnum(str, GrammarEnum):
     deck = "deck"
-    discard = "discard"
+    pile = "pile"
     hand = "hand"
-    field = "field"
+    board = "board"
+    stack = "stack"
     it = "it"
 
 
@@ -349,8 +350,13 @@ class Player(BaseModel):
 
 class Zone(BaseModel):
     zones: list[ZoneEnum] = []
-    ref: Object | Player | None = None
-    op: OperatorEnum | None = None
+    ref: Player | None = None
+
+    def match(self, ctx: dict, field: ZoneEnum, player: Any = None):
+        if isinstance(self.ref, Player):
+            if not self.ref.match(ctx, player):
+                return False
+        return field in self.zones
 
 
 class Into(Zone):
@@ -578,7 +584,7 @@ class DestroyEffect(BaseEffect):
     async def activate(self, ctx: dict):
         game = ctx["game"]
         player = ctx["subject"]
-        for d in game.pick(ctx, self.objects, place="board"):
+        for d in game.pick(ctx, self.objects, place=ZoneEnum.board):
             game.enqueue(player, "destroy", d)
 
 
@@ -588,10 +594,10 @@ class CopyEffect(BaseEffect):
     async def activate(self, ctx: dict):
         game = ctx["game"]
         player = ctx["subject"]
-        for d in game.pick(ctx, self.objects, place="board"):
+        for d in game.pick(ctx, self.objects, place=ZoneEnum.board):
             index = player.pick_free_field()
             if index == -1:
-                # TODO: No field places available, should it stop creeating tokens?
+                # TODO: No field places available, should it stop creating tokens?
                 return
             game.enqueue(player, "copy", d)
 
@@ -654,9 +660,27 @@ class ShuffleEffect(BaseEffect):
     what: Zone | Objects | None = None
     zones: Zone
 
+    async def activate(self, ctx: dict):
+        game = ctx["game"]
+        player = ctx["subject"]
+        for zone in self.zones.zones:
+            if isinstance(self.what, Objects):
+                what = player.query(ctx, self.what)
+            elif isinstance(self.what, Zone):
+                what = player.query(ctx, None, self.what)
+            else:
+                what = player.query(ctx, None, Zone(zones=[zone], ref=self.zones.ref))
+            game.enqueue(player, "shuffle", what, zone)
+
 
 class CounterEffect(BaseEffect):
     objects: Objects
+
+    async def activate(self, ctx: dict):
+        game = ctx["game"]
+        player = ctx["subject"]
+        for d in game.pick(ctx, self.objects, place=ZoneEnum.stack):
+            game.enqueue(player, "counter", d)
 
 
 class ExtraTurnEffect(BaseEffect):

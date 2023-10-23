@@ -409,7 +409,7 @@ def from_tree(tree: Tree | Token):
             return a
         case "into":
             if tree.children[0].data == "field":
-                return Into(zones=[ZoneEnum.field])
+                return Into(zones=[ZoneEnum.board])
             elif tree.children[0] == "zones":
                 return Into(**from_tree(tree.children[0]))
             return Into(
@@ -422,12 +422,10 @@ def from_tree(tree: Tree | Token):
             if t.data == "it":
                 return Zone(zones=[ZoneEnum.it])
             elif t.data == "field":
-                return Zone(zones=[ZoneEnum.field])
-            op = [c for c in tree.children if isinstance(c, Tree) and c.data == "op"]
+                return Zone(zones=[ZoneEnum.board])
             return Zone(
                 ref=from_tree(t) if t.data == "possesion" else None,
-                zones=[from_tree(i) for i in tree.children if i.data == "zone"],
-                op=from_tree(op[0]) if op else None
+                zones=[from_tree(i) for i in tree.children if i.data == "zone"]
             )
         case "zone":
             return from_tree(tree.children[0])
@@ -648,7 +646,7 @@ def from_tree(tree: Tree | Token):
         case "deck":
             return ZoneEnum.deck
         case "discardzone":
-            return ZoneEnum.discard
+            return ZoneEnum.pile
         case "refsacrificed":
             return ObjectRef.sac
         case "anyof":
