@@ -4,7 +4,10 @@ from pydantic import BaseModel
 
 
 NumberOrX = int | Literal["X"] | Literal["-X"] | Literal["that"]
-Stats = tuple[NumberOrX, NumberOrX]
+
+class Stats(BaseModel):
+    power: NumberOrX = 1
+    health: NumberOrX = 1
 
 
 class GrammarEnum(Enum):
@@ -82,6 +85,7 @@ class PlayerRef(str, GrammarEnum):
 class Reference(str, GrammarEnum):
     this = "this"
     that = "that"
+    the = "the"
     another = "another"
     chosen = "the chosen"
     each = "each"
@@ -127,13 +131,6 @@ class SuffixEnum(str, GrammarEnum):
     amongthem = "among them"
 
 
-class PureObject(str, GrammarEnum):
-    ability = "ability"
-    token = "token"
-    card = "card"
-    copies = "copies"
-
-
 class ZoneEnum(str, GrammarEnum):
     deck = "deck"
     pile = "pile"
@@ -153,6 +150,11 @@ class OperatorEnum(str, GrammarEnum):
 class PlaceEnum(str, GrammarEnum):
     bottom = "bottom"
     top = "top"
+
+
+class OrderEnum(str, GrammarEnum):
+    ordered = "ordered"
+    random = "random"
 
 
 class PlayerEnum(str, GrammarEnum):

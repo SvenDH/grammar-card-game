@@ -136,10 +136,10 @@ hand: "hand"
 deck: "deck"
 discardzone: "discard"
 
-players: you | they | p (" " whocant)?
-p: ("Y" | "y") "our " opponent "s"? | defending "player" | attacking "player" | refplayer | itspossesion " " (owners | controllers)
+players: you | they | player (" " whocant)?
+player: Y "our " opponent "s"? | defending "player" | attacking "player" | refplayer | itspossesion " " (owners | controllers)
 refplayer: reference " " pureplayer
-pureplayer: opponent | player "s"?
+pureplayer: opponent | anyplayer "s"?
 itspossesion: objects "'s" | its | their
 possesion: your | their | players "'s"
 owners: "owner" | "owners"
@@ -172,7 +172,7 @@ deactivatedthisway: "deactivated this way"
 amongthem: "from among them"
 youplay: "you play"
 
-specifiedobject: (referenceprefix " ")? (prefix " ")* pureobject (" without " keyword)? (" " with)? (" " suffix)?
+specifiedobject: (referenceprefix " ")? (prefix " ")* pureobject (" without " keyword)? (" " opwith)? (" " suffix)?
 pureobject: copies | typecard | tokencard | abilityref
 typecard: (type " ")? ("card" | "unit") "s"?
 
@@ -183,7 +183,7 @@ deals: numberorxorthat " damage to " damagerecipients
 damagerecipients: damagerecipient | "target " damagerecipient " or " damagerecipient
 damagerecipient: objects | players | anytarget | itself
 
-with: "with " (numbercompare | highestnumber | whatlevel | acquiredability)
+opwith: "with " (numbercompare | highestnumber | whatlevel | acquiredability)
 numbercompare: numberical " " numbericalcompare
 highestnumber: "the highest " numberical " among " objects
 whatlevel: "level " numberorxorthat
@@ -264,14 +264,15 @@ its: I "ts"
 their: T "heir"
 your: Y "our"
 opponent: O "pponent"
-player: P "layer"
+anyplayer: P "layer"
 doesnt: "doesn't" | "don't"
 does: "does" | "do"
 
 free: "without paying essence"
 whocant: "who can't"
 
-mod: plusminus numberorx "/" plusminus numberorx (" " foreach)?
+mod: plusminusnumber "/" plusminusnumber (" " foreach)?
+plusminusnumber: plusminus numberorx
 plusminus: /[+-]/
 numberorxorthat: numberorx | thatmany
 numberorx: smallnumber | x
@@ -297,11 +298,11 @@ nine: "nine"
 ten: "ten"
 x: "X"
 
-opandorthen: " " (and | or | then) " "
-opandor: " " (and | or | andor) " "
-opandthen: (and | then)
-and: "and"
-or: "or"
+opandorthen: " " (opand | opor | then) " "
+opandor: " " (opand | opor | andor) " "
+opandthen: (opand | then)
+opand: "and"
+opor: "or"
 andor: "and/or"
 then: T "hen" ","?
 

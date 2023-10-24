@@ -3,6 +3,13 @@ from lark import Lark, Tree, Token
 from models import *
 
 
+class PureObject(str, GrammarEnum):
+    ability = "ability"
+    token = "token"
+    card = "card"
+    copies = "copies"
+
+
 def to_numberorx(x):
     try:
         return int(x)
