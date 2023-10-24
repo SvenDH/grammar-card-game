@@ -13,8 +13,7 @@ class DropLetters(Transformer):
 
     def _drop_token(self):
         return Discard
-
-
+    
 @v_args(inline=True)
 class NumberTransformer(Transformer):
     def smallnumber(self, item):
@@ -74,7 +73,6 @@ class OperatorTransformer(Transformer):
         return OperatorEnum.XOR
     def then(self):
         return OperatorEnum.AND
-    
 
 @v_args(inline=True)
 class BaseTransformer(Transformer):
@@ -301,9 +299,12 @@ class ReferenceTransformer(Transformer):
 
 class PrefixMixin:
     def prefix(self, item):
+        item = item[0]
         if isinstance(item, Stats):
             return Prefix(prefix=item)
-        return Prefix(prefix=item[0], non=item[1])
+        elif item == PlayerEnum.attacking:
+            item = (PrefixEnum.attacking, False)
+        return Prefix(prefix=item[0], non=item[1] if len(item) > 1 else False)
     def activated(self):
         return (PrefixEnum.activated, False)
     def deactivated(self):
@@ -312,8 +313,6 @@ class PrefixMixin:
         return (TypeEnum.TOKEN, False)
     def nontoken(self):
         return (TypeEnum.TOKEN, True)
-    def attacking(self):
-        return (PrefixEnum.attacking, False)
     def blocking(self):
         return (PrefixEnum.blocking, False)
     def attackingorblocking(self):
@@ -337,7 +336,7 @@ class SuffixMixin:
         return Suffix(suffix=SuffixEnum.own, subj=item)
     def playernoown(self, item):
         return Suffix(suffix=SuffixEnum.noown, subj=item)
-    def inzones(self, *items):
+    def inzones(self, items):
         return Suffix(suffix=SuffixEnum.inzone, subj=items)
     def thattargets(self, item):
         return Suffix( suffix=SuffixEnum.targets, subj=item)
@@ -364,7 +363,7 @@ class ConditionMixin:
         return Condition(condition=ConditonEnum.notyourturn)
     def thisturn(self):
         return Condition(condition=ConditonEnum.thisturn)
-    def until(self, *items):
+    def until(self, items):
         if len(items):
             items[0].until = True
             return items[0]
@@ -373,10 +372,22 @@ class ConditionMixin:
         return item
     def duration(self, item):
         return item
+    def playedwhen(self, object, duration):
+        return PlayedCondition(
+            condition=ConditonEnum.playedwhen,
+            object=object,
+            duration=duration
+        )
+    def compare(self, number, compare):
+        return NumberCondition(
+            condition=ConditonEnum.compare,
+            number=number,
+            compare=compare
+        )
 
 
 class ZoneMixin:
-    def into(self, *items):
+    def into(self, items):
         if items[0] == ZoneEnum.board:
             return Into(zones=[ZoneEnum.board])
         elif isinstance(items[0], Zone):
@@ -387,7 +398,7 @@ class ZoneMixin:
             random=len(items) > 2 and items[2] == OrderEnum.random
         )
     
-    def zones(self, *items):
+    def zones(self, items):
         if items[0] == ObjectRef.it:
             return Zone(zones=[ZoneEnum.it])
         elif items[0] == ZoneEnum.board:
@@ -398,12 +409,11 @@ class ZoneMixin:
         )
 
 
-
 class PlayerMixin:
-    def refplayer(self, *items):
+    def refplayer(self, items):
         return tuple(items)
     
-    def player(self, *items):
+    def player(self, items):
         if len(items) == 1:
             return items[0]
         return items
@@ -415,7 +425,7 @@ class PlayerMixin:
             return Player(player=PlayerEnum.they)
         return Player(player=PlayerEnum.you)
     
-    def players(self, *items):
+    def players(self, items):
         p = items[0]
         ref = None
         if isinstance(p, tuple):
@@ -425,7 +435,7 @@ class PlayerMixin:
 
 
 class ObjectMixin:
-    def selfref(self):
+    def selfref(self, n):
         return CardObject(ref=ObjectRef.self)
     
     def object(self, item):
@@ -435,7 +445,8 @@ class ObjectMixin:
             return CardObject(type=item)
         return item
     
-    def objects(self, *items):
+    def objects(self, items):
+        items = items[0]
         each = False
         if len(items) > 1 and items[0] == Reference.each:
             items = items[1:]
@@ -446,7 +457,7 @@ class ObjectMixin:
         # TODO: implement more with clauses (numbercompare, highestnumber, whatlevel)
         return ("with", item)
     
-    def specifiedobject(self, *items):
+    def specifiedobject(self, items):
         r = items[0] if not isinstance(items[0], Prefix) and not isinstance(items[0], PureObject) and not isinstance(items[0], TypeEnum) else None
         e = None
         if r and isinstance(r, tuple):
@@ -491,10 +502,9 @@ class ObjectMixin:
         return CardObject(ref=ref, prefixes=prefixes, extra=extra, without=without, withwhat=withwhat)
 
 
-
 @v_args(inline=True)
 class ObjectTransformer(PrefixMixin, SuffixMixin, ZoneMixin, PlayerMixin, ObjectMixin, ConditionMixin, Transformer):
-    def numberdefinition(self, *items):
+    def numberdefinition(self, items):
         o = [c for c in items if isinstance(c, Objects)]
         n = [c for c in items if isinstance(c, NumbericalEnum)]
         return NumberDef(amount=o[0] if len(o) > 0 else items[0], property=n[0] if len(n) > 0 else None)
@@ -504,15 +514,15 @@ class ObjectTransformer(PrefixMixin, SuffixMixin, ZoneMixin, PlayerMixin, Object
             item = (item, )
         return item
     
-    def moment(self, *items):
+    def moment(self, items):
         if items:
             return Phase(ref=items[0], phase=items[1])
-        return Phase(ref=ObjectRef.your, phase=PhaseEnum.fight)
+        return Phase(ref=PlayerRef.your, phase=PhaseEnum.fight)
     
     def beginningofphase(self, item):
         return item
     
-    def turnqualifier(self, *items):
+    def turnqualifier(self, items):
         t = items[0]
         if t == Reference.each:
             return (TurnQualifierEnum.each, False)
@@ -523,6 +533,67 @@ class ObjectTransformer(PrefixMixin, SuffixMixin, ZoneMixin, PlayerMixin, Object
         elif t == Reference.the:
             return (TurnQualifierEnum.the, len(items) > 1)
         return (t, len(items) > 1)
+
+
+@v_args(inline=True)
+class EffectTransformer(Transformer):
+    def createtoken(self, number, stats, *args):
+        return CreateTokenEffect(number=number, stats=stats, abilities=args[0] if args else [])
+    def destroy(self, objects):
+        return DestroyEffect(objects=objects)
+    def copy(self, objects):
+        return CopyEffect(objects=objects)
+    def play(self, objects, *args):
+        return PlayEffect(objects=objects, free=len(args) > 0)
+    def draw(self, *args):
+        return DrawEffect(number=args[0] if args else 1)
+    def discard(self, *args):
+        return DiscardEffect(
+            number=args[0] if args else 1,
+            objects=args[1] if len(args) > 1 else Objects(objects=[CardObject()])
+        )
+    def search(self, zones, *args):
+        return SearchEffect(zones=zones, objects=args[0] if args else None)
+    def shuffle(self, *args):
+        return ShuffleEffect(what=args[0] if len(args) > 1 else None, zones=args[-1])
+    def counter(self, objects):
+        return CounterEffect(objects=objects)
+    def extraturn(self):
+        return ExtraTurnEffect()
+    def look(self, number, zones):
+        return LookEffect(number=number, zones=zones)
+    def put(self, objects, into, *args):
+        objs = [c for c in args if isinstance(c, Objects)]
+        intos = [c for c in args if isinstance(c, Into)]
+        return PutEffect(
+            objects=objects,
+            into=into,
+            deactivated=(PrefixEnum.activated, True) in args,
+            second_objects=objs[0] if objs else None,
+            second_into=intos[0] if intos else None,
+        )
+    def gaincontrol(self, objects, *args):
+        return GainControlEffect(objects=objects, until=args[0] if args else None)
+    def switchdmghp(self, objects, *args):
+        return SwitchHpDmgEffect(objects=objects, until=args[0] if args else None)
+    def addessence(self):
+        a = [from_tree(c) for c in tree.children if isinstance(c, Tree) and c.data == "number"]
+        return AddEssenceEffect(
+            colors=[c.children[0] for c in tree.children if isinstance(c, Tree) and c.data == "esscolor"],
+            amount=a[0] if a else 1
+        )
+    def activate(self, objects):
+        return ActivationEffect(objects=objects, deactivate=False)
+    def deactivate(self, objects):
+        return ActivationEffect(objects=objects, deactivate=True)
+    def returncard(self, objects, *args):
+        return MoveEffect(objects=objects, tozone=args[-1], fromzone=args[-2] if len(args) > 1 else None)
+    def sacrifice(self, objects):
+        return SacrificeEffect(objects=objects)
+    def payessence(self, costs):
+        return PayessenceEffect(costs=costs)
+    def paylife(self, costs):
+        return PaylifeEffect(costs=costs)
 
 
         def root(self):
@@ -700,102 +771,6 @@ class ObjectTransformer(PrefixMixin, SuffixMixin, ZoneMixin, PlayerMixin, Object
         def damagerecipients(self):
             return [from_tree(c) for c in tree.children if c.data == "damagerecipient"]
         
-        def createtoken(self):
-            return CreateTokenEffect(
-                number=from_tree(tree.children[1]),
-                stats=from_tree(tree.children[2]),
-                abilities=from_tree(tree.children[3]) if len(tree.children) > 3 else []
-            )
-        def destroy(self):
-            return DestroyEffect(objects=from_tree(tree.children[1]))
-        def copy(self):
-            return CopyEffect(objects=from_tree(tree.children[1]))
-        def play(self):
-            return PlayEffect(
-                objects=from_tree(tree.children[1]),
-                free="free" in [c.data for c in tree.children if isinstance(c, Tree)]
-            )
-        def draw(self):
-            c = [t for t in tree.children if isinstance(t, Tree)]
-            return DrawEffect(number=from_tree(c[0]) if c else 1)
-        def discard(self):
-            return DiscardEffect(
-                number=from_tree(tree.children[1]) if len(tree.children) > 1 else 1,
-                objects=from_tree(tree.children[1]) if len(tree.children) > 2 else Objects(objects=[CardObject()])
-            )
-        def search(self):
-            return SearchEffect(
-                zones=from_tree(tree.children[1]),
-                objects=from_tree(tree.children[2]) if len(tree.children) > 2 else None
-            )
-        def shuffle(self):
-            return ShuffleEffect(
-                what=from_tree(tree.children[1]) if len(tree.children) > 2 else None,
-                zones=from_tree(tree.children[-1])
-            )
-        def counter(self):
-            return CounterEffect(objects=from_tree(tree.children[1]))
-        def extraturn(self):
-            return ExtraTurnEffect()
-        def look(self):
-            return LookEffect(
-                number=from_tree(tree.children[1]),
-                zones=from_tree(tree.children[2])
-            )
-        def put(self):
-            objs = [c for c in tree.children if isinstance(c, Tree) and c.data == "objects"]
-            intos = [c for c in tree.children if isinstance(c, Tree) and c.data == "into"]
-            return PutEffect(
-                objects=from_tree(objs[0]),
-                into=from_tree(intos[0]),
-                deactivated=len(tree.children) > 3 and tree.children[3].data == "deactivated",
-                second_objects=from_tree(objs[1]) if len(objs) > 1 else None,
-                second_into=from_tree(intos[1]) if len(intos) > 1 else None,
-            )
-        def gaincontrol(self):
-            return GainControlEffect(
-                objects=from_tree(tree.children[1]),
-                until=from_tree(tree.children[2]) if len(tree.children) > 2 else None
-            )
-        def switchdmghp(self):
-            return SwitchHpDmgEffect(
-                objects=from_tree(tree.children[1]),
-                until=from_tree(tree.children[2]) if len(tree.children) > 2 else None
-            )
-        def addessence(self):
-            a = [from_tree(c) for c in tree.children if isinstance(c, Tree) and c.data == "number"]
-            return AddEssenceEffect(
-                colors=[c.children[0] for c in tree.children if isinstance(c, Tree) and c.data == "esscolor"],
-                amount=a[0] if a else 1
-            )
-        def activate(self):
-            return ActivationEffect(objects=from_tree(tree.children[1]), deactivate=False)
-        def deactivate(self):
-            return ActivationEffect(objects=from_tree(tree.children[1]), deactivate=True)
-        def return(self):
-            return MoveEffect(
-                objects=from_tree(tree.children[1]),
-                tozone=from_tree(tree.children[-1]),
-                fromzone=from_tree(tree.children[-2]) if len(tree.children) > 3 else None,
-            )
-        def sacrifice(self):
-            return SacrificeEffect(objects=from_tree(tree.children[1]))
-        def payessence(self):
-            return PayessenceEffect(costs=from_tree(tree.children[1]))
-        def paylife(self):
-            return PaylifeEffect(costs=from_tree(tree.children[1]))
-        def playedwhen(self):
-            return PlayedCondition(
-                condition=ConditonEnum.playedwhen,
-                object=from_tree(tree.children[0]),
-                duration=from_tree(tree.children[1])
-            )
-        def compare(self):
-            return NumberCondition(
-                condition=ConditonEnum.compare,
-                number=from_tree(tree.children[0]),
-                compare=from_tree(tree.children[1])
-            )
         def playercondition(self):
             return PlayerCondition(
                 condition=ConditonEnum.playercond,

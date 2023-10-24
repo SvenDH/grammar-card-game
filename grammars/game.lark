@@ -26,7 +26,7 @@ activatedability: abilitycosts ":" " " effects
 extracosts: "Extra cost:" " " imperativescost
 acquiredability: "\"" tokenability "\"" (" and \"" tokenability "\"")* | "this ability"
 imperativescost: imperativecost (", " imperativecost)*
-imperativecost: return | discard | sacrifice | paylife | activate | deactivate
+imperativecost: returncard | discard | sacrifice | paylife | activate | deactivate
 
 triggeredability: triggercondition ", " ("if " condition ", ")? effects
 triggercondition: W ("hen " | "henever ") (whenyouplay | whengainlife | whenloselife | whendamaged | condition) | endofturn | beginningofphase
@@ -53,7 +53,7 @@ playerphrase: pp
 | pp ", then " pp
 | pp " this way"
 
-i: createtoken | destroy | copy | play | draw | search | shuffle | counter | activate | deactivate | extraturn | look | put | gaincontrol | switchdmghp | addessence | return | discard | sacrifice | payessence | paylife | reveals
+i: createtoken | destroy | copy | play | draw | search | shuffle | counter | activate | deactivate | extraturn | look | put | gaincontrol | switchdmghp | addessence | returncard | discard | sacrifice | payessence | paylife | reveals
 
 createtoken: C "reate " number " " stats (" token" | " tokens") (" with " acquiredability)?
 destroy: D "estroy " objects
@@ -72,7 +72,7 @@ switchdmghp: S "witch the damage and health of " objects (" " until)?
 addessence: A "dd " ("one essence of any color" | number " essence of any one color" | esscolor ((", " esscolor)* " or " esscolor)?)
 activate: A "ctivate " objects
 deactivate: D "eactivate " objects
-return: R "eturn " objects (" from " zones)? " to " zones
+returncard: R "eturn " objects (" from " zones)? " to " zones
 sacrifice: S "acrifice" "s"? " " objects
 payessence: P "ay " essencecost
 paylife: P "ay " numberorxorthat " life"

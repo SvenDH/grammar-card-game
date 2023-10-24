@@ -299,10 +299,12 @@ class ReferenceTransformer(Transformer):
 
 class PrefixMixin:
     def prefix(self, item):
-        print(item)
+        item = item[0]
         if isinstance(item, Stats):
             return Prefix(prefix=item)
-        return Prefix(prefix=item[0], non=item[1])
+        elif item == PlayerEnum.attacking:
+            item = (PrefixEnum.attacking, False)
+        return Prefix(prefix=item[0], non=item[1] if len(item) > 1 else False)
     def activated(self):
         return (PrefixEnum.activated, False)
     def deactivated(self):
@@ -311,8 +313,6 @@ class PrefixMixin:
         return (TypeEnum.TOKEN, False)
     def nontoken(self):
         return (TypeEnum.TOKEN, True)
-    def attacking(self):
-        return (PrefixEnum.attacking, False)
     def blocking(self):
         return (PrefixEnum.blocking, False)
     def attackingorblocking(self):
@@ -336,7 +336,7 @@ class SuffixMixin:
         return Suffix(suffix=SuffixEnum.own, subj=item)
     def playernoown(self, item):
         return Suffix(suffix=SuffixEnum.noown, subj=item)
-    def inzones(self, *items):
+    def inzones(self, items):
         return Suffix(suffix=SuffixEnum.inzone, subj=items)
     def thattargets(self, item):
         return Suffix( suffix=SuffixEnum.targets, subj=item)
@@ -363,7 +363,7 @@ class ConditionMixin:
         return Condition(condition=ConditonEnum.notyourturn)
     def thisturn(self):
         return Condition(condition=ConditonEnum.thisturn)
-    def until(self, *items):
+    def until(self, items):
         if len(items):
             items[0].until = True
             return items[0]
@@ -375,7 +375,7 @@ class ConditionMixin:
 
 
 class ZoneMixin:
-    def into(self, *items):
+    def into(self, items):
         if items[0] == ZoneEnum.board:
             return Into(zones=[ZoneEnum.board])
         elif isinstance(items[0], Zone):
@@ -386,7 +386,7 @@ class ZoneMixin:
             random=len(items) > 2 and items[2] == OrderEnum.random
         )
     
-    def zones(self, *items):
+    def zones(self, items):
         if items[0] == ObjectRef.it:
             return Zone(zones=[ZoneEnum.it])
         elif items[0] == ZoneEnum.board:
@@ -398,10 +398,10 @@ class ZoneMixin:
 
 
 class PlayerMixin:
-    def refplayer(self, *items):
+    def refplayer(self, items):
         return tuple(items)
     
-    def player(self, *items):
+    def player(self, items):
         if len(items) == 1:
             return items[0]
         return items
@@ -413,7 +413,7 @@ class PlayerMixin:
             return Player(player=PlayerEnum.they)
         return Player(player=PlayerEnum.you)
     
-    def players(self, *items):
+    def players(self, items):
         p = items[0]
         ref = None
         if isinstance(p, tuple):
@@ -423,7 +423,7 @@ class PlayerMixin:
 
 
 class ObjectMixin:
-    def selfref(self):
+    def selfref(self, n):
         return CardObject(ref=ObjectRef.self)
     
     def object(self, item):
@@ -433,7 +433,8 @@ class ObjectMixin:
             return CardObject(type=item)
         return item
     
-    def objects(self, *items):
+    def objects(self, items):
+        items = items[0]
         each = False
         if len(items) > 1 and items[0] == Reference.each:
             items = items[1:]
@@ -444,7 +445,7 @@ class ObjectMixin:
         # TODO: implement more with clauses (numbercompare, highestnumber, whatlevel)
         return ("with", item)
     
-    def specifiedobject(self, *items):
+    def specifiedobject(self, items):
         r = items[0] if not isinstance(items[0], Prefix) and not isinstance(items[0], PureObject) and not isinstance(items[0], TypeEnum) else None
         e = None
         if r and isinstance(r, tuple):
@@ -489,10 +490,9 @@ class ObjectMixin:
         return CardObject(ref=ref, prefixes=prefixes, extra=extra, without=without, withwhat=withwhat)
 
 
-
 @v_args(inline=True)
 class ObjectTransformer(PrefixMixin, SuffixMixin, ZoneMixin, PlayerMixin, ObjectMixin, ConditionMixin, Transformer):
-    def numberdefinition(self, *items):
+    def numberdefinition(self, items):
         o = [c for c in items if isinstance(c, Objects)]
         n = [c for c in items if isinstance(c, NumbericalEnum)]
         return NumberDef(amount=o[0] if len(o) > 0 else items[0], property=n[0] if len(n) > 0 else None)
@@ -502,15 +502,15 @@ class ObjectTransformer(PrefixMixin, SuffixMixin, ZoneMixin, PlayerMixin, Object
             item = (item, )
         return item
     
-    def moment(self, *items):
+    def moment(self, items):
         if items:
             return Phase(ref=items[0], phase=items[1])
-        return Phase(ref=ObjectRef.your, phase=PhaseEnum.fight)
+        return Phase(ref=PlayerRef.your, phase=PhaseEnum.fight)
     
     def beginningofphase(self, item):
         return item
     
-    def turnqualifier(self, *items):
+    def turnqualifier(self, items):
         t = items[0]
         if t == Reference.each:
             return (TurnQualifierEnum.each, False)

@@ -410,7 +410,7 @@ class ObjectCondition(Condition):
 
 
 class Phase(BaseModel):
-    ref: TurnQualifierEnum | ObjectRef | Player | None = None
+    ref: TurnQualifierEnum | PlayerRef | Player | None = None
     phase: PhaseEnum
     
 
