@@ -29,7 +29,8 @@ imperativescost: imperativecost (", " imperativecost)*
 imperativecost: returncard | discard | sacrifice | paylife | activate | deactivate
 
 triggeredability: triggercondition ", " ("if " condition ", ")? effects
-triggercondition: W ("hen " | "henever ") (whenyouplay | whengainlife | whenloselife | whendamaged | condition) | endofturn | beginningofphase
+triggercondition: W ("hen " | "henever ") (whenyouplay | whengainlife | whenloselife | whendamaged | condition)
+| endofturn | beginningofphase
 whenyouplay: "you play " objects
 whengainlife: players " gain" "s"? " life"
 whenloselife: players " lose" "s"? " life"
@@ -43,7 +44,7 @@ objecteffect: objects " " objectphrase
 playereffect: players " " playerphrase
 conditionaleffect: I "f " (playercondition | objectcondition) (imperative | objecteffect | playereffect)
 
-imperative: i (" for each " pureobject)? (", where X is " numberdefinition)? (" unless " condition)?
+imperative: action (" for each " pureobject)? (", where X is " numberdefinition)? (" unless " condition)?
 
 
 objectphrase: op (("," op)* opandorthen op)? (" if " condition)?
@@ -53,7 +54,8 @@ playerphrase: pp
 | pp ", then " pp
 | pp " this way"
 
-i: createtoken | destroy | copy | play | draw | search | shuffle | counter | activate | deactivate | extraturn | look | put | gaincontrol | switchdmghp | addessence | returncard | discard | sacrifice | payessence | paylife | reveals
+action: createtoken | destroy | copy | play | draw | search | shuffle | counter | activate | deactivate | extraturn | look
+| put | gaincontrol | switchdmghp | addessence | returncard | discard | sacrifice | payessence | paylife | reveals
 
 createtoken: C "reate " number " " stats (" token" | " tokens") (" with " acquiredability)?
 destroy: D "estroy " objects
@@ -91,7 +93,8 @@ controls: "control" "s"? " " objects
 owns: "own" "s"? " " objects
 gainslife: "gain" "s"? " life"
 
-op: hasability | getsability | getsmod | objectcantdo | noactivate | losesabilities | costsless | costsmore | entersdeactivated | becomeswhat | dealswhat
+op: hasability | getsability | getsmod | objectcantdo | noactivate | losesabilities | costsless | costsmore
+| entersdeactivated | becomeswhat | dealswhat
 hasability: ("has " | "have ") acquiredability (" as long as " condition)?
 getsability: "gain" "s"? " " acquiredability (" and gets " mod)? (" " until)?
 getsmod: "get" "s"? " " mod (" and gains " acquiredability)? (" " until)?
@@ -137,7 +140,8 @@ deck: "deck"
 discardzone: "discard"
 
 players: you | they | player (" " whocant)?
-player: Y "our " opponent "s"? | defending "player" | attacking "player" | refplayer | itspossesion " " (owners | controllers)
+player: Y "our " opponent "s"? | defending "player" | attacking "player" | refplayer
+| itspossesion " " (owners | controllers)
 refplayer: reference " " pureplayer
 pureplayer: opponent | anyplayer "s"?
 itspossesion: objects "'s" | its | their
@@ -153,11 +157,13 @@ reference: each | all | a | this | that | another | chosen | atleast | countable
 target: (another " ")? (countable " ")? "target"
 countable: exactly | ormore | fewerthan | upto | anynumberof | oneof  | number
 
-prefix: color | noncolor | activated | deactivated | nontype | token | nontoken | attacking | blocking | attackingorblocking | stats
+prefix: color | noncolor | activated | deactivated | nontype | token | nontoken | attacking | blocking
+| attackingorblocking | stats
 nontype: N "on-" type
 noncolor: N "on-" color
 
-suffix: playercontrol | playernocontrol | playerown | playernoown | inzones | youplay | thattargets | thattargetsonly | activatedthisway | deactivatedthisway | chosentype | couldtarget | amongthem
+suffix: playercontrol | playernocontrol | playerown | playernoown | inzones | youplay | thattargets | thattargetsonly
+| activatedthisway | deactivatedthisway | chosentype | couldtarget | amongthem
 playercontrol: players " " ("control" | "controls")
 playernocontrol: players " " ("don't" | "doesn't") " control"
 playerown: players " " ("own" | "owns")

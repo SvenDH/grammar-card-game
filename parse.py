@@ -1,6 +1,6 @@
 from string import ascii_uppercase as auc
 
-from lark import Tree, Token, Transformer, v_args, Discard
+from lark import Lark, Transformer, v_args, Discard
 
 from models import *
 
@@ -90,7 +90,7 @@ class BaseTransformer(Transformer):
         main_types = []
         sub_types = []
         for i in items:
-            if i in TypeEnum.__members__:
+            if i in TypeEnum.__members__.values():
                 main_types.append(i)
             else:
                 sub_types.append(i)
@@ -101,6 +101,16 @@ class BaseTransformer(Transformer):
         return item
     def stats(self, power, health):
         return Stats(power=power, health=health)
+    def essencecost(self, *args):
+        return EssenceCosts(costs=list(args))
+    def activatecost(self):
+        return Activation.activate
+    def deactivatecost(self):
+        return Activation.deactivate
+    def activationcost(self, item):
+        return item
+    def keywords(self, *args):
+        return args
 
 
 class PureObject(str, Enum):
@@ -217,6 +227,9 @@ class KeywordTransformer(Transformer):
     def itself(self):
         return DamageRef.itself
     
+    def endofturn(self):
+        return TriggerEnum.endofturn
+    
     def phase(self, item):
         return item
     def pureplayer(self, item):
@@ -262,25 +275,25 @@ class ReferenceTransformer(Transformer):
         return Reference.oneof
     
     def atleast(self, item):
-        return (Reference.atleast, item)
+        return Reference.atleast, item
     def exactly(self, item):
-        return (Reference.exactly, item)
+        return Reference.exactly, item
     def ormore(self, item):
-        return (Reference.ormore, item)
+        return Reference.ormore, item
     def fewerthan(self, item):
-        return (Reference.fewerthan, item)
+        return Reference.fewerthan, item
     def upto(self, item):
-        return (Reference.upto, item)
+        return Reference.upto, item
     def atleast(self, item):
-        return (Reference.atleast, item)
+        return Reference.atleast, item
     def exactly(self, item):
-        return (Reference.exactly, item)
+        return Reference.exactly, item
     def ormore(self, item):
-        return (Reference.ormore, item)
+        return Reference.ormore, item
     def fewerthan(self, item):
-        return (Reference.fewerthan, item)
+        return Reference.fewerthan, item
     def upto(self, item):
-        return (Reference.upto, item)
+        return Reference.upto, item
     
     def reference(self, item):
         return item
@@ -290,11 +303,11 @@ class ReferenceTransformer(Transformer):
     
     def referenceprefix(self, item):
         if isinstance(item, int):
-            return (Reference.exactly, item)
+            return Reference.exactly, item
         return item
     
     def target(self, *items):
-        return tuple([Reference.target] + items)
+        return tuple([Reference.target] + list(items))
 
 
 class PrefixMixin:
@@ -303,26 +316,26 @@ class PrefixMixin:
         if isinstance(item, Stats):
             return Prefix(prefix=item)
         elif item == PlayerEnum.attacking:
-            item = (PrefixEnum.attacking, False)
+            item = PrefixEnum.attacking, False
         return Prefix(prefix=item[0], non=item[1] if len(item) > 1 else False)
-    def activated(self):
-        return (PrefixEnum.activated, False)
-    def deactivated(self):
-        return (PrefixEnum.activated, True)
+    def activated(self, _):
+        return PrefixEnum.activated, False
+    def deactivated(self, _):
+        return PrefixEnum.activated, True
     def token(self):
-        return (TypeEnum.TOKEN, False)
+        return TypeEnum.TOKEN, False
     def nontoken(self):
-        return (TypeEnum.TOKEN, True)
+        return TypeEnum.TOKEN, True
     def blocking(self):
-        return (PrefixEnum.blocking, False)
+        return PrefixEnum.blocking, False
     def attackingorblocking(self):
-        return (PrefixEnum.attackingorblocking, False)
+        return PrefixEnum.attackingorblocking, False
     def nontype(self, item):
-        return (item, True)
+        return item[0], True
     def noncolor(self, item):
-        return (item, True)
+        return item[0], True
     def color(self, item):
-        return (item, False)
+        return item[0], False
     
 
 class SuffixMixin:
@@ -416,14 +429,7 @@ class PlayerMixin:
     def player(self, items):
         if len(items) == 1:
             return items[0]
-        return items
-    
-    def possesion(self, item):
-        if isinstance(item, Player):
-            return item
-        elif item == PlayerRef.their:
-            return Player(player=PlayerEnum.they)
-        return Player(player=PlayerEnum.you)
+        return items[0][0], items[1]
     
     def players(self, items):
         p = items[0]
@@ -432,6 +438,13 @@ class PlayerMixin:
             ref = p[0]
             p = p[1]
         return Player(player=p, ref=ref, who_cant=len(items) > 1)
+    
+    def possesion(self, item):
+        if isinstance(item, Player):
+            return item
+        elif item == PlayerRef.their:
+            return Player(player=PlayerEnum.they)
+        return Player(player=PlayerEnum.you)
 
 
 class ObjectMixin:
@@ -576,10 +589,10 @@ class EffectTransformer(Transformer):
         return GainControlEffect(objects=objects, until=args[0] if args else None)
     def switchdmghp(self, objects, *args):
         return SwitchHpDmgEffect(objects=objects, until=args[0] if args else None)
-    def addessence(self):
-        a = [from_tree(c) for c in tree.children if isinstance(c, Tree) and c.data == "number"]
+    def addessence(self, *args):
+        a = [c for c in args if isinstance(c, NumberOrX)]
         return AddEssenceEffect(
-            colors=[c.children[0] for c in tree.children if isinstance(c, Tree) and c.data == "esscolor"],
+            colors=[c for c in args if isinstance(c, ColorEnum)],
             amount=a[0] if a else 1
         )
     def activate(self, objects):
@@ -594,203 +607,172 @@ class EffectTransformer(Transformer):
         return PayessenceEffect(costs=costs)
     def paylife(self, costs):
         return PaylifeEffect(costs=costs)
+    def reveals(self, possesion):
+        # TODO: implement reveal effect
+        pass
+    
+    def ability(self, item):
+        return item
+    def activatedability(self, abilitycosts, effects):
+        return [ActivatedAbility(costs=abilitycosts, effect=Effect(effects=effects))]
+    def abilitycosts(self, *args):
+        return args
+    def triggeredability(self, triggercondition, *args):
+        return [TriggeredAbility(
+            trigger=triggercondition,
+            effect=Effect(effects=args[-1]),
+            condition=args[0] if len(args) > 1 else None
+        )]
+    def triggercondition(self, item):
+        if item == TriggerEnum.endofturn:
+            return Trigger(trigger=TriggerEnum.endofturn)
+        elif isinstance(item, Phase):
+            return Trigger(trigger=TriggerEnum.beginningofphase, objects=item)
+        return item
+    def whenyouplay(self, item):
+        return Trigger(trigger=TriggerEnum.whenplay, objects=item)
+    def whengainlife(self, item):
+        return Trigger(trigger=TriggerEnum.whengainlife, objects=item)
+    def whenloselife(self, item):
+        return Trigger(trigger=TriggerEnum.whenloselife, objects=item)
+    def whendamaged(self, item):
+        return Trigger(trigger=TriggerEnum.whendamaged, objects=item)
+    def mod(self, power, health, *args):
+        return ModAbility(stats=Stats(power=power, health=health), foreach=args[0] if args else None)
+    def extracosts(self, item):
+        return ActionCost(costs=item)
+    def imperativescost(self, *args):
+        return ActionCost(costs=args)
+    def imperativecost(self, item):
+        return item
+    def acquiredability(self, *args):
+        return [c for a in args for c in a] if args else ["this"]
+    def tokenability(self, item):
+        return item
+    def effects(self, item):
+        return item
+    def may(self, item, *args):
+        # TODO: implement "When you do"
+        return Effect(effects=item, op=OperatorEnum.OPTIONAL)
+    def composedeffect(self, *args):
+        return [c for c in args if isinstance(c, BaseEffect)]
+    def effect(self, item):
+        return item
+    def imperative(self, item, *args):
+        # TODO: add for each, conditional and where X
+        return PlayerEffect(effects=[item])  
+    def action(self, item):
+        return item
+    def objecteffect(self, obj, effect):
+        effect.subj = obj
+        return effect
+    def playereffect(self, obj, effect):
+        effect.subj = obj
+        return effect
+    def objectphrase(self, *args):
+        p = [c for c in args if isinstance(c, BaseEffect)]
+        o = [c for c in args if isinstance(c, OperatorEnum)]
+        return ObjectEffect(effects=p, op=o[0] if o else None)  # TODO: add condition
+    def playerphrase(self, *args):
+        return PlayerEffect(effects=[c for c in args if isinstance(c, BaseEffect)])  # TODO: add for each
+    def hasability(self, abilities, *args):
+        return GetAbility(abilities=abilities, until=args[0] if args else None)
+    def getsability(self, acquiredability, *args):
+        m = [c for c in args if isinstance(c, ModAbility)]
+        u = [c for c in args if isinstance(c, Condition)]
+        return GetAbility(abilities=acquiredability + m, until=u[0] if u else None)
+    def getsmod(self, mod, *args):
+        m, u = [], []
+        for a in args:
+            if isinstance(a, Condition):
+                u.append(a)
+            else:
+                m.append(a)
+        return GetAbility(abilities=[mod] + m, until=u[0] if u else None)
+    def objectcantdo(self, item, *args):
+        return CantAbility(actions=item, until=args[0] if args else None)
+    def noactivate(self, item):
+        return NoActivationAbility(moment=item)
+    def losesabilities(self, *args):
+        return LoseAbilitiesAbility(until=args[0] if args else None)
+    def costsless(self, item, *args):
+        return CostsAbility(costs=item, foreach=args[0] if args else None)
+    def costsmore(self, item, *args):
+        return CostsAbility(costs=item, more=True, foreach=args[0] if args else None)
+    def entersdeactivated(self, *args):
+        return EntersAbility(deactivate=True, control=args[0] if args else None)
+    def becomeswhat(self, item, *args):
+        return BecomesAbility(what=item, additional=args)
+    def dealswhat(self, item):
+        return item
+    def deals(self, *args):
+        r = [i for c in args if isinstance(c, tuple) for i in c]
+        n = [c for c in args if not isinstance(c, tuple)]
+        return DealsAbility(amount=n[0], recipients=r if r else [DamageRef.anytarget], spread=len(r) == 0)
+    def damagerecipients(self, *args):
+        return args
+    def damagerecipient(self, item):
+        return item
+    def playercondition(self, player, phrase):
+        return PlayerCondition(condition=ConditonEnum.playercond, player=player, phrase=phrase)
+    def objectcondition(self, object, phrase):
+        return ObjectCondition(condition=ConditonEnum.objectcond, object=object, phrase=phrase)
+    def pc(self, item):
+        return item
+    def oc(self, item):
+        return item
+    def pp(self, item):
+        return item
+    def op(self, item):
+        return item
+    def cardcosts(self, item):
+        return item
+    def abilities(self, *args):
+        return [i for a in args for i in a]
 
 
-        def root(self):
-            types = tree.children[2].children[0].children
-            return Card(
-                cost=[from_tree(c.children[0]) for c in tree.children[1].children],
-                type=[types[0].lower()],   # TODO: add more types and subtypes
-                subtype=[types[1].lower()] if len(types) > 1 else [],
-                abilities=[i for a in tree.children[3].children for i in from_tree(a)],
-                damage=from_tree(tree.children[4].children[0]),
-                health=from_tree(tree.children[4].children[1]),
-            )
-        def essencecost(self):
-            if isinstance(tree.children[0], Token):
-                return EssenceCosts(costs=[from_tree(e) for e in tree.children])
-            return EssenceCosts(costs=[from_tree(e) for e in tree.children[0].children])
-        def activationcost(self):
-            if tree.children[0].data == "deactivatecost(self):
-                return Activation.deactivate
-            return Activation.activate
-        def ability(self):
-            return from_tree(tree.children[0])
-        def keywords(self):
-            return [i.children[0].lower() for i in tree.children]
-        def activatedability(self):
-            return [ActivatedAbility(
-                costs=[from_tree(t) for t in tree.children[0].children],
-                effect=Effect(effects=from_tree(tree.children[1]))
-            )]
-        def triggeredability(self):
-            return [TriggeredAbility(
-                trigger=from_tree(tree.children[0]),
-                effect=Effect(effects=from_tree(tree.children[-1])),
-                condition=from_tree(tree.children[1]) if len(tree.children) > 2 else None
-            )]
-        def triggercondition(self):
-            if tree.children[0].data == "endofturn(self):
-                return Trigger(trigger=TriggerEnum.endofturn)
-            elif tree.children[0].data == "beginningofphase(self):
-                return Trigger(
-                    trigger=TriggerEnum.beginningofphase, 
-                    objects=from_tree(tree.children[0])
-                )
-            return from_tree(tree.children[1])
-        def whenyouplay(self):
-            return Trigger(
-                trigger=TriggerEnum.whenplay, 
-                objects=from_tree(tree.children[0])
-            )
-        def whengainlife(self):
-            return Trigger(
-                trigger=TriggerEnum.whengainlife, 
-                objects=from_tree(tree.children[0])
-            )
-        def whenloselife(self):
-            return Trigger(
-                trigger=TriggerEnum.whenloselife, 
-                objects=from_tree(tree.children[0])
-            )
-        def whendamaged(self):
-            return Trigger(
-                trigger=TriggerEnum.whendamaged, 
-                objects=from_tree(tree.children[0])
-            )
-        def mod(self):
-            return ModAbility(
-                stats=(
-                    from_tree(tree.children[0])(from_tree(tree.children[1])),
-                    from_tree(tree.children[2])(from_tree(tree.children[3]))
-                ),
-                foreach=from_tree(tree.children[4]) if len(tree.children) > 4 else None
-            )
-        def extracosts(self):
-            return ActionCost(costs=[from_tree(c) for c in tree.children[0].children])
-        def imperativescost(self):
-            return ActionCost(costs=[from_tree(c) for c in tree.children])
-        def imperativecost(self):
-            return from_tree(tree.children[0])
-        def acquiredability(self):
-            return [i for c in tree.children for i in from_tree(c)] if tree.children else ["this"]
-        def tokenability(self):
-            return from_tree(tree.children[0])
-        def effects(self):
-            return from_tree(tree.children[0])
-        def may(self):
-            return Effect(
-                effects=[e for a in tree.children for e in from_tree(a)],
-                op=OperatorEnum.OPTIONAL
-            )
-        def composedeffect(self):
-            return [from_tree(c) for c in tree.children if isinstance(c, Tree) and c.data == "effect"]
-        def effect(self):
-            return from_tree(tree.children[0])
-        def imperative(self):
-            return PlayerEffect(
-                effects=[from_tree(tree.children[0])]
-            )  # TODO: add for each, conditional and where X
-        def i(self):
-            return from_tree(tree.children[0])
-        def objecteffect(self):
-            p = from_tree(tree.children[1])
-            p.subj = from_tree(tree.children[0])
-            return p
-        def playereffect(self):
-            p = from_tree(tree.children[1])
-            p.subj = from_tree(tree.children[0])
-            return p
-        def objectphrase(self):
-            p = [from_tree(c) for c in tree.children if isinstance(c, Tree) and c.data == "op"]
-            o = [from_tree(c) for c in tree.children if isinstance(c, Tree) and c.data == "opandorthen"]
-            return ObjectEffect(effects=p, op=o[0] if o else None)  # TODO: add condition
-        def playerphrase(self):
-            return PlayerEffect(
-                effects=[from_tree(c) for c in tree.children if isinstance(c, Tree) and c.data == "pp"]
-            )  # TODO: add for each
-        def hasability(self):
-            return GetAbility(
-                abilities=from_tree(tree.children[0]),
-                until=from_tree(tree.children[1]) if len(tree.children) > 1 else None
-            )
-        def getsability(self):
-            m = [from_tree(c) for c in tree.children if c.data == "mod"]
-            u = [from_tree(c) for c in tree.children if c.data == "until"]
-            return GetAbility(
-                abilities=[from_tree(tree.children[0])] + m,
-                until=u[0] if u else None
-            )
-        def getsmod(self):
-            m = [from_tree(c) for c in tree.children if c.data == "acquiredability"]
-            u = [from_tree(c) for c in tree.children if c.data == "until"]
-            return GetAbility(
-                abilities=[from_tree(tree.children[0])] + m,
-                until=u[0] if u else None
-            )
-        def objectcantdo(self):
-            return CantAbility(
-                actions=from_tree(tree.children[0]),
-                until=from_tree(tree.children[1]) if len(tree.children) > 1 else None
-            )
-        def noactivate(self):
-            return NoActivationAbility(moment=from_tree(tree.children[0]))
-        def losesabilities(self):
-            return LoseAbilitiesAbility(until=from_tree(tree.children[0]) if tree.children else None)
-        def costsless(self):
-            return CostsAbility(
-                costs=from_tree(tree.children[0]),
-                foreach=from_tree(tree.children[1]) if len(tree.children) > 1 else None
-            )
-        def costsmore(self):
-            return CostsAbility(
-                costs=from_tree(tree.children[0]),
-                more=True,
-                foreach=from_tree(tree.children[1]) if len(tree.children) > 1 else None
-            )
-        def entersdeactivated(self):
-            return EntersAbility(
-                deactivate=True,
-                control=from_tree(tree.children[0]) if tree.children else None
-            )
-        def becomeswhat(self):
-            return BecomesAbility(
-                what=from_tree(tree.children[0]),
-                additional=len(tree.children) > 1
-            )
-        def dealswhat(self):
-            return from_tree(tree.children[0])
-        def deals(self):
-            r = [i for c in tree.children if c.data == "damagerecipients" for i in from_tree(c)]
-            n = [from_tree(c) for c in tree.children if c.data == "numberorxorthat" or c.data == "numberdefinition"]
-            return DealsAbility(
-                amount=n[0],
-                recipients=r if r else [DamageRef.anytarget],
-                spread=len(r) == 0
-            )
-        def damagerecipients(self):
-            return [from_tree(c) for c in tree.children if c.data == "damagerecipient"]
-        
-        def playercondition(self):
-            return PlayerCondition(
-                condition=ConditonEnum.playercond,
-                player=from_tree(tree.children[0]),
-                phrase=from_tree(tree.children[1])
-            )
-        def objectcondition(self):
-            return ObjectCondition(
-                condition=ConditonEnum.objectcond,
-                object=from_tree(tree.children[0]),
-                phrase=from_tree(tree.children[1])
-            )
-        def pc(self):
-            return from_tree(tree.children[0])
-        def oc(self):
-            return from_tree(tree.children[0])
-        def pp(self):
-            return from_tree(tree.children[0])
-        def op(self):
-            return from_tree(tree.children[0])
-        case _:
-            print(tree.data)
-            return ""
+@v_args(inline=True)
+class CardTransformer(Transformer):
+    def root(self, _, cardcosts, types, abilities, stats):
+        return Card(
+            cost=cardcosts.costs,
+            type=[t.lower() for t in types[0]],   # TODO: add more types and subtypes
+            subtype=[t.lower() for t in types[1]],
+            abilities=abilities,
+            damage=stats.power,
+            health=stats.health,
+        )
+
+
+class Parser:
+    def __init__(self, grammar_path: str = "grammars/game.lark", debug: bool = True) -> None:
+        self.grammar = open(grammar_path, "r").read()
+        self.lark = Lark(self.grammar.format(name=f'"~"', types=TypeEnum.to_grammar(), keywords=KeywordEnum.to_grammar()), start="root", debug=debug)
+        self.drop_tf = DropLetters()
+        self.number_tf = NumberTransformer()
+        self.op_tf = OperatorTransformer()
+        self.base_tf = BaseTransformer()
+        self.keyword_tf = KeywordTransformer()
+        self.ref_tf = ReferenceTransformer()
+        self.obj_tf = ObjectTransformer()
+        self.eff_tf = EffectTransformer()
+        self.card_tf = CardTransformer()
+        self.debug = debug
+
+    def parse(self, card: str, name: str | None = None):
+        if name is None:
+            name = " ".join(card.split("\n", 1)[0].split(" ")[:-1])
+        card_txt = card.split("\n\n", 1)[0].replace(name, "~")
+        t = self.lark.parse(card_txt)
+        t = self.drop_tf.transform(t)
+        t = self.number_tf.transform(t)
+        t = self.op_tf.transform(t)
+        t = self.base_tf.transform(t)
+        t = self.keyword_tf.transform(t)
+        t = self.ref_tf.transform(t)
+        t = self.obj_tf.transform(t)
+        t = self.eff_tf.transform(t)
+        t = self.card_tf.transform(t)
+        t.name = name
+        t.rule_texts = card_txt.split("\n")[2:-1]
+        return t

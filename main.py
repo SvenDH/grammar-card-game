@@ -1,7 +1,7 @@
 import typer
 import asyncio
 
-from cardparser import Parser
+from parse import Parser
 #from generator import Generator
 from game import Game, CallbackManager
 
