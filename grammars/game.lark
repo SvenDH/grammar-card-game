@@ -1,10 +1,8 @@
-root: NAME " " cardcosts "\n" types "\n" abilities stats "\n\n"?
-types: maintype (" " maintype)* (" - " subtype (" " subtype)*)?
-maintype: TYPE
-subtype: /[ a-zA-Z]+/
+root: NAME " " essencecost "\n" types "\n" abilities stats "\n\n"?
+types: TYPE (" " TYPE)* (" - " /[a-zA-Z]+/ (" " /[a-zA-Z]+/)*)?
+abilities: (ability "\n")*
 stats: numberorx "/" numberorx
 
-cardcosts: essencecost
 abilitycosts: essencecost ", " activationcost ", " imperativescost 
 | activationcost ", " imperativescost 
 | essencecost ", " imperativescost 
@@ -17,11 +15,9 @@ activationcost: activatecost | deactivatecost
 deactivatecost: "{{T}}"
 activatecost: "{{Q}}"
 
-abilities: (ability "\n")*
 ability: keywords | activatedability | triggeredability | extracosts | effects
 tokenability: keywords | activatedability | triggeredability | objecteffect
-keywords: keyword (", " keyword)*
-keyword: KEYWORD
+keywords: KEYWORD (", " KEYWORD)*
 activatedability: abilitycosts ":" " " effects
 extracosts: "Extra cost:" " " imperativescost
 acquiredability: "\"" tokenability "\"" (" and \"" tokenability "\"")* | "this ability"
@@ -30,7 +26,7 @@ imperativecost: returncard | discard | sacrifice | paylife | activate | deactiva
 
 triggeredability: triggercondition ", " ("if " condition ", ")? effects
 triggercondition: W ("hen " | "henever ") (whenyouplay | whengainlife | whenloselife | whendamaged | condition)
-| endofturn | beginningofphase
+| endofturn | A "t the beginning of " moment
 whenyouplay: "you play " objects
 whengainlife: players " gain" "s"? " life"
 whenloselife: players " lose" "s"? " life"
@@ -45,13 +41,8 @@ playereffect: players " " playerphrase
 conditionaleffect: I "f " (playercondition | objectcondition) (imperative | objecteffect | playereffect)
 
 imperative: action (" for each " pureobject)? (", where X is " numberdefinition)? (" unless " condition)?
-
-
 objectphrase: op (("," op)* opandorthen op)? (" if " condition)?
-playerphrase: pp
-| pp " for each " object
-| pp " for the first time each turn"
-| pp ", then " pp
+playerphrase: pp | pp " for each " object | pp " for the first time each turn" | pp ", then " pp
 | pp " this way"
 
 action: createtoken | destroy | copy | play | draw | search | shuffle | counter | activate | deactivate | extraturn | look
@@ -71,7 +62,8 @@ look: L "ook at the top " number " cards of " zones
 put: P "ut" "s"? " " objects " " into (" " deactivated)? (" and " objects " " into)?
 gaincontrol: G "ain" "s"? " control of " objects (" " until)?
 switchdmghp: S "witch the damage and health of " objects (" " until)?
-addessence: A "dd " ("one essence of any color" | number " essence of any one color" | esscolor ((", " esscolor)* " or " esscolor)?)
+addessence: A "dd " ("one essence of any color" | number " essence of any one color"
+| esscolor ((", " esscolor)* " or " esscolor)?)
 activate: A "ctivate " objects
 deactivate: D "eactivate " objects
 returncard: R "eturn " objects (" from " zones)? " to " zones
@@ -94,7 +86,7 @@ owns: "own" "s"? " " objects
 gainslife: "gain" "s"? " life"
 
 op: hasability | getsability | getsmod | objectcantdo | noactivate | losesabilities | costsless | costsmore
-| entersdeactivated | becomeswhat | dealswhat
+| entersdeactivated | becomeswhat | "deals " deals
 hasability: ("has " | "have ") acquiredability (" as long as " condition)?
 getsability: "gain" "s"? " " acquiredability (" and gets " mod)? (" " until)?
 getsmod: "get" "s"? " " mod (" and gains " acquiredability)? (" " until)?
@@ -104,8 +96,9 @@ losesabilities: "lose" "s"? " all abilities" (" " until)?
 costsless: "cost" "s"? " " essencecost " less to play" (" " foreach)?
 costsmore: "cost" "s"? " " essencecost " more to play" (" " foreach)?
 entersdeactivated: "enter" "s"? " the field deactivated" (" under " possesion " control")?
-becomeswhat: "is " color (" " coloraddition)? | stats | type (" " typeaddition)?
-dealswhat: "deals " deals
+becomeswhat: "is " color (" " coloraddition)? | stats | TYPE (" " typeaddition)?
+
+mod: plusminusnumber "/" plusminusnumber (" " foreach)?
 
 objectcondition: objects " " oc
 oc: blocked | attacked | targets | leaves | dies | moveszone | whenenters | dealsdamage
@@ -159,7 +152,7 @@ countable: exactly | ormore | fewerthan | upto | anynumberof | oneof  | number
 
 prefix: color | noncolor | activated | deactivated | nontype | token | nontoken | attacking | blocking
 | attackingorblocking | stats
-nontype: N "on-" type
+nontype: N "on-" TYPE
 noncolor: N "on-" color
 
 suffix: playercontrol | playernocontrol | playerown | playernoown | inzones | youplay | thattargets | thattargetsonly
@@ -172,15 +165,15 @@ inzones: "in " zones (" and in " zones)? | "from " zones
 thattargets: "that targets " objects
 thattargetsonly: "that targets only " objects
 couldtarget: objects " could target"
-chosentype: "of the " type " type of " possesion " choice"
+chosentype: "of the " TYPE " type of " possesion " choice"
 activatedthisway: "activated this way"
 deactivatedthisway: "deactivated this way"
 amongthem: "from among them"
 youplay: "you play"
 
-specifiedobject: (referenceprefix " ")? (prefix " ")* pureobject (" without " keyword)? (" " opwith)? (" " suffix)?
+specifiedobject: (referenceprefix " ")? (prefix " ")* pureobject (" without " KEYWORD)? (" " opwith)? (" " suffix)?
 pureobject: copies | typecard | tokencard | abilityref
-typecard: (type " ")? ("card" | "unit") "s"?
+typecard: (TYPE " ")? ("card" | "unit") "s"?
 
 deals: numberorxorthat " damage to " damagerecipients
 | "damage equal to " numberdefinition " to " damagerecipients
@@ -194,7 +187,7 @@ numbercompare: numberical " " numbericalcompare
 highestnumber: "the highest " numberical " among " objects
 whatlevel: "level " numberorxorthat
 
-what: color | objects | place | type
+what: color | objects | place | TYPE
 becomes: deactivated | activated | "a copy of " objects (", except " copyexception (", " ("and ")? copyexception)*)?
 copyexception: "its name is " NAME | "it is " what
 objectcant: attack | block | attackorblock | becountered
@@ -206,11 +199,8 @@ becountered: "be countered"
 activateability: "activate abilities"
 foreach: "for each " object
 numberical: damage | health | level
-numbericalcompare: numberorx " or greater"
-| numberorx " or less"
-| "less than or equal to " numberdefinition
-| "greater than " numberdefinition
-| numberorx
+numbericalcompare: numberorx " or greater" | numberorx " or less" | "less than or equal to " numberdefinition
+| "greater than " numberdefinition | numberorx
 numberdefinition: itspossesion " " numberical | T "he number of " objects
 typeaddition: "in addition to its other types"
 coloraddition: "in addition to its other colors"
@@ -233,7 +223,6 @@ drawphase: "draw step"
 playphase: "play phase"
 fightphase: "fight phase"
 cleanup: "cleanup"
-beginningofphase: A "t the beginning of " moment
 next: "next"
 itself: "itself"
 anytarget: "any target"
@@ -273,11 +262,9 @@ opponent: O "pponent"
 anyplayer: P "layer"
 doesnt: "doesn't" | "don't"
 does: "does" | "do"
-
 free: "without paying essence"
 whocant: "who can't"
 
-mod: plusminusnumber "/" plusminusnumber (" " foreach)?
 plusminusnumber: plusminus numberorx
 plusminus: /[+-]/
 numberorxorthat: numberorx | thatmany
@@ -320,7 +307,6 @@ yellow: "yellow"
 colorless: "colorless"
 multicolored: "multicolored"
 selfref: NAME
-type: TYPE
 esscolor: COLOR
 smallnumber: /[1]?[0-9]/
 
