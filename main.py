@@ -47,17 +47,17 @@ print(parser.parse(output))
 
 
 class CliManager(CallbackManager):
-    def confirm(self, msg: str) -> bool:
+    async def confirm(self, msg: str) -> bool:
         return typer.confirm("\n" + msg + "\nConfirm?")
 
-    def choose(self, msg: str, options: list) -> int:
+    async def choose(self, msg: str, options: list) -> int:
         typer.echo("\n" + msg + "\n" + "".join([f"[{i+1}]: {o}\n" for i, o in enumerate(options)]))
         while True:
             index = int(typer.prompt(f"Choose one option [1-{len(options)}]")) - 1
             if 0 <= index < len(options):
                 return index
 
-    def order(self, msg: str, options: list) -> list:
+    async def order(self, msg: str, options: list) -> list:
         assert len(options) > 0
         typer.echo("\n" + msg + "\n" + "".join([f"[{i+1}]: {o}\n" for i, o in enumerate(options)]))
         ordered = []
@@ -72,6 +72,9 @@ class CliManager(CallbackManager):
             result = typer.prompt("[" + ", ".join(ordered) + "] Next option:")
         
         return ordered + options
+    
+    async def show(self, msg: str, items: list) -> None:
+        typer.echo("\n" + msg + "\n" + "\n".join(items))
 
 
 def main():

@@ -1,4 +1,4 @@
-from string import ascii_uppercase as auc
+from string import ascii_uppercase
 
 from lark import Lark, Transformer, v_args, Discard
 
@@ -7,7 +7,7 @@ from models import *
 
 class DropLetters(Transformer):
     def __init__(self, visit_tokens: bool = True) -> None:
-        for l in auc:
+        for l in ascii_uppercase:
             setattr(self, l, self._drop_token.__func__)
         super().__init__(visit_tokens)
 
@@ -82,23 +82,6 @@ class BaseTransformer(Transformer):
         return TypeEnum(item.lower())
     def KEYWORD(self, item):
         return KeywordEnum(item.lower())
-    def maintype(self, item):
-        return item
-    def subtype(self, item):
-        return str(item)
-    def types(self, *items):
-        main_types = []
-        sub_types = []
-        for i in items:
-            if i in TypeEnum.__members__.values():
-                main_types.append(i)
-            else:
-                sub_types.append(i)
-        return main_types, sub_types
-    def type(self, item):
-        return item
-    def keyword(self, item):
-        return item
     def stats(self, power, health):
         return Stats(power=power, health=health)
     def essencecost(self, *args):
@@ -402,10 +385,10 @@ class ConditionMixin:
 class ZoneMixin:
     def into(self, items):
         if items[0] == ZoneEnum.board:
-            return Into(zones=[ZoneEnum.board])
+            return Place(zones=[ZoneEnum.board])
         elif isinstance(items[0], Zone):
-            return Into(**items[0].dict())
-        return Into(
+            return Place(**items[0].dict())
+        return Place(
             place=items[0],
             zones=[items[1]],
             random=len(items) > 2 and items[2] == OrderEnum.random
@@ -448,7 +431,7 @@ class PlayerMixin:
 
 
 class ObjectMixin:
-    def selfref(self, n):
+    def selfref(self, _):
         return CardObject(ref=ObjectRef.self)
     
     def object(self, item):
@@ -532,9 +515,6 @@ class ObjectTransformer(PrefixMixin, SuffixMixin, ZoneMixin, PlayerMixin, Object
             return Phase(ref=items[0], phase=items[1])
         return Phase(ref=PlayerRef.your, phase=PhaseEnum.fight)
     
-    def beginningofphase(self, item):
-        return item
-    
     def turnqualifier(self, items):
         t = items[0]
         if t == Reference.each:
@@ -577,7 +557,7 @@ class EffectTransformer(Transformer):
         return LookEffect(number=number, zones=zones)
     def put(self, objects, into, *args):
         objs = [c for c in args if isinstance(c, Objects)]
-        intos = [c for c in args if isinstance(c, Into)]
+        intos = [c for c in args if isinstance(c, Place)]
         return PutEffect(
             objects=objects,
             into=into,
@@ -645,10 +625,6 @@ class EffectTransformer(Transformer):
         return ActionCost(costs=args)
     def imperativecost(self, item):
         return item
-    def acquiredability(self, *args):
-        return [c for a in args for c in a] if args else ["this"]
-    def tokenability(self, item):
-        return item
     def effects(self, item):
         return item
     def may(self, item, *args):
@@ -703,8 +679,6 @@ class EffectTransformer(Transformer):
         return EntersAbility(deactivate=True, control=args[0] if args else None)
     def becomeswhat(self, item, *args):
         return BecomesAbility(what=item, additional=args)
-    def dealswhat(self, item):
-        return item
     def deals(self, *args):
         r = [i for c in args if isinstance(c, tuple) for i in c]
         n = [c for c in args if not isinstance(c, tuple)]
@@ -725,14 +699,27 @@ class EffectTransformer(Transformer):
         return item
     def op(self, item):
         return item
-    def cardcosts(self, item):
+    def acquiredability(self, *args):
+        return [c for a in args for c in a] if args else ["this"]
+    def tokenability(self, item):
         return item
-    def abilities(self, *args):
-        return [i for a in args for i in a]
 
 
 @v_args(inline=True)
 class CardTransformer(Transformer):
+    def types(self, *items):
+        main_types = []
+        sub_types = []
+        for i in items:
+            if i in TypeEnum.__members__.values():
+                main_types.append(i)
+            else:
+                sub_types.append(i)
+        return main_types, sub_types
+    
+    def abilities(self, *args):
+        return [i for a in args for i in a]
+    
     def root(self, _, cardcosts, types, abilities, stats):
         return Card(
             cost=cardcosts.costs,

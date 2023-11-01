@@ -194,10 +194,22 @@ class Stats(BaseModel):
     health: NumberOrX = 0
 
 
+def getnumber(n: NumberOrX, ctx: dict):
+    if isinstance(n, int):
+        return n
+    elif n == "X":
+        # TODO: find value of X
+        # TODO: ask player for X
+        return ctx["X"]
+    else:
+        raise RuntimeError(F"n can't be {n}")
+
+
 class BaseEffect(BaseModel):
     async def activate(self, ctx: dict):
         raise NotImplementedError("Subclass BaseEffect and implement activate")
 
+    
 
 class Prefix(BaseModel):
     prefix: PrefixEnum | TypeEnum | ColorEnum | Stats
@@ -362,7 +374,7 @@ class Zone(BaseModel):
         return field in self.zones
 
 
-class Into(Zone):
+class Place(Zone):
     place: PlaceEnum | None = None
     random: bool = False
 
@@ -435,6 +447,10 @@ class ActivatedAbility(BaseModel):
     costs: list[EssenceCosts | Activation | ActionCost] = []
     effect: Effect
 
+    def can_activate(self, ctx: dict):
+        # TODO: check if costs can be paid
+        return True
+
     async def pay_costs(self, ctx: dict):
         # TODO: check if costs can be paid and pay costs
         # TODO: add pyed costs to ctx including sacrificed units
@@ -461,8 +477,7 @@ class CardObject(Object):
     def targets(self, ctx: dict) -> int:
         if self.ref == Reference.target:
             if self.extra is not None:
-                # TODO: get X
-                return self.extra
+                return getnumber(self.extra, ctx)
             return 1
         return -1
 
@@ -532,7 +547,7 @@ class AbilityObject(Object):
     suffix: Suffix | None = None
 
     def match(self, ctx: dict, other: Any) -> bool:
-        if not isinstance(other, AquiredAbilities):
+        if type(other).__name__ != 'PlayedAbility':
             return False
         # TODO: add prefixes, suffix and ref checks
         return True
@@ -543,12 +558,13 @@ class SubjEffect(BaseEffect):
 
     async def activate(self, ctx: dict):
         game = ctx["game"]
-        for player in game.pick(ctx, self.subj):
+        effects = []
+        for player in await game.pick(ctx, self.subj):
             ctx["subject"] = player
             for e in self.effects:
                 async for action in e.activate(ctx):
-                    game.enqueue(*action)
-        game.flush(ctx)
+                    effects.append((player, action[0], action[1:]))
+        await game.send(ctx, effects)
 
 
 class PlayerEffect(SubjEffect):
@@ -566,29 +582,26 @@ class CreateTokenEffect(BaseEffect):
 
     async def activate(self, ctx: dict):
         player = ctx["subject"]
-        # TODO: find value of X
-        for _ in range(self.number):
-            index = player.pick_free_field()
+        for _ in range(getnumber(self.number, ctx)):
+            index = await player.pick_free_field(ctx, d)
             if index == -1:
                 # TODO: No field places available, should it stop creeating tokens?
                 return
-
-            yield player, "create", Card(
+            card = Card(
                 name="Token",
                 damage=self.stats.power,
                 health=self.stats.health,
                 type=[TypeEnum.UNIT],
-            ), index
+            )
+            yield "create", card, index
 
 
 class DestroyEffect(BaseEffect):
     objects: Objects
 
     async def activate(self, ctx: dict):
-        game = ctx["game"]
-        player = ctx["subject"]
-        for d in game.pick(ctx, self.objects, place=ZoneEnum.board):
-            yield player, "destroy", d
+        for d in await ctx["game"].pick(ctx, self.objects, place=ZoneEnum.board):
+            yield "destroy", d
 
 
 class CopyEffect(BaseEffect):
@@ -596,12 +609,12 @@ class CopyEffect(BaseEffect):
 
     async def activate(self, ctx: dict):
         player = ctx["subject"]
-        for d in ctx["game"].pick(ctx, self.objects, place=ZoneEnum.board):
-            index = player.pick_free_field()
+        for d in await ctx["game"].pick(ctx, self.objects, place=ZoneEnum.board):
+            index = await player.pick_free_field(ctx, d)
             if index == -1:
                 # TODO: No field places available, should it stop creating tokens?
                 return
-            yield player, "copy", d
+            yield "copy", d
 
 
 class PlayEffect(BaseEffect):
@@ -609,24 +622,16 @@ class PlayEffect(BaseEffect):
     free: bool = False
     
     async def activate(self, ctx: dict):
-        player = ctx["subject"]
-        for d in ctx["game"].pick(ctx, self.objects):
-            yield player, "play", d, self.free
+        for d in await ctx["game"].pick(ctx, self.objects):
+            yield "play", d, self.free
 
 
 class DrawEffect(BaseEffect):
     number: NumberOrX = 1
     
     async def activate(self, ctx: dict):
-        player = ctx["subject"]
-        if isinstance(self.number, int):
-            n = self.number
-        elif self.number == "X":
-            n = ctx["X"]
-        else:
-            raise RuntimeError(F"n can't be {self.number}")
-        for _ in range(n):
-            yield player, "draw"
+        for _ in range(getnumber(self.number, ctx)):
+            yield "draw"
 
 
 class DiscardEffect(BaseEffect):
@@ -634,23 +639,17 @@ class DiscardEffect(BaseEffect):
     objects: Objects
 
     async def activate(self, ctx: dict):
-        player = ctx["subject"]
-        if isinstance(self.number, int):
-            n = self.number
-        elif self.number == "X":
-            n = ctx["X"]
-        else:
-            raise RuntimeError(F"n can't be {self.name}")
-        # TODO: find value of X
-        yield player, "discard", n, self.objects
+        yield "discard", getnumber(self.number, ctx), self.objects
 
 
 class SearchEffect(BaseEffect):
+    number: NumberOrX = 1
     zones: Zone
     objects: Objects | None = None
 
     async def activate(self, ctx: dict):
-        yield ctx["subject"], "search", self.objects, self.zones
+        for _ in range(getnumber(self.number, ctx)):
+            yield "search", self.objects, self.zones
 
 
 class ShuffleEffect(BaseEffect):
@@ -666,33 +665,43 @@ class ShuffleEffect(BaseEffect):
                 what = player.query(ctx, None, self.what)
             else:
                 what = player.query(ctx, None, Zone(zones=[zone], ref=self.zones.ref))
-            yield player, "shuffle", what, zone
+            yield "shuffle", what, zone
 
 
 class CounterEffect(BaseEffect):
     objects: Objects
 
     async def activate(self, ctx: dict):
-        player = ctx["subject"]
-        for d in ctx["game"].pick(ctx, self.objects, place=ZoneEnum.stack):
-            yield player, "counter", d
+        for d in await ctx["game"].pick(ctx, self.objects, place=ZoneEnum.stack):
+            yield "counter", d
 
 
 class ExtraTurnEffect(BaseEffect):
-    turns: int = 1
+    number: NumberOrX = 1
+
+    async def activate(self, ctx: dict):
+        for _ in range(getnumber(self.number, ctx)):
+            yield "extraturn"
 
 
 class LookEffect(BaseEffect):
     number: NumberOrX = 1
     zones: Zone
 
+    async def activate(self, ctx: dict):
+        yield "look", self.zones, getnumber(self.number, ctx)
+
 
 class PutEffect(BaseEffect):
     objects: Objects
-    into: Into
+    into: Place
     deactivated: bool = False
     second_objects: Objects | None = None
-    second_into: Into | None = None
+    second_into: Place | None = None
+
+    async def activate(self, ctx: dict):
+        for d in await ctx["game"].pick(ctx, self.objects):
+            yield "put", d, self.into, self.deactivated
 
 
 class GainControlEffect(BaseEffect):

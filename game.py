@@ -9,13 +9,35 @@ NUM_FIELDS = 5
 
 
 class CallbackManager:
-    def confirm(self) -> bool:
+    async def confirm(self, msg: str) -> bool:
         pass
 
-    def choose(self, options: list) -> int:
+    async def choose(self, msg: str, options: list) -> int:
         pass
 
-    def order(self, options: list) -> list:
+    async def order(self, msg: str, options: list) -> list:
+        pass
+
+    async def show(self, msg: str, items: list) -> None:
+        pass
+
+
+
+class DefaultCallbackManager:
+    async def confirm(self, msg: str) -> bool:
+        return True
+
+    async def choose(self, msg: str, options: list) -> int:
+        if len(options):
+            if "pass" in options:
+                return options.index("pass")
+            return 0
+        return -1
+
+    async def order(self, msg: str, options: list) -> list:
+        return options
+
+    async def show(self, msg: str, items: list) -> None:
         pass
 
 
@@ -64,6 +86,7 @@ class CardInstance:
         ctx["self"] = self
         ctx["owner"] = self.owner
         ctx["controller"] = self.controller
+        ctx["ability"] = ability
         await ability.activate(ctx)
 
     def reset(self):
@@ -74,6 +97,52 @@ class CardInstance:
         self.attacking = False
         self.blocking = False
         self.field_index = -1
+
+    def can_cast(self, ctx: dict):
+        return True
+    
+    def can_activate(self, ctx: dict):
+        for ability in self.activated_abilities:
+            if ability.can_activate(ctx):
+                return True
+        return False
+
+
+
+@dataclass
+class PlayedAbility:
+    source: CardInstance
+    ability: AquiredAbilities | None = None
+    effects: list[tuple['PlayerState', str, list]] = field(default_factory=list)
+
+    async def resolve(self, ctx: dict):
+        for sub, eff, arg in self.effects:
+            ctx["subject"] = sub
+            match eff:
+                case "draw":
+                    await sub.draw(ctx, *arg)
+                case "discard":
+                    await sub.discard(ctx, *arg)
+                case "create":
+                    await sub.create(ctx, *arg)
+                case "destroy":
+                    await sub.destroy(ctx, *arg)
+                case "search":
+                    await sub.search(ctx, *arg)
+                case "play":
+                    await sub.play(ctx, *arg)
+                case "copy":
+                    await sub.copy(ctx, *arg)
+                case "shuffle":
+                    await sub.shuffle(ctx, *arg)
+                case "counter":
+                    await sub.counter(ctx, *arg)
+                case "extraturn":
+                    await sub.extraturn(ctx, *arg)
+                case "look":
+                    await sub.look(ctx, *arg)
+                case "put":
+                    await sub.put(ctx, *arg)
 
 
 @dataclass
@@ -86,8 +155,10 @@ class PlayerState:
     hand: list[CardInstance] = field(default_factory=list)
     side: list[Card] = field(default_factory=list)
     life: int = 20
+    turnsafterthis: int = 0
 
-    callback: CallbackManager | None = None
+    callback: CallbackManager = DefaultCallbackManager()
+    actions: list[str] = ["play", "activate", "hand", "field", "pile", "pass"]
     subscribed: dict[str, list[CardInstance]] = field(default_factory=dict)
 
     class Config:
@@ -95,35 +166,6 @@ class PlayerState:
 
     def __repr__(self) -> str:
         return self.name
-    
-    def print_hand(self) -> str:
-        print(self.repr_stack(self.hand))
-    
-    def print_field(self) -> str:
-        print(self.repr_stack(self.board))
-
-    def print_pile(self) -> str:
-        print(self.repr_stack(self.pile))
-
-    @staticmethod
-    def repr_stack(cards: list):
-        if len(cards) == 0:
-            return "No cards"
-        n = 26
-        line = ""
-        card_text = [[s[i:i+n] for s in str(t).split("\n") for i in range(0, len(s), n)] for t in cards]
-        h = max([len(t) for t in card_text])
-        for i in range(h-1):
-            line += "| "
-            for c in card_text:
-                l = c[i] if len(c) - 1 > i else ""
-                line += l.ljust(n) + " | "
-            line += "\n"
-        line += "| "
-        for c in card_text:
-            if c:
-                line += (c[-1] if c[-1] != "None" else "").rjust(n) + " | "
-        return line
 
     @classmethod
     def from_cards(cls, name: str, game: 'Game', cards: list[Card], side_cards: list[Card]):
@@ -131,14 +173,29 @@ class PlayerState:
         p.deck=[CardInstance(owner=p, card=c) for c in cards]
         p.board = [None] * NUM_FIELDS
         return p
+    
+    def can_cast(self, ctx: dict):
+        # TODO: get castable cards not in hand
+        for card in self.hand:
+            if card.can_cast(ctx):
+                return True
+        return False
+    
+    def can_activate(self, ctx: dict):
+        # TODO: get activatable cards not on board
+        for card in self.board:
+            if card is not None and card.can_activate(ctx):
+                return True
+        return False
 
-    def pick_free_field(self):
+    async def pick_free_field(self, ctx: dict, card: CardInstance) -> int:
+        # TODO: check card stacking
         fields = [i + 1 for i in range(len(self.board)) if self.board[i] is None]
         if not fields:
             return -1
-        return fields[self.callback.choose("Choose field:", fields)]-1
+        return fields[await self.callback.choose("Choose field position:", fields)]-1
 
-    def draw(self, ctx: dict, n: int = 1, side: bool = False):
+    async def draw(self, ctx: dict, n: int = 1, side: bool = False):
         # TODO: draw specific matched card
         # TODO: lose game when deck is empty
         assert side or n <= len(self.deck)
@@ -147,18 +204,18 @@ class PlayerState:
                 card = CardInstance(owner=self, card=random.choice(self.side), side=True)
             else:
                 card = self.deck.pop()
-            self.put(ctx, card, ZoneEnum.hand)
+            self.place(ctx, card, ZoneEnum.hand)
             self.on_draw(ctx, card)
 
-    def search(self, ctx: dict, zones: Zone, match: Objects | None = None):
+    async def search(self, ctx: dict, zones: Zone, match: Objects | None = None):
         choices = self.game.query(ctx, match, place=zones)
         # TODO: search own fields if not otherwise specified
-        index = self.callback.choose("Choose a card:", choices)
+        index = await self.callback.choose("Choose a card:", choices)
         card = choices[index]
         self.pop(ctx, card)
-        self.put(ctx, card, ZoneEnum.hand)
+        self.place(ctx, card, ZoneEnum.hand)
     
-    def discard(self, ctx: dict, n: int = 1, match: Objects | None = None):
+    async def discard(self, ctx: dict, n: int = 1, match: Objects | None = None):
         for _ in range(n):
             if len(self.hand) == 0:
                 return
@@ -166,39 +223,85 @@ class PlayerState:
                 choices = self.query(ctx, match, place=ZoneEnum.hand)
             else:
                 choices = self.hand
-            index = self.callback.choose("Discard a card:", choices)
+            index = await self.callback.choose("Discard a card:", choices)
             index = self.hand.index(choices[index])
             card = self.hand.pop(index)
             self.pile.append(card)
             card.location = ZoneEnum.pile
             self.on_discard(ctx, card)
 
-    def create(self, ctx: dict, card: Card, to_index: int):
+    async def create(self, ctx: dict, card: Card, to_index: int):
         assert to_index >= 0 and to_index < len(self.board)
         assert self.board[to_index] is None  # TODO: should this be allowed?
         inst = CardInstance(card=card, controller=self, owner=self, field_index=to_index)
-        self.put(ctx, inst, ZoneEnum.board, to_index)
+        self.place(ctx, inst, ZoneEnum.board, to_index)
     
-    def destroy(self, ctx: dict, card: CardInstance):
+    async def destroy(self, ctx: dict, card: CardInstance):
         self.pop(ctx, card)
-        self.put(ctx, card, ZoneEnum.pile)
+        self.place(ctx, card, ZoneEnum.pile)
         self.on_destroy(ctx, card)
 
-    def play(self, ctx: dict, card: CardInstance, to_index: int):
+    async def play(self, ctx: dict, card: CardInstance, to_index: int):
         self.pop(ctx, card)
-        self.put(ctx, card, ZoneEnum.board, to_index)
+        self.place(ctx, card, ZoneEnum.board, to_index)
+    
+    async def cast(self, ctx: dict):
+        from_index = await self.callback.choose("Play from hand:", [o.name for o in self.hand])
+        card = self.hand.pop(from_index)
+        card.location = ZoneEnum.stack
+        ctx["self"] = card
+        to_index = await self.pick_free_field(ctx, card)
+        if to_index == -1:
+            return
+        # TODO: pay card costs
+        await self.game.send(ctx, [(self, "play", [card, to_index])])
 
-    def copy(self, ctx: dict, card: CardInstance, to_index: int):
+    async def activate(self, ctx: dict):
+        # TODO: get payable and playable abilities
+        # TODO: include enemy abilities
+        card_options = [o.name for o in self.board if o and o.activated_abilities]
+        index = await self.callback.choose("Activate ability of:", card_options)
+        card: CardInstance = self.board[index]
+        abilities = list(reversed(card.abilities))
+        abilities = [abilities.index(a) for a in card.activated_abilities]
+        texts = list(reversed(card.card.rule_texts))
+        abilities = [texts[a] for a in abilities]
+        index = await self.callback.choose("Choose ability:", abilities)
+        await card.activate(ctx, index)
+
+    async def copy(self, ctx: dict, card: CardInstance, to_index: int):
         # TODO: add 'token' and 'copy' modifier
         inst = CardInstance(card=card.card, controller=self, owner=self, field_index=to_index)
-        self.put(ctx, inst, ZoneEnum.board, to_index)
+        self.place(ctx, inst, ZoneEnum.board, to_index)
 
-    def shuffle(self, ctx: dict, cards: list[CardInstance], zone: ZoneEnum):
+    async def shuffle(self, ctx: dict, cards: list[CardInstance], zone: ZoneEnum):
+        assert zone != ZoneEnum.hand and zone != ZoneEnum.board
         for card in cards:
             self.pop(ctx, card)
-            self.put(ctx, card, zone)
+            self.place(ctx, card, zone)
+        match zone:
+            case ZoneEnum.deck:
+                random.shuffle(self.deck)
+            case ZoneEnum.pile:
+                random.shuffle(self.pile)
     
-    def put(self, ctx: dict, card: CardInstance, place: ZoneEnum, to_index: int | None = None, relative: PlaceEnum | None = None):
+    async def counter(self, ctx: dict, obj: CardInstance | PlayedAbility):
+        assert obj in self.game.stack
+        self.game.stack.remove(obj)
+        self.on_counter(ctx, obj)
+    
+    async def extraturn(self, ctx: dict):
+        self.turnsafterthis += 1
+
+    async def look(self, ctx: dict, place: Zone, n: int):
+        cards = self.game.query(ctx, None, place, n)
+        await self.callback.show("Revealed cards:", cards)
+
+    async def put(self, ctx: dict, card: CardInstance, to_index: int):
+        self.pop(ctx, card)
+        self.place(ctx, card, ZoneEnum.board, to_index)
+    
+    def place(self, ctx: dict, card: CardInstance, place: ZoneEnum, to_index: int | None = None, relative: PlaceEnum | None = None):
         if place == ZoneEnum.deck:
             if relative is None or relative == PlaceEnum.top:
                 if to_index is None:
@@ -216,7 +319,6 @@ class PlayerState:
             self.pile.append(card)
             card.location = ZoneEnum.pile
             card.field_index = -1
-            self.on_discard(ctx, card)
         elif place == ZoneEnum.hand:
             self.hand.append(card)
             card.location = ZoneEnum.hand
@@ -288,6 +390,9 @@ class PlayerState:
     def on_destroy(self, ctx: dict, card: CardInstance):
         pass
 
+    def on_counter(self, ctx: dict, ability: CardInstance | PlayedAbility):
+        pass
+
     def on_endturn(self, ctx: dict):
         pass
 
@@ -298,7 +403,7 @@ class Game:
     start_cards: int = 5
     turn: int = 0
     phase: PhaseEnum = PhaseEnum.activation
-    queue: list[tuple[PlayerState, PlayerState| CardInstance, str, list]] = field(default_factory=list)
+    stack: list[PlayedAbility] = field(default_factory=list)
 
     class Config:
         arbitrary_types_allowed = True
@@ -312,111 +417,114 @@ class Game:
         # TODO: add muligan callbacks
         for player in self.players:
             for _ in range(self.start_cards):
-                player.draw({})
+                await player.draw({})
         
         while True:
             # TODO: decide turn order
             player = self.players[self.turn % len(self.players)]
 
-            await self.next_turn(player)
+            await self.do_turn(player)
+            # TODO: look at turnsafterthis for next player's turn
 
             self.turn += 1
         
-    async def next_turn(self, player: PlayerState):
+    async def do_turn(self, player: PlayerState):
         ctx = {
             "game": self,
             "turn": self.turn,
             "current_player": player
         }
-        player.draw(ctx)
-        player.print_hand()
+        await player.draw(ctx)
+        self.print_hand(player)
 
         done = False
-        options = ["play", "activate", "hand", "field", "pile", "endturn"]
         while not done:
-            # TODO: get possible actions
-            idx = player.callback.choose("Choose action:", options)
-            match options[idx]:
-                case "hand":
-                    player.print_hand()
-                case "field":
-                    player.print_field()
-                case "pile":
-                    player.print_pile()
-                
-                case "play":
-                    from_index = player.callback.choose("Play from hand:", [o.name for o in player.hand])
-                    positions = [i for i in range(5) if player.board[i] is None]
-                    # TODO: get possible board positions
-                    to_index = player.callback.choose("Place on board position:", [f"Position {i+1}" for i in positions])
-                    player.play(ctx, player.hand[from_index], positions[to_index])
-                
-                case "activate":
-                    # TODO: get payable and playable abilities
-                    # TODO: include enemy abilities
-                    card_options = [o.name for o in player.board if o and o.activated_abilities]
-                    index = player.callback.choose("Activate ability of:", card_options)
-                    card = player.board[index]
-                    abilities = list(reversed(card.abilities))
-                    abilities = [abilities.index(a) for a in card.activated_abilities]
-                    texts = list(reversed(card.card.rule_texts))
-                    abilities = [texts[a] for a in abilities]
-                    index = player.callback.choose("Choose ability:", abilities)
-                    await card.activate(ctx, index)
-                
-                case "endturn":
-                    done = True
+            done = await self._choose_action(ctx, player)
         
         # TODO: combat
         
         player.on_endturn(ctx)
 
-    def pick(self, ctx: dict, obj: Player | Objects, place: ZoneEnum | Zone | None= None) -> list:
+    async def _choose_action(self, ctx: dict, player: PlayerState):
+        # TODO: get possible actions
+        choices = 
+        idx = await player.callback.choose("Choose action:", choices)
+        match choices[idx]:
+            case "hand":
+                self.print_hand(player)
+            case "field":
+                self.print_field(player)
+            case "pile":
+                self.print_pile(player)
+            case "play":
+                await player.cast(ctx)
+            case "activate":
+                await player.activate(ctx)
+            case "pass":
+                return True
+        return False
+
+    async def pick(self, ctx: dict, obj: Player | Objects, place: ZoneEnum | Zone | None= None) -> list:
         n = obj.targets(ctx)
         if n > 0:
-            player = ctx["controller"]
+            player: PlayerState = ctx["controller"]
             ctx["targets"] = []
             for _ in range(n):
                 found = self.query(ctx, obj, place)
                 if len(found) == 0:
                     return ctx["targets"]
-                i = player.callback.choose("Target one of:", found)
+                i = await player.callback.choose("Target one of:", found)
                 ctx["targets"].append(found[i])
             return ctx["targets"]
+        
         return self.query(ctx, obj, place)
 
-    def query(self, ctx: dict, obj: Player | Objects, place: ZoneEnum | Zone | None = None) -> list:
+    def query(self, ctx: dict, obj: Player | Objects, place: ZoneEnum | Zone | None = None, n: int = -1) -> list:
         found = []
+        # TODO: add stack abilities
         for player in self.players:
             if obj.match(ctx, player):
                 found.append(player)
             found.extend(player.query(ctx, obj, place))
+        if n > 0:
+            return found[:n]
         return found
-
-    def enqueue(self, subject: PlayerEffect, effect: str, *args: Any):
-        self.queue.append((subject, effect, args))
     
-    def flush(self, ctx: dict):
-        player = ctx["controller"]
-        player.callback.confirm("Are you sure you want to do this action?")
+    async def send(self, ctx: dict, effects: list[tuple[PlayerState, str, list]]):
+        self.stack.append(PlayedAbility(source=ctx["self"], ability=ctx.get("ability"), effects=effects))
+        while len(self.stack) > 0:
+            for priority in range(len(self.players)):
+                player = self.players[(self.turn + priority) % len(self.players)]
+                done = False
+                while not done:
+                    done = await self._choose_action(ctx, player)
+            await self.stack.pop().resolve(ctx)
 
-        while len(self.queue) > 0:
-            sub, eff, arg = self.queue.pop()
-            ctx["subject"] = sub
-            match eff:
-                case "draw":
-                    sub.draw(ctx, *arg)
-                case "discard":
-                    sub.discard(ctx, *arg)
-                case "create":
-                    sub.create(ctx, *arg)
-                case "destroy":
-                    sub.destroy(ctx, *arg)
-                case "search":
-                    sub.search(ctx, *arg)
-                case "play":
-                    sub.play(ctx, *arg)
-                case "copy":
-                    sub.copy(ctx, *arg)
-                case "shuffle":
-                    sub.shuffle(ctx, *arg)
+    @staticmethod
+    def repr_stack(cards: list):
+        if len(cards) == 0:
+            return "No cards"
+        n = 26
+        line = ""
+        card_text = [[s[i:i+n] for s in str(t).split("\n") for i in range(0, len(s), n)] for t in cards]
+        h = max([len(t) for t in card_text])
+        for i in range(h-1):
+            line += "| "
+            for c in card_text:
+                l = c[i] if len(c) - 1 > i else ""
+                line += l.ljust(n) + " | "
+            line += "\n"
+        line += "| "
+        for c in card_text:
+            if c:
+                line += (c[-1] if c[-1] != "None" else "").rjust(n) + " | "
+        return line
+    
+    def print_hand(self, player: PlayerState) -> str:
+        print(self.repr_stack(player.hand))
+    
+    def print_field(self, player: PlayerState) -> str:
+        print(self.repr_stack(player.board))
+
+    def print_pile(self, player: PlayerState) -> str:
+        print(self.repr_stack(player.pile))
