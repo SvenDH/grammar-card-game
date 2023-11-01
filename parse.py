@@ -745,18 +745,10 @@ class CardTransformer(Transformer):
 
 
 class Parser:
-    def __init__(self, grammar_path: str = "grammars/game.lark", debug: bool = True) -> None:
+    def __init__(self, transformers: list[Transformer], grammar_path: str = "grammars/game.lark", debug: bool = True) -> None:
         self.grammar = open(grammar_path, "r").read()
         self.lark = Lark(self.grammar.format(name=f'"~"', types=TypeEnum.to_grammar(), keywords=KeywordEnum.to_grammar()), start="root", debug=debug)
-        self.drop_tf = DropLetters()
-        self.number_tf = NumberTransformer()
-        self.op_tf = OperatorTransformer()
-        self.base_tf = BaseTransformer()
-        self.keyword_tf = KeywordTransformer()
-        self.ref_tf = ReferenceTransformer()
-        self.obj_tf = ObjectTransformer()
-        self.eff_tf = EffectTransformer()
-        self.card_tf = CardTransformer()
+        self.transformers = transformers
         self.debug = debug
 
     def parse(self, card: str, name: str | None = None):
@@ -764,15 +756,8 @@ class Parser:
             name = " ".join(card.split("\n", 1)[0].split(" ")[:-1])
         card_txt = card.split("\n\n", 1)[0].replace(name, "~")
         t = self.lark.parse(card_txt)
-        t = self.drop_tf.transform(t)
-        t = self.number_tf.transform(t)
-        t = self.op_tf.transform(t)
-        t = self.base_tf.transform(t)
-        t = self.keyword_tf.transform(t)
-        t = self.ref_tf.transform(t)
-        t = self.obj_tf.transform(t)
-        t = self.eff_tf.transform(t)
-        t = self.card_tf.transform(t)
+        for tf in self.transformers:
+            t = tf.transform(t)
         t.name = name
         t.rule_texts = card_txt.split("\n")[2:-1]
         return t

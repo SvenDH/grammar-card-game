@@ -1,12 +1,33 @@
 import typer
 import asyncio
 
-from parse import Parser
+from parse import (
+    Parser,
+    DropLetters,
+    NumberTransformer,
+    OperatorTransformer,
+    BaseTransformer,
+    KeywordTransformer,
+    ReferenceTransformer,
+    ObjectTransformer,
+    EffectTransformer,
+    CardTransformer
+)
 #from generator import Generator
 from game import Game, CallbackManager
 
 
-parser = Parser()
+parser = Parser([
+    DropLetters(),
+    NumberTransformer(),
+    OperatorTransformer(),
+    BaseTransformer(),
+    KeywordTransformer(),
+    ReferenceTransformer(),
+    ObjectTransformer(),
+    EffectTransformer(),
+    CardTransformer()
+])
 text = open("cards/cards.txt").read().strip()
 
 cards = []
