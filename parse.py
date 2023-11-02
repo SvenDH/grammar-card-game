@@ -568,7 +568,7 @@ class EffectTransformer(Transformer):
     def gaincontrol(self, objects, *args):
         return GainControlEffect(objects=objects, until=args[0] if args else None)
     def switchdmghp(self, objects, *args):
-        return SwitchHpDmgEffect(objects=objects, until=args[0] if args else None)
+        return SwitchStatsEffect(objects=objects, until=args[0] if args else None)
     def addessence(self, *args):
         a = [c for c in args if isinstance(c, NumberOrX)]
         return AddEssenceEffect(
@@ -588,8 +588,7 @@ class EffectTransformer(Transformer):
     def paylife(self, costs):
         return PaylifeEffect(costs=costs)
     def reveals(self, possesion):
-        # TODO: implement reveal effect
-        pass
+        return RevealEffect(player=possesion)
     
     def ability(self, item):
         return item
@@ -683,6 +682,7 @@ class EffectTransformer(Transformer):
         r = [i for c in args if isinstance(c, tuple) for i in c]
         n = [c for c in args if not isinstance(c, tuple)]
         return DealsAbility(amount=n[0], recipients=r if r else [DamageRef.anytarget], spread=len(r) == 0)
+    
     def damagerecipients(self, *args):
         return args
     def damagerecipient(self, item):

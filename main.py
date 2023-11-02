@@ -26,6 +26,8 @@ print(parser.parse(output))
 
 
 class CliManager(CallbackManager):
+    choices = ["hand", "field", "pile", "play", "activate", "pass"]
+
     async def confirm(self, msg: str) -> bool:
         return typer.confirm("\n" + msg + "\nConfirm?")
 

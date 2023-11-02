@@ -459,6 +459,7 @@ class ActivatedAbility(BaseModel):
     async def activate(self, ctx: dict):
         await self.pay_costs(ctx)
         await self.effect.activate(ctx)
+        return True
 
 
 AquiredAbilities = KeywordEnum | TriggeredAbility | ActivatedAbility | ActionCost | Effect | Literal["this"]
@@ -563,7 +564,7 @@ class SubjEffect(BaseEffect):
             ctx["subject"] = player
             for e in self.effects:
                 async for action in e.activate(ctx):
-                    effects.append((player, action[0], action[1:]))
+                    effects.append((player, e.action, action))
         await game.send(ctx, effects)
 
 
@@ -576,6 +577,7 @@ class ObjectEffect(SubjEffect):
 
 
 class CreateTokenEffect(BaseEffect):
+    action: str = "create"
     number: NumberOrX = 1
     stats: Stats = Stats()
     abilities: list[AquiredAbilities] = []
@@ -583,28 +585,30 @@ class CreateTokenEffect(BaseEffect):
     async def activate(self, ctx: dict):
         player = ctx["subject"]
         for _ in range(getnumber(self.number, ctx)):
-            index = await player.pick_free_field(ctx, d)
-            if index == -1:
-                # TODO: No field places available, should it stop creeating tokens?
-                return
             card = Card(
                 name="Token",
                 damage=self.stats.power,
                 health=self.stats.health,
                 type=[TypeEnum.UNIT],
             )
-            yield "create", card, index
+            index = await player.pick_free_field(ctx, card)
+            if index == -1:
+                # TODO: No field places available, should it stop creeating tokens?
+                return
+            yield card, index
 
 
 class DestroyEffect(BaseEffect):
+    action: str = "destroy"
     objects: Objects
 
     async def activate(self, ctx: dict):
         for d in await ctx["game"].pick(ctx, self.objects, place=ZoneEnum.board):
-            yield "destroy", d
+            yield d
 
 
 class CopyEffect(BaseEffect):
+    action: str = "copy"
     objects: Objects
 
     async def activate(self, ctx: dict):
@@ -614,45 +618,49 @@ class CopyEffect(BaseEffect):
             if index == -1:
                 # TODO: No field places available, should it stop creating tokens?
                 return
-            yield "copy", d
+            yield d
 
 
 class PlayEffect(BaseEffect):
+    action: str = "play"
     objects: Objects
     free: bool = False
     
     async def activate(self, ctx: dict):
         for d in await ctx["game"].pick(ctx, self.objects):
-            yield "play", d, self.free
+            yield d, self.free
 
 
 class DrawEffect(BaseEffect):
+    action: str = "draw"
     number: NumberOrX = 1
     
     async def activate(self, ctx: dict):
-        for _ in range(getnumber(self.number, ctx)):
-            yield "draw"
+        yield getnumber(self.number, ctx)
 
 
 class DiscardEffect(BaseEffect):
+    action: str = "discard"
     number: NumberOrX = 1
     objects: Objects
 
     async def activate(self, ctx: dict):
-        yield "discard", getnumber(self.number, ctx), self.objects
+        yield getnumber(self.number, ctx), self.objects
 
 
 class SearchEffect(BaseEffect):
+    action: str = "search"
     number: NumberOrX = 1
     zones: Zone
     objects: Objects | None = None
 
     async def activate(self, ctx: dict):
         for _ in range(getnumber(self.number, ctx)):
-            yield "search", self.objects, self.zones
+            yield self.objects, self.zones
 
 
 class ShuffleEffect(BaseEffect):
+    action: str = "shuffle"
     what: Zone | Objects | None = None
     zones: Zone
 
@@ -665,34 +673,37 @@ class ShuffleEffect(BaseEffect):
                 what = player.query(ctx, None, self.what)
             else:
                 what = player.query(ctx, None, Zone(zones=[zone], ref=self.zones.ref))
-            yield "shuffle", what, zone
+            yield what, zone
 
 
 class CounterEffect(BaseEffect):
+    action: str = "counter"
     objects: Objects
 
     async def activate(self, ctx: dict):
         for d in await ctx["game"].pick(ctx, self.objects, place=ZoneEnum.stack):
-            yield "counter", d
+            yield d
 
 
 class ExtraTurnEffect(BaseEffect):
+    action: str = "extraturn"
     number: NumberOrX = 1
 
     async def activate(self, ctx: dict):
-        for _ in range(getnumber(self.number, ctx)):
-            yield "extraturn"
+        yield getnumber(self.number, ctx)
 
 
 class LookEffect(BaseEffect):
+    action: str = "look"
     number: NumberOrX = 1
     zones: Zone
 
     async def activate(self, ctx: dict):
-        yield "look", self.zones, getnumber(self.number, ctx)
+        yield self.zones, getnumber(self.number, ctx)
 
 
 class PutEffect(BaseEffect):
+    action: str = "put"
     objects: Objects
     into: Place
     deactivated: bool = False
@@ -701,22 +712,43 @@ class PutEffect(BaseEffect):
 
     async def activate(self, ctx: dict):
         for d in await ctx["game"].pick(ctx, self.objects):
-            yield "put", d, self.into, self.deactivated
+            yield d, self.into, self.deactivated
 
 
 class GainControlEffect(BaseEffect):
+    action: str = "control"
     objects: Objects
     until: Condition | None = None
 
+    async def activate(self, ctx: dict):
+        for d in await ctx["game"].pick(ctx, self.objects):
+            yield d, self.until
 
-class SwitchHpDmgEffect(BaseEffect):
+
+class SwitchStatsEffect(BaseEffect):
+    action: str = "switchstats"
     objects: Objects
     until: Condition | None = None
+
+    async def activate(self, ctx: dict):
+        for d in await ctx["game"].pick(ctx, self.objects):
+            yield d, self.until
 
 
 class AddEssenceEffect(BaseEffect):
+    action: str = "essence"
     colors: list[str] = []
     amount: NumberOrX = 1
+
+    async def activate(self, ctx: dict):
+        player = ctx["subject"]
+        for _ in range(self.amount):
+            if len(self.colors) > 1:
+                yield await player.callback.choose("Choose essence color:", self.colors)
+            elif len(self.colors) == 1:
+                yield self.colors[0]
+            else:
+                yield None
 
 
 class ActivationEffect(BaseEffect):
@@ -734,6 +766,10 @@ class PayessenceEffect(BaseEffect):
 
 class PaylifeEffect(BaseEffect):
     costs: NumberOrX
+
+
+class RevealEffect(BaseEffect):
+    player: Player
 
 
 class MoveEffect(BaseEffect):
