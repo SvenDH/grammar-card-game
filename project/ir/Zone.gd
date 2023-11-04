@@ -12,6 +12,7 @@ enum ZoneEnum {
 }
 
 enum PlaceEnum {
+	none,
 	top,
 	bottom,
 }

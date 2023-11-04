@@ -729,7 +729,7 @@ class CardTransformer(Transformer):
     
     def root(self, _, cardcosts, types, abilities, stats):
         return Card(
-            cost=cardcosts.costs,
+            cost=cardcosts,
             types=[t.lower() for t in types[0]],   # TODO: add more types and subtypes
             subtypes=[t.lower() for t in types[1]],
             abilities=abilities,
