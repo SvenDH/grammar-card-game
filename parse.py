@@ -186,11 +186,11 @@ class KeywordTransformer(Transformer):
         return PlayerEnum.attacking
     
     def its(self):
-        return PlayerRef.their
+        return Reference.their
     def their(self):
-        return PlayerRef.their
+        return Reference.their
     def your(self):
-        return PlayerRef.your
+        return Reference.your
     
     def attack(self):
         return ObjectActionEnum.attack
@@ -385,10 +385,10 @@ class ConditionMixin:
 class ZoneMixin:
     def into(self, items):
         if items[0] == ZoneEnum.board:
-            return Place(zones=[ZoneEnum.board])
-        elif isinstance(items[0], Zone):
-            return Place(**items[0].dict())
-        return Place(
+            return ZoneMatch(zones=[ZoneEnum.board])
+        elif isinstance(items[0], ZoneMatch):
+            return ZoneMatch(**items[0].dict())
+        return ZoneMatch(
             place=items[0],
             zones=[items[1]],
             random=len(items) > 2 and items[2] == OrderEnum.random
@@ -396,10 +396,10 @@ class ZoneMixin:
     
     def zones(self, items):
         if items[0] == ObjectRef.it:
-            return Zone(zones=[ZoneEnum.it])
+            return ZoneMatch(zones=[ZoneEnum.it])
         elif items[0] == ZoneEnum.board:
-            return Zone(zones=[ZoneEnum.board])
-        return Zone(
+            return ZoneMatch(zones=[ZoneEnum.board])
+        return ZoneMatch(
             ref=None if items[0] == 1 else items[0],
             zones=[i for i in items[1:] if isinstance(i, ZoneEnum)]
         )
@@ -420,14 +420,14 @@ class PlayerMixin:
         if isinstance(p, tuple):
             ref = p[0]
             p = p[1]
-        return Player(player=p, ref=ref, who_cant=len(items) > 1)
+        return PlayerMatch(player=p, ref=ref, who_cant=len(items) > 1)
     
     def possesion(self, item):
-        if isinstance(item, Player):
+        if isinstance(item, PlayerMatch):
             return item
-        elif item == PlayerRef.their:
-            return Player(player=PlayerEnum.they)
-        return Player(player=PlayerEnum.you)
+        elif item == Reference.their:
+            return PlayerMatch(player=PlayerEnum.they)
+        return PlayerMatch(player=PlayerEnum.you)
 
 
 class ObjectMixin:
@@ -447,7 +447,7 @@ class ObjectMixin:
         if len(items) > 1 and items[0] == Reference.each:
             items = items[1:]
             each = True
-        return Objects(objects=items, each=each)
+        return ObjectMatch(objects=items, each=each)
     
     def opwith(self, item):
         # TODO: implement more with clauses (numbercompare, highestnumber, whatlevel)
@@ -501,7 +501,7 @@ class ObjectMixin:
 @v_args(inline=True)
 class ObjectTransformer(PrefixMixin, SuffixMixin, ZoneMixin, PlayerMixin, ObjectMixin, ConditionMixin, Transformer):
     def numberdefinition(self, items):
-        o = [c for c in items if isinstance(c, Objects)]
+        o = [c for c in items if isinstance(c, ObjectMatch)]
         n = [c for c in items if isinstance(c, NumbericalEnum)]
         return NumberDef(amount=o[0] if len(o) > 0 else items[0], property=n[0] if len(n) > 0 else None)
     
@@ -513,7 +513,7 @@ class ObjectTransformer(PrefixMixin, SuffixMixin, ZoneMixin, PlayerMixin, Object
     def moment(self, items):
         if items:
             return Phase(ref=items[0], phase=items[1])
-        return Phase(ref=PlayerRef.your, phase=PhaseEnum.fight)
+        return Phase(ref=Reference.your, phase=PhaseEnum.fight)
     
     def turnqualifier(self, items):
         t = items[0]
@@ -543,7 +543,7 @@ class EffectTransformer(Transformer):
     def discard(self, *args):
         return DiscardEffect(
             number=args[0] if args else 1,
-            objects=args[1] if len(args) > 1 else Objects(objects=[CardObject()])
+            objects=args[1] if len(args) > 1 else ObjectMatch(objects=[CardObject()])
         )
     def search(self, zones, *args):
         return SearchEffect(zones=zones, objects=args[0] if args else None)
@@ -556,8 +556,8 @@ class EffectTransformer(Transformer):
     def look(self, number, zones):
         return LookEffect(number=number, zones=zones)
     def put(self, objects, into, *args):
-        objs = [c for c in args if isinstance(c, Objects)]
-        intos = [c for c in args if isinstance(c, Place)]
+        objs = [c for c in args if isinstance(c, ObjectMatch)]
+        intos = [c for c in args if isinstance(c, ZoneMatch)]
         return PutEffect(
             objects=objects,
             into=into,
@@ -571,10 +571,10 @@ class EffectTransformer(Transformer):
         return SwitchStatsEffect(objects=objects, until=args[0] if args else None)
     def addessence(self, *args):
         a = [c for c in args if isinstance(c, NumberOrX)]
-        return AddEssenceEffect(
-            colors=[c for c in args if isinstance(c, ColorEnum)],
-            amount=a[0] if a else 1
-        )
+        colors = [c for c in args if isinstance(c, ColorEnum)]
+        if not colors:
+            colors = [ColorEnum.yellow, ColorEnum.red, ColorEnum.green, ColorEnum.blue]
+        return AddEssenceEffect(colors=colors, amount=a[0] if a else 1)
     def activate(self, objects):
         return ActivationEffect(objects=objects, deactivate=False)
     def deactivate(self, objects):
@@ -583,12 +583,13 @@ class EffectTransformer(Transformer):
         return MoveEffect(objects=objects, tozone=args[-1], fromzone=args[-2] if len(args) > 1 else None)
     def sacrifice(self, objects):
         return SacrificeEffect(objects=objects)
+    def reveals(self, possesion):
+        return RevealEffect(player=possesion)
+    
     def payessence(self, costs):
         return PayessenceEffect(costs=costs)
     def paylife(self, costs):
         return PaylifeEffect(costs=costs)
-    def reveals(self, possesion):
-        return RevealEffect(player=possesion)
     
     def ability(self, item):
         return item
@@ -723,8 +724,8 @@ class CardTransformer(Transformer):
     def root(self, _, cardcosts, types, abilities, stats):
         return Card(
             cost=cardcosts.costs,
-            type=[t.lower() for t in types[0]],   # TODO: add more types and subtypes
-            subtype=[t.lower() for t in types[1]],
+            types=[t.lower() for t in types[0]],   # TODO: add more types and subtypes
+            subtypes=[t.lower() for t in types[1]],
             abilities=abilities,
             damage=stats.power,
             health=stats.health,

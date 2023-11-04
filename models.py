@@ -73,11 +73,6 @@ class ObjectRef(str, GrammarEnum):
     any = "any of"
 
 
-class PlayerRef(str, GrammarEnum):
-    your = "your"
-    their = "their"
-
-
 class Reference(str, GrammarEnum):
     this = "this"
     that = "that"
@@ -94,6 +89,8 @@ class Reference(str, GrammarEnum):
     anynumberof = "any number of"
     upto = "up to"
     oneof = "one of"
+    your = "your"
+    their = "their"
 
 
 class DamageRef(str, GrammarEnum):
@@ -209,7 +206,6 @@ class BaseEffect(BaseModel):
     async def activate(self, ctx: dict):
         raise NotImplementedError("Subclass BaseEffect and implement activate")
 
-    
 
 class Prefix(BaseModel):
     prefix: PrefixEnum | TypeEnum | ColorEnum | Stats
@@ -306,7 +302,7 @@ class Suffix(BaseModel):
         return True
 
 
-class Object(BaseModel):
+class BaseObject(BaseModel):
     def targets(self, ctx: dict) -> int:
         return -1
     
@@ -314,8 +310,8 @@ class Object(BaseModel):
         pass
 
 
-class Objects(BaseModel):
-    objects: list[Object] = []
+class ObjectMatch(BaseModel):
+    objects: list[BaseObject] = []
     each: bool = False
 
     def targets(self, ctx: dict) -> int:
@@ -332,9 +328,9 @@ class Objects(BaseModel):
         return True
 
 
-class Player(BaseModel):
+class PlayerMatch(BaseModel):
     player: PlayerEnum
-    ref: Reference | Objects | PlayerRef | None = None
+    ref: Reference | ObjectMatch | None = None
     extra: NumberOrX | None = None  # TODO: implement player extra (target count etc)
     who_cant: bool = False
 
@@ -363,20 +359,18 @@ class Player(BaseModel):
         return True
 
 
-class Zone(BaseModel):
+class ZoneMatch(BaseModel):
     zones: list[ZoneEnum] = []
-    ref: Player | None = None
+    ref: PlayerMatch | None = None
+    # Used for placement
+    place: PlaceEnum | None = None
+    random: bool = False
 
     def match(self, ctx: dict, field: ZoneEnum, player: Any = None):
-        if isinstance(self.ref, Player):
+        if isinstance(self.ref, PlayerMatch):
             if not self.ref.match(ctx, player):
                 return False
         return field in self.zones
-
-
-class Place(Zone):
-    place: PlaceEnum | None = None
-    random: bool = False
 
 
 class Effect(BaseEffect):
@@ -389,11 +383,6 @@ class Effect(BaseEffect):
             await e.activate(ctx)
 
 
-class Condition(BaseModel):
-    condition: ConditonEnum
-    until: bool = False
-
-
 class EssenceCosts(BaseModel):
     costs: list[ColorEnum | NumberOrX] = []
 
@@ -402,8 +391,13 @@ class ActionCost(BaseModel):
     cost: list[BaseEffect] = []
 
 
+class Condition(BaseModel):
+    condition: ConditonEnum
+    until: bool = False
+
+
 class PlayedCondition(Condition):
-    object: Objects
+    object: ObjectMatch
     duration: Condition
 
 
@@ -413,27 +407,27 @@ class NumberCondition(Condition):
 
 
 class PlayerCondition(Condition):
-    player: Player
+    player: PlayerMatch
     phrase: str   # TODO: implement playerphrase
 
 
 class ObjectCondition(Condition):
-    object: Objects
+    object: ObjectMatch
     phrase: str   # TODO: implement objectphrase
 
 
 class Phase(BaseModel):
-    ref: TurnQualifierEnum | PlayerRef | Player | None = None
+    ref: TurnQualifierEnum | Reference | PlayerMatch | None = None
     phase: PhaseEnum
     
 
 class Trigger(BaseModel):
     trigger: TriggerEnum
-    objects: Objects | Player | Phase | None = None
+    objects: ObjectMatch | PlayerMatch | Phase | None = None
 
 
 class NumberDef(BaseModel):
-    amount: Objects | PlayerRef
+    amount: ObjectMatch | Reference
     property: NumbericalEnum | None = None
 
 
@@ -465,7 +459,7 @@ class ActivatedAbility(BaseModel):
 AquiredAbilities = KeywordEnum | TriggeredAbility | ActivatedAbility | ActionCost | Effect | Literal["this"]
 
 
-class CardObject(Object):
+class CardObject(BaseObject):
     type: TypeEnum | None = None
     ref: Reference | ObjectRef | None = None
     extra: NumberOrX | None = None
@@ -532,7 +526,7 @@ class CardObject(Object):
         
         if self.withwhat is not None:
             # TODO: implement more "with"
-            if isinstance(self.without, AquiredAbilities) and r not in other.abilities:
+            if isinstance(self.withwhat, AquiredAbilities) and self.withwhat not in other.abilities:
                 return False
         
         if self.without is not None and self.without in other.card.abilities:
@@ -541,7 +535,7 @@ class CardObject(Object):
         return True
 
 
-class AbilityObject(Object):
+class AbilityObject(BaseObject):
     ref: Reference | ObjectRef | NumberOrX | None = None
     extra: NumberOrX | None = None
     prefixes: list[Prefix] = []
@@ -569,11 +563,11 @@ class SubjEffect(BaseEffect):
 
 
 class PlayerEffect(SubjEffect):
-    subj: Player = Player(player=PlayerEnum.you)
+    subj: PlayerMatch = PlayerMatch(player=PlayerEnum.you)
     
 
 class ObjectEffect(SubjEffect):
-    subj: Object = Object(object=ObjectRef.it)
+    subj: ObjectMatch = ObjectMatch(objects=[BaseObject(object=ObjectRef.it)])
 
 
 class CreateTokenEffect(BaseEffect):
@@ -589,7 +583,7 @@ class CreateTokenEffect(BaseEffect):
                 name="Token",
                 damage=self.stats.power,
                 health=self.stats.health,
-                type=[TypeEnum.UNIT],
+                types=[TypeEnum.UNIT],
             )
             index = await player.pick_free_field(ctx, card)
             if index == -1:
@@ -600,7 +594,7 @@ class CreateTokenEffect(BaseEffect):
 
 class DestroyEffect(BaseEffect):
     action: str = "destroy"
-    objects: Objects
+    objects: ObjectMatch
 
     async def activate(self, ctx: dict):
         for d in await ctx["game"].pick(ctx, self.objects, place=ZoneEnum.board):
@@ -609,7 +603,7 @@ class DestroyEffect(BaseEffect):
 
 class CopyEffect(BaseEffect):
     action: str = "copy"
-    objects: Objects
+    objects: ObjectMatch
 
     async def activate(self, ctx: dict):
         player = ctx["subject"]
@@ -623,7 +617,7 @@ class CopyEffect(BaseEffect):
 
 class PlayEffect(BaseEffect):
     action: str = "play"
-    objects: Objects
+    objects: ObjectMatch
     free: bool = False
     
     async def activate(self, ctx: dict):
@@ -642,7 +636,7 @@ class DrawEffect(BaseEffect):
 class DiscardEffect(BaseEffect):
     action: str = "discard"
     number: NumberOrX = 1
-    objects: Objects
+    objects: ObjectMatch
 
     async def activate(self, ctx: dict):
         yield getnumber(self.number, ctx), self.objects
@@ -651,8 +645,8 @@ class DiscardEffect(BaseEffect):
 class SearchEffect(BaseEffect):
     action: str = "search"
     number: NumberOrX = 1
-    zones: Zone
-    objects: Objects | None = None
+    zones: ZoneMatch
+    objects: ObjectMatch | None = None
 
     async def activate(self, ctx: dict):
         for _ in range(getnumber(self.number, ctx)):
@@ -661,24 +655,24 @@ class SearchEffect(BaseEffect):
 
 class ShuffleEffect(BaseEffect):
     action: str = "shuffle"
-    what: Zone | Objects | None = None
-    zones: Zone
+    what: ZoneMatch | ObjectMatch | None = None
+    zones: ZoneMatch
 
     async def activate(self, ctx: dict):
         player = ctx["subject"]
         for zone in self.zones.zones:
-            if isinstance(self.what, Objects):
+            if isinstance(self.what, ObjectMatch):
                 what = player.query(ctx, self.what)
-            elif isinstance(self.what, Zone):
+            elif isinstance(self.what, ZoneMatch):
                 what = player.query(ctx, None, self.what)
             else:
-                what = player.query(ctx, None, Zone(zones=[zone], ref=self.zones.ref))
+                what = player.query(ctx, None, ZoneMatch(zones=[zone], ref=self.zones.ref))
             yield what, zone
 
 
 class CounterEffect(BaseEffect):
     action: str = "counter"
-    objects: Objects
+    objects: ObjectMatch
 
     async def activate(self, ctx: dict):
         for d in await ctx["game"].pick(ctx, self.objects, place=ZoneEnum.stack):
@@ -696,7 +690,7 @@ class ExtraTurnEffect(BaseEffect):
 class LookEffect(BaseEffect):
     action: str = "look"
     number: NumberOrX = 1
-    zones: Zone
+    zones: ZoneMatch
 
     async def activate(self, ctx: dict):
         yield self.zones, getnumber(self.number, ctx)
@@ -704,20 +698,20 @@ class LookEffect(BaseEffect):
 
 class PutEffect(BaseEffect):
     action: str = "put"
-    objects: Objects
-    into: Place
+    objects: ObjectMatch
+    into: ZoneMatch
     deactivated: bool = False
-    second_objects: Objects | None = None
-    second_into: Place | None = None
+    second_objects: ObjectMatch | None = None
+    second_into: ZoneMatch | None = None
 
     async def activate(self, ctx: dict):
         for d in await ctx["game"].pick(ctx, self.objects):
-            yield d, self.into, self.deactivated
+            yield d, self.into, {"deactivated": self.deactivated}
 
 
 class GainControlEffect(BaseEffect):
     action: str = "control"
-    objects: Objects
+    objects: ObjectMatch
     until: Condition | None = None
 
     async def activate(self, ctx: dict):
@@ -727,7 +721,7 @@ class GainControlEffect(BaseEffect):
 
 class SwitchStatsEffect(BaseEffect):
     action: str = "switchstats"
-    objects: Objects
+    objects: ObjectMatch
     until: Condition | None = None
 
     async def activate(self, ctx: dict):
@@ -742,22 +736,21 @@ class AddEssenceEffect(BaseEffect):
 
     async def activate(self, ctx: dict):
         player = ctx["subject"]
-        for _ in range(self.amount):
-            if len(self.colors) > 1:
-                yield await player.callback.choose("Choose essence color:", self.colors)
-            elif len(self.colors) == 1:
-                yield self.colors[0]
-            else:
-                yield None
+        if len(self.colors) > 1:
+            yield await player.callback.choose("Choose essence color:", self.colors), self.amount
+        elif len(self.colors) == 1:
+            yield self.colors[0], self.amount
+        else:
+            yield None, self.amount
 
 
 class ActivationEffect(BaseEffect):
-    objects: Objects
+    objects: ObjectMatch
     deactivate: bool = True
 
 
 class SacrificeEffect(BaseEffect):
-    objects: Objects
+    objects: ObjectMatch
 
 
 class PayessenceEffect(BaseEffect):
@@ -769,18 +762,18 @@ class PaylifeEffect(BaseEffect):
 
 
 class RevealEffect(BaseEffect):
-    player: Player
+    player: PlayerMatch
 
 
 class MoveEffect(BaseEffect):
-    objects: Objects
-    tozone: Zone
-    fromzone: Zone | None = None
+    objects: ObjectMatch
+    tozone: ZoneMatch
+    fromzone: ZoneMatch | None = None
 
 
 class ModAbility(BaseEffect):
     stats: Stats = Stats()
-    foreach: Objects | None = None
+    foreach: ObjectMatch | None = None
 
 
 class GetAbility(BaseEffect):
@@ -804,12 +797,12 @@ class LoseAbilitiesAbility(BaseEffect):
 class CostsAbility(BaseEffect):
     costs: EssenceCosts
     more: bool = False
-    foreach: Objects | None = None
+    foreach: ObjectMatch | None = None
 
 
 class EntersAbility(BaseEffect):
     deactivate: bool = False
-    control: Player | ObjectRef | None = None
+    control: PlayerMatch | ObjectRef | None = None
 
 
 class BecomesAbility(BaseEffect):
@@ -819,15 +812,15 @@ class BecomesAbility(BaseEffect):
 
 class DealsAbility(BaseEffect):
     amount: NumberOrX | NumberDef = 1
-    recipients: list[Player | Objects | DamageRef] = []
+    recipients: list[PlayerMatch | ObjectMatch | DamageRef] = []
     spread: bool = False
 
 
 class Card(BaseModel):
     name: str = ''
     cost: list[ColorEnum | NumberOrX] = [0]
-    type: list[TypeEnum] = []
-    subtype: list[str] = []
+    types: list[TypeEnum] = []
+    subtypes: list[str] = []
     abilities: list[AquiredAbilities] = []
     rule_texts: list[str] = []
     damage: int = 1
@@ -844,8 +837,8 @@ class Card(BaseModel):
     
     def __str__(self) -> str:
         costs = "}{".join([str(c) for c in self.cost])
-        t = " ".join([t.capitalize() for t in self.type])
-        if self.subtype:
-            t += " - " + " ".join([t.capitalize() for t in self.subtype])
+        t = " ".join([t.capitalize() for t in self.types])
+        if self.subtypes:
+            t += " - " + " ".join([t.capitalize() for t in self.subtypes])
         a = "\n".join(self.rule_texts)
         return f"{self.name} {{{costs}}}\n{t}\n{a}\n{self.damage}/{self.health}"

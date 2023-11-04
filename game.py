@@ -45,7 +45,7 @@ class DefaultCallbackManager:
 
 @dataclass
 class CardStatus:
-    until: Condition | None = None
+    until: Condition | None
 
     async def on_end(self, card: 'CardInstance'):
         pass
@@ -89,7 +89,7 @@ class CardInstance:
 
     @property
     def type(self) -> list[TypeEnum]:
-        return self.card.type  # TODO: add modified types
+        return self.card.types  # TODO: add modified types
 
     @property
     def abilities(self) -> list[AquiredAbilities]:
@@ -305,7 +305,7 @@ class PlayerState:
             self.place(ctx, card, ZoneEnum.hand)
             self.on_draw(ctx, card)
     
-    async def discard(self, ctx: dict, n: int = 1, match: Objects | None = None):
+    async def discard(self, ctx: dict, n: int = 1, match: ObjectMatch | None = None):
         for _ in range(n):
             if len(self.hand) == 0:
                 return
@@ -320,7 +320,7 @@ class PlayerState:
             card.location = ZoneEnum.pile
             self.on_discard(ctx, card)
 
-    async def search(self, ctx: dict, zones: Zone, match: Objects | None = None):
+    async def search(self, ctx: dict, zones: ZoneMatch, match: ObjectMatch | None = None):
         choices = self.game.query(ctx, match, place=zones)
         # TODO: search own fields if not otherwise specified
         index = await self.callback.choose("Choose a card:", choices)
@@ -367,13 +367,14 @@ class PlayerState:
     async def extraturn(self, ctx: dict, n: int):
         self.turnsafterthis += n
 
-    async def look(self, ctx: dict, place: Zone, n: int):
+    async def look(self, ctx: dict, place: ZoneMatch, n: int):
         cards = self.game.query(ctx, None, place, n)
         await self.callback.show("Revealed cards:", cards)
 
-    async def put(self, ctx: dict, card: CardInstance, to_index: int):
+    async def put(self, ctx: dict, card: CardInstance, into: ZoneMatch, state: dict):
         self.pop(ctx, card)
-        self.place(ctx, card, ZoneEnum.board, to_index)
+        # TODO: add deactivate and other state
+        self.place(ctx, card, into.zones[0], None, into.place)
 
     async def control(self, ctx: dict, card: CardInstance, until: Condition | None = None):
         if card.controller == self:
@@ -387,7 +388,7 @@ class PlayerState:
         card.add_status(status)
     
     async def switchstats(self, ctx: dict, card: CardInstance, until: Condition | None = None):
-        status = StatsChanged(until=until, original=Stats(power=card.damage, health=card.health)
+        status = StatsChanged(until=until, original=Stats(power=card.damage, health=card.health))
         card.add_status(status)
     
     def place(self, ctx: dict, card: CardInstance, place: ZoneEnum, to_index: int | None = None, relative: PlaceEnum | None = None):
@@ -437,7 +438,7 @@ class PlayerState:
             self.board[self.board.index(card)] = None
             self.on_exit(ctx, card)
 
-    def query(self, ctx: dict, obj: Player | Objects | None = None, place: Zone | ZoneEnum | None = None) -> list[CardInstance]:
+    def query(self, ctx: dict, obj: PlayerMatch | ObjectMatch | None = None, place: ZoneMatch | ZoneEnum | None = None) -> list[CardInstance]:
         found = []
         if self._match_field(ctx, ZoneEnum.board, place):
             for card in self.board:
@@ -462,10 +463,10 @@ class PlayerState:
                         found.append(card)
         return found
     
-    def _match_field(self, ctx: dict, place: ZoneEnum, match: ZoneEnum | Zone | None) -> bool:
+    def _match_field(self, ctx: dict, place: ZoneEnum, match: ZoneEnum | ZoneMatch | None) -> bool:
         if match is None:
             return True
-        if isinstance(match, Zone):
+        if isinstance(match, ZoneMatch):
             return match.match(ctx, place, self)
         return place == match
 
@@ -498,9 +499,6 @@ class Game:
     turn: int = 0
     phase: PhaseEnum = PhaseEnum.activation
     stack: list[PlayedAbility] = field(default_factory=list)
-
-    class Config:
-        arbitrary_types_allowed = True
 
     def add_player(self, name: str, deck: list[Card], side: list[Card] | None = None):
         player = PlayerState.from_cards(name, self, deck, side or [])
@@ -563,7 +561,7 @@ class Game:
         
         ctx["reaction"] = False
 
-    async def pick(self, ctx: dict, obj: Player | Objects, place: ZoneEnum | Zone | None= None) -> list:
+    async def pick(self, ctx: dict, obj: PlayerMatch | ObjectMatch, place: ZoneEnum | ZoneMatch | None= None) -> list:
         n = obj.targets(ctx)
         if n > 0:
             player: PlayerState = ctx["controller"]
@@ -578,7 +576,7 @@ class Game:
         
         return self.query(ctx, obj, place)
 
-    def query(self, ctx: dict, obj: Player | Objects, place: ZoneEnum | Zone | None = None, n: int = -1) -> list:
+    def query(self, ctx: dict, obj: PlayerMatch | ObjectMatch, place: ZoneEnum | ZoneMatch | None = None, n: int = -1) -> list:
         found = []
         # TODO: add stack abilities
         for player in self.players:

@@ -46,7 +46,7 @@ playerphrase: pp | pp " for each " object | pp " for the first time each turn" |
 | pp " this way"
 
 action: createtoken | destroy | copy | play | draw | search | shuffle | counter | activate | deactivate | extraturn | look
-| put | gaincontrol | switchdmghp | addessence | returncard | discard | sacrifice | payessence | paylife | reveals
+| put | gaincontrol | switchdmghp | addessence | returncard | discard | reveals | sacrifice | payessence | paylife
 
 createtoken: C "reate " number " " stats (" token" | " tokens") (" with " acquiredability)?
 destroy: D "estroy " objects
@@ -67,10 +67,11 @@ addessence: A "dd " ("one essence of any color" | number " essence of any one co
 activate: A "ctivate " objects
 deactivate: D "eactivate " objects
 returncard: R "eturn " objects (" from " zones)? " to " zones
+reveals: R "eveal" "s"? " " possesion " hand"
+
 sacrifice: S "acrifice" "s"? " " objects
 payessence: P "ay " essencecost
 paylife: P "ay " numberorxorthat " life"
-reveals: R "eveal" "s"? " " possesion " hand"
 
 pp: gainsxlife | gainseqlife | loseaction | losethegame | imperative
 gainsxlife: "gain" "s"? " " numberorx " life"
