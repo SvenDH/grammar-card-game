@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://dojm7b3or6gun"]
+
+[ext_resource type="Script" path="res://CardField.gd" id="1_h2ot6"]
+
+[node name="Field" type="Node"]
+script = ExtResource("1_h2ot6")

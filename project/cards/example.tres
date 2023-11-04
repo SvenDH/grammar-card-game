@@ -1,0 +1,48 @@
+[gd_resource type="Resource" script_class="Card" load_steps=12 format=3 uid="uid://c0mtp8lsv04yi"]
+
+[ext_resource type="Script" path="res://ir/Card.gd" id="1_43ven"]
+[ext_resource type="Script" path="res://Card.gd" id="1_b005d"]
+[ext_resource type="Script" path="res://ir/Object.gd" id="2_1t416"]
+[ext_resource type="Script" path="res://effects/DestroyEffect.gd" id="3_lo727"]
+[ext_resource type="Script" path="res://Effect.gd" id="4_3s5yo"]
+[ext_resource type="Script" path="res://ActivatedAbility.gd" id="5_gn2ti"]
+
+[sub_resource type="Resource" id="Resource_x3cqv"]
+script = ExtResource("1_43ven")
+ref = 7
+type = 0
+extra = 0
+prefixes = Array[Resource("res://ir/Prefix.gd")]([])
+suffixes = Array[Resource("res://ir/Suffix.gd")]([])
+without = 0
+copies = false
+
+[sub_resource type="Resource" id="Resource_io8hl"]
+script = ExtResource("2_1t416")
+objects = Array[Resource("res://ir/Match.gd")]([SubResource("Resource_x3cqv")])
+each = false
+
+[sub_resource type="Resource" id="Resource_i81ij"]
+script = ExtResource("3_lo727")
+objects = SubResource("Resource_io8hl")
+action = ""
+
+[sub_resource type="Resource" id="Resource_aflqv"]
+script = ExtResource("4_3s5yo")
+effects = Array[Resource("res://BaseEffect.gd")]([SubResource("Resource_i81ij")])
+optional = false
+
+[sub_resource type="Resource" id="Resource_it46f"]
+script = ExtResource("5_gn2ti")
+costs = ["R", "Q"]
+effect = SubResource("Resource_aflqv")
+text = ""
+
+[resource]
+script = ExtResource("1_b005d")
+cost = ["R", 0]
+types = Array[int]([0])
+subtypes = Array[String](["Human", "Soldier"])
+abilities = Array[Resource("res://CardAbility.gd")]([SubResource("Resource_it46f")])
+power = null
+health = null
