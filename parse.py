@@ -85,7 +85,7 @@ class BaseTransformer(Transformer):
     def stats(self, power, health):
         return Stats(power=power, health=health)
     def essencecost(self, *args):
-        return EssenceCosts(costs=list(args))
+        return list(args)
     def activatecost(self):
         return Activation.activate
     def deactivatecost(self):
@@ -186,11 +186,11 @@ class KeywordTransformer(Transformer):
         return PlayerEnum.attacking
     
     def its(self):
-        return PlayerRef.their
+        return Reference.their
     def their(self):
-        return PlayerRef.their
+        return Reference.their
     def your(self):
-        return PlayerRef.your
+        return Reference.your
     
     def attack(self):
         return ObjectActionEnum.attack
@@ -206,9 +206,9 @@ class KeywordTransformer(Transformer):
         return ObjectActionEnum.activateability
     
     def anytarget(self):
-        return DamageRef.anytarget
+        return Reference.anytarget
     def itself(self):
-        return DamageRef.itself
+        return Reference.itself
     
     def endofturn(self):
         return TriggerEnum.endofturn
@@ -228,17 +228,17 @@ class KeywordTransformer(Transformer):
 @v_args(inline=True)
 class ReferenceTransformer(Transformer):
     def refsacrificed(self):
-        return ObjectRef.sac
+        return Reference.sac
     def anyof(self):
-        return ObjectRef.any
+        return Reference.any
     def self(self):
-        return ObjectRef.self
+        return Reference.self
     def it(self):
-        return ObjectRef.it
+        return Reference.it
     def they(self):
-        return ObjectRef.they
+        return Reference.they
     def other(self):
-        return ObjectRef.rest
+        return Reference.rest
     
     def this(self):
         return Reference.this
@@ -306,9 +306,9 @@ class PrefixMixin:
     def deactivated(self, _):
         return PrefixEnum.activated, True
     def token(self):
-        return TypeEnum.TOKEN, False
+        return TypeEnum.token, False
     def nontoken(self):
-        return TypeEnum.TOKEN, True
+        return TypeEnum.token, True
     def blocking(self):
         return PrefixEnum.blocking, False
     def attackingorblocking(self):
@@ -385,21 +385,21 @@ class ConditionMixin:
 class ZoneMixin:
     def into(self, items):
         if items[0] == ZoneEnum.board:
-            return Place(zones=[ZoneEnum.board])
-        elif isinstance(items[0], Zone):
-            return Place(**items[0].dict())
-        return Place(
+            return ZoneMatch(zones=[ZoneEnum.board])
+        elif isinstance(items[0], ZoneMatch):
+            return ZoneMatch(**items[0].dict())
+        return ZoneMatch(
             place=items[0],
             zones=[items[1]],
             random=len(items) > 2 and items[2] == OrderEnum.random
         )
     
     def zones(self, items):
-        if items[0] == ObjectRef.it:
-            return Zone(zones=[ZoneEnum.it])
+        if items[0] == Reference.it:
+            return ZoneMatch(zones=[ZoneEnum.it])
         elif items[0] == ZoneEnum.board:
-            return Zone(zones=[ZoneEnum.board])
-        return Zone(
+            return ZoneMatch(zones=[ZoneEnum.board])
+        return ZoneMatch(
             ref=None if items[0] == 1 else items[0],
             zones=[i for i in items[1:] if isinstance(i, ZoneEnum)]
         )
@@ -420,19 +420,19 @@ class PlayerMixin:
         if isinstance(p, tuple):
             ref = p[0]
             p = p[1]
-        return Player(player=p, ref=ref, who_cant=len(items) > 1)
+        return PlayerMatch(player=p, ref=ref, who_cant=len(items) > 1)
     
     def possesion(self, item):
-        if isinstance(item, Player):
+        if isinstance(item, PlayerMatch):
             return item
-        elif item == PlayerRef.their:
-            return Player(player=PlayerEnum.they)
-        return Player(player=PlayerEnum.you)
+        elif item == Reference.their:
+            return PlayerMatch(player=PlayerEnum.they)
+        return PlayerMatch(player=PlayerEnum.you)
 
 
 class ObjectMixin:
     def selfref(self, _):
-        return CardObject(ref=ObjectRef.self)
+        return CardObject(ref=Reference.self)
     
     def object(self, item):
         if isinstance(item, PureObject):
@@ -447,7 +447,7 @@ class ObjectMixin:
         if len(items) > 1 and items[0] == Reference.each:
             items = items[1:]
             each = True
-        return Objects(objects=items, each=each)
+        return ObjectMatch(objects=items, each=each)
     
     def opwith(self, item):
         # TODO: implement more with clauses (numbercompare, highestnumber, whatlevel)
@@ -482,7 +482,7 @@ class ObjectMixin:
     def _from_pureobject(
         self,
         o: PureObject,
-        ref: Reference | ObjectRef | NumberOrX | None = None,
+        ref: Reference | NumberOrX | None = None,
         prefixes: list[Prefix] = [],
         suffix: Suffix | None = None,
         extra: Any = None,
@@ -490,18 +490,18 @@ class ObjectMixin:
         without: Any = None
     ):
         if o == PureObject.ability:
-            return AbilityObject(ref=ref, prefixes=prefixes, suffix=suffix, extra=extra)
+            return AbilityObject(ref=ref, prefixes=prefixes, suffixes=[suffix], extra=extra)
         elif o == PureObject.copies:
-            return CardObject(ref=ref, prefixes=prefixes, suffix=suffix, extra=extra, copies=True, without=without, withwhat=withwhat)
+            return CardObject(ref=ref, prefixes=prefixes, suffixes=[suffix], extra=extra, copies=True, without=without, withwhat=withwhat)
         elif o == PureObject.token:
-            return CardObject(ref=ref, prefixes=prefixes, suffix=suffix, type=TypeEnum.TOKEN, extra=extra, without=without, withwhat=withwhat)
+            return CardObject(ref=ref, prefixes=prefixes, suffixes=[suffix], type=TypeEnum.token, extra=extra, without=without, withwhat=withwhat)
         return CardObject(ref=ref, prefixes=prefixes, extra=extra, without=without, withwhat=withwhat)
 
 
 @v_args(inline=True)
 class ObjectTransformer(PrefixMixin, SuffixMixin, ZoneMixin, PlayerMixin, ObjectMixin, ConditionMixin, Transformer):
     def numberdefinition(self, items):
-        o = [c for c in items if isinstance(c, Objects)]
+        o = [c for c in items if isinstance(c, ObjectMatch)]
         n = [c for c in items if isinstance(c, NumbericalEnum)]
         return NumberDef(amount=o[0] if len(o) > 0 else items[0], property=n[0] if len(n) > 0 else None)
     
@@ -513,7 +513,7 @@ class ObjectTransformer(PrefixMixin, SuffixMixin, ZoneMixin, PlayerMixin, Object
     def moment(self, items):
         if items:
             return Phase(ref=items[0], phase=items[1])
-        return Phase(ref=PlayerRef.your, phase=PhaseEnum.fight)
+        return Phase(ref=Reference.your, phase=PhaseEnum.fight)
     
     def turnqualifier(self, items):
         t = items[0]
@@ -543,7 +543,7 @@ class EffectTransformer(Transformer):
     def discard(self, *args):
         return DiscardEffect(
             number=args[0] if args else 1,
-            objects=args[1] if len(args) > 1 else Objects(objects=[CardObject()])
+            objects=args[1] if len(args) > 1 else ObjectMatch(objects=[CardObject()])
         )
     def search(self, zones, *args):
         return SearchEffect(zones=zones, objects=args[0] if args else None)
@@ -556,8 +556,8 @@ class EffectTransformer(Transformer):
     def look(self, number, zones):
         return LookEffect(number=number, zones=zones)
     def put(self, objects, into, *args):
-        objs = [c for c in args if isinstance(c, Objects)]
-        intos = [c for c in args if isinstance(c, Place)]
+        objs = [c for c in args if isinstance(c, ObjectMatch)]
+        intos = [c for c in args if isinstance(c, ZoneMatch)]
         return PutEffect(
             objects=objects,
             into=into,
@@ -568,13 +568,13 @@ class EffectTransformer(Transformer):
     def gaincontrol(self, objects, *args):
         return GainControlEffect(objects=objects, until=args[0] if args else None)
     def switchdmghp(self, objects, *args):
-        return SwitchHpDmgEffect(objects=objects, until=args[0] if args else None)
+        return SwitchStatsEffect(objects=objects, until=args[0] if args else None)
     def addessence(self, *args):
         a = [c for c in args if isinstance(c, NumberOrX)]
-        return AddEssenceEffect(
-            colors=[c for c in args if isinstance(c, ColorEnum)],
-            amount=a[0] if a else 1
-        )
+        colors = [c for c in args if isinstance(c, ColorEnum)]
+        if not colors:
+            colors = [ColorEnum.yellow, ColorEnum.red, ColorEnum.green, ColorEnum.blue]
+        return AddEssenceEffect(colors=colors, amount=a[0] if a else 1)
     def activate(self, objects):
         return ActivationEffect(objects=objects, deactivate=False)
     def deactivate(self, objects):
@@ -583,20 +583,26 @@ class EffectTransformer(Transformer):
         return MoveEffect(objects=objects, tozone=args[-1], fromzone=args[-2] if len(args) > 1 else None)
     def sacrifice(self, objects):
         return SacrificeEffect(objects=objects)
+    def reveals(self, possesion):
+        return RevealEffect(player=possesion)
+    
     def payessence(self, costs):
         return PayessenceEffect(costs=costs)
     def paylife(self, costs):
         return PaylifeEffect(costs=costs)
-    def reveals(self, possesion):
-        # TODO: implement reveal effect
-        pass
     
     def ability(self, item):
         return item
     def activatedability(self, abilitycosts, effects):
         return [ActivatedAbility(costs=abilitycosts, effect=Effect(effects=effects))]
     def abilitycosts(self, *args):
-        return args
+        items = []
+        for a in args:
+            if isinstance(a, list):
+                items.extend(a)
+            else:
+                items.append(a)
+        return items
     def triggeredability(self, triggercondition, *args):
         return [TriggeredAbility(
             trigger=triggercondition,
@@ -682,7 +688,8 @@ class EffectTransformer(Transformer):
     def deals(self, *args):
         r = [i for c in args if isinstance(c, tuple) for i in c]
         n = [c for c in args if not isinstance(c, tuple)]
-        return DealsAbility(amount=n[0], recipients=r if r else [DamageRef.anytarget], spread=len(r) == 0)
+        return DealsAbility(amount=n[0], recipients=r if r else [Reference.anytarget], spread=len(r) == 0)
+    
     def damagerecipients(self, *args):
         return args
     def damagerecipient(self, item):
@@ -723,10 +730,10 @@ class CardTransformer(Transformer):
     def root(self, _, cardcosts, types, abilities, stats):
         return Card(
             cost=cardcosts.costs,
-            type=[t.lower() for t in types[0]],   # TODO: add more types and subtypes
-            subtype=[t.lower() for t in types[1]],
+            types=[t.lower() for t in types[0]],   # TODO: add more types and subtypes
+            subtypes=[t.lower() for t in types[1]],
             abilities=abilities,
-            damage=stats.power,
+            power=stats.power,
             health=stats.health,
         )
 

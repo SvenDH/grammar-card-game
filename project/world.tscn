@@ -1,0 +1,30 @@
+[gd_scene load_steps=6 format=3 uid="uid://oer7ytplr5eq"]
+
+[ext_resource type="Script" path="res://CardPlayer.gd" id="1_ajvan"]
+[ext_resource type="Script" path="res://CardGame.gd" id="1_cwwvb"]
+[ext_resource type="Script" path="res://CardPile.gd" id="3_mh53e"]
+[ext_resource type="Script" path="res://CardFields.gd" id="4_mby53"]
+[ext_resource type="PackedScene" uid="uid://dojm7b3or6gun" path="res://Field.tscn" id="5_so1uy"]
+
+[node name="World" type="Node3D"]
+
+[node name="CardGame" type="Node" parent="."]
+script = ExtResource("1_cwwvb")
+
+[node name="Player" type="Node3D" parent="."]
+
+[node name="CardPlayer" type="Node" parent="Player"]
+script = ExtResource("1_ajvan")
+
+[node name="Deck" type="Node" parent="Player/CardPlayer"]
+script = ExtResource("3_mh53e")
+
+[node name="Discard" type="Node" parent="Player/CardPlayer"]
+script = ExtResource("3_mh53e")
+
+[node name="Hand" type="Node" parent="Player/CardPlayer"]
+script = ExtResource("3_mh53e")
+
+[node name="Board" type="Node" parent="Player/CardPlayer"]
+script = ExtResource("4_mby53")
+field_scene = ExtResource("5_so1uy")
