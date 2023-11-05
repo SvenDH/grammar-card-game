@@ -454,8 +454,8 @@ class ObjectMixin:
         return ("with", item)
     
     def specifiedobject(self, items):
-        r = items[0] if not isinstance(items[0], Prefix) and not isinstance(items[0], PureObject) and not isinstance(items[0], TypeEnum) else None
-        e = None
+        r = items[0] if not isinstance(items[0], Prefix) and not isinstance(items[0], PureObject) and not isinstance(items[0], TypeEnum) else Reference.none
+        e = 0
         if r and isinstance(r, tuple):
             if len(r) > 1:
                 e = r[1]
@@ -473,7 +473,7 @@ class ObjectMixin:
             suffix=suffix,
             extra=e,
             withwhat=w[0] if w else None,
-            without=wo[0] if wo else None
+            without=wo[0] if wo else KeywordEnum.none
         )
     def foreach(self, item):
         return item
@@ -489,12 +489,13 @@ class ObjectMixin:
         withwhat: Any = None,
         without: Any = None
     ):
+        suffixes = [suffix] if suffix else []
         if o == PureObject.ability:
-            return AbilityObject(ref=ref, prefixes=prefixes, suffixes=[suffix], extra=extra)
+            return AbilityObject(ref=ref, prefixes=prefixes, suffixes=suffixes, extra=extra)
         elif o == PureObject.copies:
-            return CardObject(ref=ref, prefixes=prefixes, suffixes=[suffix], extra=extra, copies=True, without=without, withwhat=withwhat)
+            return CardObject(ref=ref, prefixes=prefixes, suffixes=suffixes, extra=extra, copies=True, without=without, withwhat=withwhat)
         elif o == PureObject.token:
-            return CardObject(ref=ref, prefixes=prefixes, suffixes=[suffix], type=TypeEnum.token, extra=extra, without=without, withwhat=withwhat)
+            return CardObject(ref=ref, prefixes=prefixes, suffixes=suffixes, type=TypeEnum.token, extra=extra, without=without, withwhat=withwhat)
         return CardObject(ref=ref, prefixes=prefixes, extra=extra, without=without, withwhat=withwhat)
 
 
@@ -738,6 +739,13 @@ class CardTransformer(Transformer):
         )
 
 
+def is_keyword_line(text: str):
+    for t in text.split(","):
+        if t.strip().lower() not in KeywordEnum.__members__:
+            return False
+    return True
+
+
 class Parser:
     def __init__(self, transformers: list[Transformer], grammar_path: str = "grammars/game.lark", debug: bool = True) -> None:
         self.grammar = open(grammar_path, "r").read()
@@ -753,5 +761,12 @@ class Parser:
         for tf in self.transformers:
             t = tf.transform(t)
         t.name = name
-        t.rule_texts = card_txt.split("\n")[2:-1]
+        rule_texts = []
+        for line in card_txt.split("\n")[2:-1]:
+            if is_keyword_line(line):
+                for l in line.split(", "):
+                    rule_texts.append(l)
+            else:
+                rule_texts.append(line)
+        t.rule_texts = rule_texts
         return t

@@ -1,6 +1,8 @@
 extends Node
 class_name CardInstance
 
+const card_text_scene := preload("res://CardText.tscn")
+
 var player_owner
 var card: Card
 var power := 1
@@ -18,7 +20,21 @@ var ctx: Dictionary
 var types: get = _get_types
 var abilities: get = _get_abilities
 var activated_abilities: get = _get_activated_abilities
+var keyword_abilities: get = _get_keyword_abilities
 var color: get = _get_color
+
+@onready var picture = $Picture
+@onready var ability_text = $Abilities
+
+func _ready():
+	if card:
+		for ability in card.abilities:
+			var text: RichTextLabel = card_text_scene.instantiate()
+			if ability is String:
+				text.append_text(ability)
+			else:
+				text.append_text(ability.text)
+			ability_text.add_child(text)
 
 func _get_types() -> Array[Card.TypeEnum]:
 	return card.types  # TODO: add modified types
@@ -34,10 +50,30 @@ func _get_activated_abilities() -> Array[ActivatedAbility]:
 			abs.append(c)
 	return abs
 
+func _get_keyword_abilities() -> Array[Card.KeywordEnum]:
+	var abs = []
+	for c in _get_abilities():
+		if c is String:
+			abs.append(card.convert_keyword(c))
+	return abs
+
 func _get_color() -> Array[Card.ColorEnum]:
+	var colors = []
+	if card:
+		for c in card.cost:
+			if not c is int:
+				var color = card.convert_color(c)
+				if color not in colors:
+					colors.append(color)
 	# TODO: add modifiers
-	return card.color
-	
+	if len(colors) == 0:
+		return [Card.ColorEnum.colorless]
+	elif len(colors) == 1:
+		colors.append(Card.ColorEnum.monocolored)
+		return colors
+	colors.append(Card.ColorEnum.multicolored)
+	return colors
+
 func activate():
 	if not activated:
 		activated = true

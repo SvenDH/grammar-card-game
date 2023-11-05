@@ -1,5 +1,4 @@
 import typer
-import asyncio
 
 from parse import (
     Parser,
@@ -47,8 +46,11 @@ print(parser.parse(output))
 
 def main():
     for card in cards:
-        print(card.to_godot())
-
+        print(card.name)
+        try:
+            card.to_godot(f"project/cards/{card.name}.tres")
+        except Exception as e:
+            print(e)
 
 if __name__ == "__main__":
     typer.run(main)

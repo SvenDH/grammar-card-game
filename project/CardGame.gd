@@ -17,13 +17,16 @@ var turn: int = 0
 var phase: PhaseEnum = PhaseEnum.activation
 var stack: Array = []
 
+func _ready():
+	start()
+
 func add_player(player: CardPlayer):
 	player.game = self
 	players.append(player)
 	return player
 
 func start():
-	# TODO: add muligan callbacks
+	# TODO: add muligan
 	for player in players:
 		for _i in range(START_CARDS):
 			player.draw()
@@ -52,7 +55,7 @@ func do_turn(player: CardPlayer):
 
 	var done = false
 	while not done:
-		done = await player.choose_action()
+		done = player.choose_action()
 	
 	# TODO: combat
 	
@@ -73,7 +76,7 @@ func send(ctx: Dictionary, effects: Array):
 			player.ctx = ctx
 			var done = false
 			while not done:
-				done = await player.choose_action()
+				done = player.choose_action()
 		stack.pop_back().resolve(ctx)
 	
 	ctx["reaction"] = false
@@ -87,8 +90,8 @@ func pick(ctx: Dictionary, obj, place = null) -> Array:
 			var found = query(ctx, obj, place)
 			if len(found) == 0:
 				return ctx["targets"]
-			var i = player.callback.choose("target", found)
-			ctx["targets"].append(found[i])
+			var choice = player.choose("target", found)
+			ctx["targets"].append(choice)
 		return ctx["targets"]
 	
 	return query(ctx, obj, place)

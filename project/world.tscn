@@ -1,30 +1,39 @@
-[gd_scene load_steps=6 format=3 uid="uid://oer7ytplr5eq"]
+[gd_scene load_steps=12 format=3 uid="uid://oer7ytplr5eq"]
 
 [ext_resource type="Script" path="res://CardPlayer.gd" id="1_ajvan"]
 [ext_resource type="Script" path="res://CardGame.gd" id="1_cwwvb"]
+[ext_resource type="Resource" uid="uid://b8fobtjmvxrxk" path="res://cards/Advisor.tres" id="3_jpmf3"]
 [ext_resource type="Script" path="res://CardPile.gd" id="3_mh53e"]
+[ext_resource type="Resource" uid="uid://ne1e7xnwhb6p" path="res://cards/Dark Council.tres" id="4_gqcai"]
 [ext_resource type="Script" path="res://CardFields.gd" id="4_mby53"]
+[ext_resource type="Resource" uid="uid://bln2uwe3k48u" path="res://cards/Knight.tres" id="5_1f0b1"]
 [ext_resource type="PackedScene" uid="uid://dojm7b3or6gun" path="res://Field.tscn" id="5_so1uy"]
+[ext_resource type="Resource" uid="uid://ba0ukq3sehjbo" path="res://cards/Soldier.tres" id="6_ko3fr"]
+[ext_resource type="Resource" uid="uid://gm7uelvkuocv" path="res://cards/Super Soldier.tres" id="7_8eb20"]
+[ext_resource type="PackedScene" uid="uid://vkqobqshius3" path="res://CardInstance.tscn" id="8_hb6q6"]
 
 [node name="World" type="Node3D"]
+
+[node name="Player" type="Node3D" parent="."]
 
 [node name="CardGame" type="Node" parent="."]
 script = ExtResource("1_cwwvb")
 
-[node name="Player" type="Node3D" parent="."]
-
-[node name="CardPlayer" type="Node" parent="Player"]
+[node name="CardPlayer" type="Node" parent="CardGame"]
 script = ExtResource("1_ajvan")
+player_name = "player1"
+cards = Array[Resource("res://Card.gd")]([ExtResource("3_jpmf3"), ExtResource("4_gqcai"), ExtResource("5_1f0b1"), ExtResource("6_ko3fr"), ExtResource("7_8eb20")])
+card_scene = ExtResource("8_hb6q6")
 
-[node name="Deck" type="Node" parent="Player/CardPlayer"]
+[node name="Deck" type="Node" parent="CardGame/CardPlayer"]
 script = ExtResource("3_mh53e")
 
-[node name="Discard" type="Node" parent="Player/CardPlayer"]
+[node name="Discard" type="Node" parent="CardGame/CardPlayer"]
 script = ExtResource("3_mh53e")
 
-[node name="Hand" type="Node" parent="Player/CardPlayer"]
+[node name="Hand" type="HBoxContainer" parent="CardGame/CardPlayer"]
 script = ExtResource("3_mh53e")
 
-[node name="Board" type="Node" parent="Player/CardPlayer"]
+[node name="Board" type="Node" parent="CardGame/CardPlayer"]
 script = ExtResource("4_mby53")
 field_scene = ExtResource("5_so1uy")

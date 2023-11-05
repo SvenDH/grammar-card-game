@@ -8,7 +8,7 @@ class_name CardFields
 
 func _ready():
 	for _i in num_fields:
-		var field = field_scene.instance()
+		var field = field_scene.instantiate()
 		add_child(field)
 
 func place(card: CardInstance, index: int):

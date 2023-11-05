@@ -13,6 +13,6 @@ func activate(ctx: Dictionary):
 func resolve(player: CardPlayer, zones: ZoneMatch, query_match = null):
 	var choices = player.game.query(player.ctx, query_match, zones)
 	# TODO: search own fields if not otherwise specified
-	var card = player.callback.choose("Choose a card:", choices)
+	var card = player.choose("search", choices)
 	player.remove(card)
 	player.place(card, ZoneMatch.ZoneEnum.hand)

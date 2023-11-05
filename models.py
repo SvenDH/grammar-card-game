@@ -2,7 +2,7 @@ from enum import Enum
 from typing import Literal, Any
 from pydantic import BaseModel
 
-from godot_parser import GDResource
+from godot_parser import GDResource, GDSection, GDSectionHeader, GDExtResourceSection, GDSubResourceSection, ExtResource, SubResource
 
 
 NumberOrX = int | Literal["X"] | Literal["-X"] | Literal["that"]
@@ -220,7 +220,8 @@ class Prefix(BaseModel):
     non: bool = False
 
     def to_godot(self, resource: GDResource):
-        ability = resource.add_ext_resource("res://ir/Prefix.gd", "Script")
+        ability = resource.add_sub_resource("Resource")
+        ability["script"] = resource.add_ext_resource("res://ir/Prefix.gd", "Script").reference
         if isinstance(self.prefix, PrefixEnum):
             ability["prefix"] = PrefixEnum.to_int(self.prefix)
         elif isinstance(self.prefix, TypeEnum):
@@ -230,7 +231,7 @@ class Prefix(BaseModel):
         elif isinstance(self.prefix, Stats):
             ability["stats"] = [self.prefix.power, self.prefix.health]
         ability["non"] = self.non
-        return ability
+        return ability.reference
 
 
 class Suffix(BaseModel):
@@ -238,13 +239,14 @@ class Suffix(BaseModel):
     subj: Any = None
 
     def to_godot(self, resource: GDResource):
-        ability = resource.add_ext_resource("res://ir/Suffix.gd", "Script")
+        ability = resource.add_sub_resource("Resource")
+        ability["script"] = resource.add_ext_resource("res://ir/Suffix.gd", "Script").reference
         ability["suffix"] = SuffixEnum.to_int(self.suffix)
         if isinstance(self.suffix, ZoneMatch):
             ability["zones"] = [z.to_godot(resource) for z in self.subj]
         elif self.suffix is not None:
             ability["subj"] = self.suffix.to_godot(resource)
-        return ability
+        return ability.reference
 
 
 class BaseObject(BaseModel):
@@ -257,10 +259,12 @@ class ObjectMatch(BaseModel):
     each: bool = False
 
     def to_godot(self, resource: GDResource):
-        ability = resource.add_ext_resource("res://ir/Object.gd", "Script")
+        
+        ability = resource.add_sub_resource("Resource")
+        ability["script"] = resource.add_ext_resource("res://ir/Object.gd", "Script").reference
         ability["objects"] = [o.to_godot(resource) for o in self.objects]
         ability["each"] = self.each
-        return ability
+        return ability.reference
 
 
 class PlayerMatch(BaseModel):
@@ -270,15 +274,16 @@ class PlayerMatch(BaseModel):
     who_cant: bool = False
 
     def to_godot(self, resource: GDResource):
-        ability = resource.add_ext_resource("res://ir/Player.gd", "Script")
+        ability = resource.add_sub_resource("Resource")
+        ability["script"] = resource.add_ext_resource("res://ir/Player.gd", "Script").reference
         ability["player"] = PlayerEnum.to_int(self.player)
         if isinstance(self.ref, ObjectMatch):
             ability["object"] = self.ref.to_godot(resource)
-        else:
+        elif self.ref is not None:
             ability["ref"] = Reference.to_int(self.ref)
         ability["extra"] = encode_numberorx(self.extra)
         ability["who_cant"] = self.who_cant
-        return ability
+        return ability.reference
 
 class ZoneMatch(BaseModel):
     zones: list[ZoneEnum] = []
@@ -288,12 +293,13 @@ class ZoneMatch(BaseModel):
     random: bool = False
 
     def to_godot(self, resource: GDResource):
-        ability = resource.add_ext_resource("res://ir/Zone.gd", "Script")
+        ability = resource.add_sub_resource("Resource")
+        ability["script"] = resource.add_ext_resource("res://ir/Zone.gd", "Script").reference
         ability["zones"] = [ZoneEnum.to_int(z) for z in self.zones]
         ability["ref"] = self.ref.to_grammar(resource) if self.ref else None
         ability["place"] = PlaceEnum.to_int(self.place)
         ability["random"] = self.random
-        return ability
+        return ability.reference
 
 
 class Effect(BaseEffect):
@@ -301,10 +307,11 @@ class Effect(BaseEffect):
     op: OperatorEnum = OperatorEnum.AND
 
     def to_godot(self, resource: GDResource):
-        ability = resource.add_ext_resource("res://Effect.gd", "Script")
+        ability = resource.add_sub_resource("Resource")
+        ability["script"] = resource.add_ext_resource("res://Effect.gd", "Script").reference
         ability["effects"] = [e.to_godot(resource) for e in self.effects]
         ability["optional"] = self.op == OperatorEnum.OPTIONAL
-        return ability
+        return ability.reference
 
 
 class ActionCost(BaseModel):
@@ -316,10 +323,11 @@ class Condition(BaseModel):
     until: bool = False
 
     def to_godot(self, resource: GDResource):
-        ability = resource.add_ext_resource("res://ir/Condition.gd", "Script")
+        ability = resource.add_sub_resource("Resource")
+        ability["script"] = resource.add_ext_resource("res://ir/Condition.gd", "Script").reference
         ability["condition"] = ConditonEnum.to_int(self.condition)
         ability["until"] = self.until
-        return ability
+        return ability.reference
 
 
 class PlayedCondition(Condition):
@@ -363,9 +371,10 @@ class TriggeredAbility(BaseModel):
     condition: Condition | None = None
 
     def to_godot(self, resource: GDResource):
-        ability = resource.add_ext_resource("res://TriggeredAbility.gd", "Script")
+        ability = resource.add_sub_resource("Resource")
+        ability["script"] = resource.add_ext_resource("res://TriggeredAbility.gd", "Script").reference
 
-        return ability
+        return ability.reference
 
 
 class ActivatedAbility(BaseModel):
@@ -373,10 +382,11 @@ class ActivatedAbility(BaseModel):
     effect: Effect
 
     def to_godot(self, resource: GDResource):
-        ability = resource.add_ext_resource("res://ActivatedAbility.gd", "Script")
+        ability = resource.add_sub_resource("Resource")
+        ability["script"] = resource.add_ext_resource("res://ActivatedAbility.gd", "Script").reference
         ability["costs"] = [c.to_godot(resource) if isinstance(c, ActionCost) else c for c in self.costs]
         ability["effect"] = self.effect.to_godot(resource)
-        return ability
+        return ability.reference
 
 AquiredAbilities = KeywordEnum | TriggeredAbility | ActivatedAbility | ActionCost | Effect | Literal["this"]
 
@@ -387,7 +397,7 @@ def ability_to_godot(resource: GDResource, ability: AquiredAbilities | None = No
     if isinstance(ability, BaseModel):
         return ability.to_godot(resource)
     # TODO: keyword to resource
-    return str(ability)
+    return ability
 
 
 class CardObject(BaseObject):
@@ -401,7 +411,8 @@ class CardObject(BaseObject):
     copies: bool = False
 
     def to_godot(self, resource: GDResource):
-        ability = resource.add_ext_resource("res://ir/Card.gd", "Script")
+        ability = resource.add_sub_resource("Resource")
+        ability["script"] = resource.add_ext_resource("res://ir/Card.gd", "Script").reference
         ability["ref"] = Reference.to_int(self.ref)
         ability["type"] = TypeEnum.to_int(self.type)
         ability["extra"] = encode_numberorx(self.extra)
@@ -410,7 +421,7 @@ class CardObject(BaseObject):
         ability["withwhat"] = ability_to_godot(resource, self.withwhat)
         ability["without"] = KeywordEnum.to_int(self.without)
         ability["copies"] = self.copies
-        return ability
+        return ability.reference
 
 
 class AbilityObject(BaseObject):
@@ -427,9 +438,23 @@ class SubjEffect(BaseEffect):
 class PlayerEffect(SubjEffect):
     subj: PlayerMatch = PlayerMatch(player=PlayerEnum.you)
     
+    def to_godot(self, resource: GDResource):
+        ability = resource.add_sub_resource("Resource")
+        ability["script"] = resource.add_ext_resource("res://SubjectEffect.gd", "Script").reference
+        ability["effects"] = [o.to_godot(resource) for o in self.effects]
+        ability["subject"] = self.subj.to_godot(resource)
+        return ability.reference
+
 
 class ObjectEffect(SubjEffect):
     subj: ObjectMatch = ObjectMatch(objects=[BaseObject(object=Reference.it)])
+
+    def to_godot(self, resource: GDResource):
+        ability = resource.add_sub_resource("Resource")
+        ability["script"] = resource.add_ext_resource("res://SubjectEffect.gd", "Script").reference
+        ability["effects"] = [o.to_godot(resource) for o in self.effects]
+        ability["subject"] = self.subj.to_godot(resource)
+        return ability.reference
 
 
 class CreateTokenEffect(BaseEffect):
@@ -438,29 +463,32 @@ class CreateTokenEffect(BaseEffect):
     abilities: list[AquiredAbilities] = []
 
     def to_godot(self, resource: GDResource):
-        ability = resource.add_ext_resource("res://effects/TokenEffect.gd", "Script")
+        ability = resource.add_sub_resource("Resource")
+        ability["script"] = resource.add_ext_resource("res://effects/TokenEffect.gd", "Script").reference
         ability["number"] = encode_numberorx(self.number)
         ability["stats"] = [self.stats.power, self.stats.health]
-        ability["abilities"] = [ability_to_godot(a) for a in self.abilities]
-        return ability
+        ability["abilities"] = [ability_to_godot(resource, a) for a in self.abilities]
+        return ability.reference
 
 
 class DestroyEffect(BaseEffect):
     objects: ObjectMatch
 
     def to_godot(self, resource: GDResource):
-        ability = resource.add_ext_resource("res://effects/DestroyEffect.gd", "Script")
+        ability = resource.add_sub_resource("Resource")
+        ability["script"] = resource.add_ext_resource("res://effects/DestroyEffect.gd", "Script").reference
         ability["objects"] = self.objects.to_godot(resource)
-        return ability
+        return ability.reference
 
 
 class CopyEffect(BaseEffect):
     objects: ObjectMatch
 
     def to_godot(self, resource: GDResource):
-        ability = resource.add_ext_resource("res://effects/CopyEffect.gd", "Script")
+        ability = resource.add_sub_resource("Resource")
+        ability["script"] = resource.add_ext_resource("res://effects/CopyEffect.gd", "Script").reference
         ability["objects"] = self.objects.to_godot(resource)
-        return ability
+        return ability.reference
     
 
 class PlayEffect(BaseEffect):
@@ -468,19 +496,21 @@ class PlayEffect(BaseEffect):
     free: bool = False
 
     def to_godot(self, resource: GDResource):
-        ability = resource.add_ext_resource("res://effects/PlayEffect.gd", "Script")
+        ability = resource.add_sub_resource("Resource")
+        ability["script"] = resource.add_ext_resource("res://effects/PlayEffect.gd", "Script").reference
         ability["objects"] = self.objects.to_godot(resource)
         ability["free"] = self.free
-        return ability
+        return ability.reference
 
 
 class DrawEffect(BaseEffect):
     number: NumberOrX = 1
 
     def to_godot(self, resource: GDResource):
-        ability = resource.add_ext_resource("res://effects/DrawEffect.gd", "Script")
+        ability = resource.add_sub_resource("Resource")
+        ability["script"] = resource.add_ext_resource("res://effects/DrawEffect.gd", "Script").reference
         ability["number"] = encode_numberorx(self.number)
-        return ability
+        return ability.reference
 
 
 class DiscardEffect(BaseEffect):
@@ -488,10 +518,11 @@ class DiscardEffect(BaseEffect):
     objects: ObjectMatch
 
     def to_godot(self, resource: GDResource):
-        ability = resource.add_ext_resource("res://effects/DiscardEffect.gd", "Script")
+        ability = resource.add_sub_resource("Resource")
+        ability["script"] = resource.add_ext_resource("res://effects/DiscardEffect.gd", "Script").reference
         ability["number"] = encode_numberorx(self.number)
         ability["objects"] = self.objects.to_godot(resource)
-        return ability
+        return ability.reference
 
 
 class SearchEffect(BaseEffect):
@@ -500,11 +531,12 @@ class SearchEffect(BaseEffect):
     objects: ObjectMatch | None = None
 
     def to_godot(self, resource: GDResource):
-        ability = resource.add_ext_resource("res://effects/SearchEffect.gd", "Script")
+        ability = resource.add_sub_resource("Resource")
+        ability["script"] = resource.add_ext_resource("res://effects/SearchEffect.gd", "Script").reference
         ability["number"] = encode_numberorx(self.number)
         ability["zones"] = self.zones.to_godot(resource)
         ability["objects"] = self.objects.to_godot(resource) if self.objects else None
-        return ability
+        return ability.reference
 
 
 class ShuffleEffect(BaseEffect):
@@ -512,29 +544,32 @@ class ShuffleEffect(BaseEffect):
     zones: ZoneMatch
 
     def to_godot(self, resource: GDResource):
-        ability = resource.add_ext_resource("res://effects/ShuffleEffect.gd", "Script")
+        ability = resource.add_sub_resource("Resource")
+        ability["script"] = resource.add_ext_resource("res://effects/ShuffleEffect.gd", "Script").reference
         if self.what:
             ability["what"] = self.what.to_godot(resource)
         ability["zones"] = self.zones.to_godot(resource)
-        return ability
+        return ability.reference
 
 
 class CounterEffect(BaseEffect):
     objects: ObjectMatch
 
     def to_godot(self, resource: GDResource):
-        ability = resource.add_ext_resource("res://effects/CounterEffect.gd", "Script")
+        ability = resource.add_sub_resource("Resource")
+        ability["script"] = resource.add_ext_resource("res://effects/CounterEffect.gd", "Script").reference
         ability["objects"] = self.objects.to_godot(resource)
-        return ability
+        return ability.reference
 
 
 class ExtraTurnEffect(BaseEffect):
     number: NumberOrX = 1
 
     def to_godot(self, resource: GDResource):
-        ability = resource.add_ext_resource("res://effects/ExtraTurnEffect.gd", "Script")
+        ability = resource.add_sub_resource("Resource")
+        ability["script"] = resource.add_ext_resource("res://effects/ExtraTurnEffect.gd", "Script").reference
         ability["number"] = encode_numberorx(self.number)
-        return ability
+        return ability.reference
 
 
 class LookEffect(BaseEffect):
@@ -542,10 +577,11 @@ class LookEffect(BaseEffect):
     zones: ZoneMatch
 
     def to_godot(self, resource: GDResource):
-        ability = resource.add_ext_resource("res://effects/LookEffect.gd", "Script")
+        ability = resource.add_sub_resource("Resource")
+        ability["script"] = resource.add_ext_resource("res://effects/LookEffect.gd", "Script").reference
         ability["number"] = encode_numberorx(self.number)
         ability["zones"] = self.zones.to_godot(resource)
-        return ability
+        return ability.reference
 
 
 class PutEffect(BaseEffect):
@@ -556,13 +592,14 @@ class PutEffect(BaseEffect):
     second_into: ZoneMatch | None = None
 
     def to_godot(self, resource: GDResource):
-        ability = resource.add_ext_resource("res://effects/PutEffect.gd", "Script")
+        ability = resource.add_sub_resource("Resource")
+        ability["script"] = resource.add_ext_resource("res://effects/PutEffect.gd", "Script").reference
         ability["objects"] = self.objects.to_godot(resource)
         ability["into"] = self.into.to_godot(resource)
         ability["deactivated"] = self.deactivated
         ability["second_objects"] = self.second_objects.to_godot(resource) if self.second_objects else None
         ability["second_into"] = self.second_into.to_godot(resource) if self.second_into else None
-        return ability
+        return ability.reference
 
 
 class GainControlEffect(BaseEffect):
@@ -570,10 +607,11 @@ class GainControlEffect(BaseEffect):
     until: Condition | None = None
 
     def to_godot(self, resource: GDResource):
-        ability = resource.add_ext_resource("res://effects/ControlEffect.gd", "Script")
+        ability = resource.add_sub_resource("Resource")
+        ability["script"] = resource.add_ext_resource("res://effects/ControlEffect.gd", "Script").reference
         ability["objects"] = self.objects.to_godot(resource)
         ability["until"] = self.until.to_godot(resource) if self.until else None
-        return ability
+        return ability.reference
 
 
 class SwitchStatsEffect(BaseEffect):
@@ -581,10 +619,11 @@ class SwitchStatsEffect(BaseEffect):
     until: Condition | None = None
 
     def to_godot(self, resource: GDResource):
-        ability = resource.add_ext_resource("res://effects/SwitchEffect.gd", "Script")
+        ability = resource.add_sub_resource("Resource")
+        ability["script"] = resource.add_ext_resource("res://effects/SwitchEffect.gd", "Script").reference
         ability["objects"] = self.objects.to_godot(resource)
         ability["until"] = self.until.to_godot(resource) if self.until else None
-        return ability
+        return ability.reference
 
 
 class AddEssenceEffect(BaseEffect):
@@ -592,10 +631,11 @@ class AddEssenceEffect(BaseEffect):
     amount: NumberOrX = 1
 
     def to_godot(self, resource: GDResource):
-        ability = resource.add_ext_resource("res://effects/EssenceEffect.gd", "Script")
+        ability = resource.add_sub_resource("Resource")
+        ability["script"] = resource.add_ext_resource("res://effects/EssenceEffect.gd", "Script").reference
         ability["colors"] = self.colors
         ability["amount"] = self.amount
-        return ability
+        return ability.reference
 
 
 class ActivationEffect(BaseEffect):
@@ -603,46 +643,51 @@ class ActivationEffect(BaseEffect):
     deactivate: bool = True
 
     def to_godot(self, resource: GDResource):
-        ability = resource.add_ext_resource("res://effects/ActivationEffect.gd", "Script")
+        ability = resource.add_sub_resource("Resource")
+        ability["script"] = resource.add_ext_resource("res://effects/ActivationEffect.gd", "Script").reference
         ability["objects"] = self.objects.to_godot(resource)
         ability["deactivate"] = self.deactivate
-        return ability
+        return ability.reference
 
 
 class SacrificeEffect(BaseEffect):
     objects: ObjectMatch
 
     def to_godot(self, resource: GDResource):
-        ability = resource.add_ext_resource("res://effects/SacrificeEffect.gd", "Script")
+        ability = resource.add_sub_resource("Resource")
+        ability["script"] = resource.add_ext_resource("res://effects/SacrificeEffect.gd", "Script").reference
         ability["objects"] = self.objects.to_godot(resource)
-        return ability
+        return ability.reference
 
 
 class PayessenceEffect(BaseEffect):
     costs: list[ColorEnum | NumberOrX]
 
     def to_godot(self, resource: GDResource):
-        ability = resource.add_ext_resource("res://effects/PayessenceEffect.gd", "Script")
+        ability = resource.add_sub_resource("Resource")
+        ability["script"] = resource.add_ext_resource("res://effects/PayessenceEffect.gd", "Script").reference
         ability["costs"] = [c if isinstance(c, ColorEnum) else encode_numberorx(c) for c in self.costs]
-        return ability
+        return ability.reference
 
 
 class PaylifeEffect(BaseEffect):
     costs: NumberOrX
 
     def to_godot(self, resource: GDResource):
-        ability = resource.add_ext_resource("res://effects/PaylifeEffect.gd", "Script")
+        ability = resource.add_sub_resource("Resource")
+        ability["script"] = resource.add_ext_resource("res://effects/PaylifeEffect.gd", "Script").reference
         ability["costs"] = encode_numberorx(self.costs)
-        return ability
+        return ability.reference
 
 
 class RevealEffect(BaseEffect):
     player: PlayerMatch
 
     def to_godot(self, resource: GDResource):
-        ability = resource.add_ext_resource("res://effects/RevealEffect.gd", "Script")
+        ability = resource.add_sub_resource("Resource")
+        ability["script"] = resource.add_ext_resource("res://effects/RevealEffect.gd", "Script").reference
         ability["player"] = self.player.to_godot(resource)
-        return ability
+        return ability.reference
 
 
 class MoveEffect(BaseEffect):
@@ -650,10 +695,26 @@ class MoveEffect(BaseEffect):
     tozone: ZoneMatch
     fromzone: ZoneMatch | None = None
 
+    def to_godot(self, resource: GDResource):
+        ability = resource.add_sub_resource("Resource")
+        ability["script"] = resource.add_ext_resource("res://effects/MoveEffect.gd", "Script").reference
+        ability["objects"] = self.objects.to_godot(resource)
+        ability["tozone"] = self.tozone.to_godot(resource)
+        ability["fromzone"] = self.fromzone.to_godot(resource) if self.fromzone else None
+        return ability.reference
+
 
 class ModAbility(BaseEffect):
     stats: Stats = Stats()
     foreach: ObjectMatch | None = None
+
+    def to_godot(self, resource: GDResource):
+        ability = resource.add_sub_resource("Resource")
+        ability["script"] = resource.add_ext_resource("res://effects/MoveEffect.gd", "Script").reference
+        ability["objects"] = self.objects.to_godot(resource)
+        ability["tozone"] = self.tozone.to_godot(resource)
+        ability["fromzone"] = self.fromzone.to_godot(resource) if self.fromzone else None
+        return ability.reference
 
 
 class GetAbility(BaseEffect):
@@ -696,6 +757,68 @@ class DealsAbility(BaseEffect):
     spread: bool = False
 
 
+class Godot4Resource(GDResource):
+    def add_ext_resource(self, path: str, type: str) -> GDExtResourceSection:
+        next_id = 1 + max([s.id for s in self.get_ext_resources()] + [s.id for s in self.get_sub_resources()] + [0])
+        section = GDExtResourceSection(path, type, next_id)
+        self.add_section(section)
+        return section
+
+    def add_sub_resource(self, type: str, **kwargs) -> GDSubResourceSection:
+        next_id = 1 + max([s.id for s in self.get_ext_resources()] + [s.id for s in self.get_sub_resources()] + [0])
+        section = GDSubResourceSection(type, next_id, **kwargs)
+        self.add_section(section)
+        return section
+    
+    def renumber_resource_ids(self):
+        """Refactor all resource IDs to be sequential with no gaps"""
+        self._renumber_resource_ids(self.get_ext_resources() + self.get_sub_resources(), (ExtResource, SubResource))
+
+    def get_subresource_refs(self, section: GDSubResourceSection):
+        refs = []
+        for val in section.properties.values():
+            if isinstance(val, SubResource):
+                refs.append(val.id)
+            elif isinstance(val, list):
+                for i in val:
+                    if isinstance(i, SubResource):
+                        refs.append(i.id)
+            elif isinstance(val, dict):
+                for i in val.keys():
+                    if isinstance(i, SubResource):
+                        refs.append(i.id)
+                for i in val.values():
+                    if isinstance(i, SubResource):
+                        refs.append(i.id)
+        return refs
+
+    def sort_subsections(self):
+        subresources = self.get_sub_resources()
+        graph = {}
+        visited = {}
+        idmap = {}
+        for sub in subresources:
+            self.remove_section(sub)
+            graph[sub.id] = self.get_subresource_refs(sub)
+            idmap[sub.id] = sub
+            visited[sub.id] = False
+        
+        stack = []
+        for i in idmap.keys():
+            if visited[i] == False:
+                self.topological_sort(graph, i, visited, stack)
+        for i in reversed(stack):
+            self.add_section(idmap[i])
+    
+    def topological_sort(self, graph, v, visited, stack):
+        visited[v] = True
+        for i in graph[v]:
+            if visited[i] == False:
+                self.topological_sort(graph, i, visited, stack)
+
+        stack.insert(0, v)
+
+
 class Card(BaseModel):
     name: str = ''
     cost: list[ColorEnum | NumberOrX] = [0]
@@ -714,13 +837,27 @@ class Card(BaseModel):
         a = "\n".join(self.rule_texts)
         return f"{self.name} {{{costs}}}\n{t}\n{a}\n{self.power}/{self.health}"
 
-    def to_godot(self):
-        resource = GDResource()
-        card = resource.add_ext_resource("res://Card.gd", "Script")
+    def to_godot(self, path):
+        resource = Godot4Resource()
+        head = resource.get_sections()[0]
+        # For godot 4 add type and script to resource
+        head.header["type"] = "Resource"
+        head.header["script_class"] = "Card"
+        
+        card = GDSection(GDSectionHeader("resource"))
+        card["script"] = resource.add_ext_resource("res://Card.gd", "Script").reference
         card["cost"] = self.cost
         card["types"] = [TypeEnum.to_int(t) for t in self.types]
         card["subtypes"] = self.subtypes
         card["abilities"] = [ability_to_godot(resource, a) for a in self.abilities]
+        for text, ref in zip(self.rule_texts, card["abilities"]):
+            if isinstance(ref, SubResource):
+                resource.find_section(id=ref.id)["text"] = text.capitalize()
+
         card["power"] = encode_numberorx(self.power)
         card["health"] = encode_numberorx(self.health)
+        resource.add_section(card)
+        
+        resource.sort_subsections()
+        resource.write(path)
         return resource

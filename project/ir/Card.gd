@@ -66,7 +66,7 @@ func match_query(ctx: Dictionary, other) -> bool:
 		if without not in other.abilities:
 			return false
 	
-	if without and without in other.card.abilities:
+	if without and without in other.card.keyword_abilities:
 		return false
 	
 	return true

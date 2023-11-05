@@ -8,4 +8,4 @@ func activate(ctx: Dictionary):
 
 func resolve(player: CardPlayer, place: ZoneMatch, n: int):
 	var cards = player.game.query(player.ctx, null, place, n)
-	player.callback.show("reveal", cards)
+	player.show("reveal", cards)

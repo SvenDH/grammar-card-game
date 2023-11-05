@@ -5,24 +5,31 @@ class_name CardPlayer
 @export var life: int = 20
 @export var cards: Array[Card] = []
 @export var side: Array[Card] = []
+@export var card_scene: PackedScene
 
 var game = null
-var callback
 var turnsafterthis: int = 0
 var essence := []
 var ctx := {}
+var choices := ["play", "activate", "pass"]
 
 @onready var board: CardFields = $Board
 @onready var deck: CardPile = $Deck
-@onready var pile: CardPile = $Pile
+@onready var pile: CardPile = $Discard
 @onready var hand: CardPile = $Hand
 
 func _ready():
 	for card in cards:
-		var inst = CardInstance.new()
+		var inst = card_scene.instantiate()
 		inst.player_owner = self
 		inst.card = card
 		deck.add(inst)
+	get_parent().add_player(self)
+
+func choose(command: String, choices: Array):
+	print(command)
+	
+	return choices[len(choices)-1]
 
 func can_cast():
 	# TODO: get castable cards not in hand
@@ -40,8 +47,7 @@ func can_activate():
 
 func choose_action():
 	# TODO: get possible actions
-	var idx = await callback.choose("action", callback.choices)
-	match callback.choices[idx]:
+	match choose("action", choices):
 		"play":
 			cast()
 		"activate":
@@ -60,7 +66,7 @@ func end():
 	essence = []
 
 func cast():
-	var card = await callback.choose("hand", hand.cards())
+	var card = choose("hand", hand.cards())
 	hand.remove(card)
 	card.cast(ctx)
 	on_cast(card)
@@ -74,8 +80,12 @@ func draw(side_: bool = false):
 		card.side = true
 	else:
 		card = deck.pop()
-	place(card, ZoneMatch.ZoneEnum.hand)
-	on_draw(card)
+	if card:
+		place(card, ZoneMatch.ZoneEnum.hand)
+		on_draw(card)
+	else:
+		# TODO: Lose game
+		pass
 
 func activate():
 	# TODO: get payable and playable abilities
@@ -85,7 +95,7 @@ func activate():
 	for card in board.cards():
 		if card.activated_abilities():
 			card_options.append(card)
-	var index = await callback.choose("Activate ability of:", card_options)
+	var index = choose("activation", card_options)
 	var card: CardInstance = board.get_card(index)
 	
 	
@@ -93,7 +103,7 @@ func activate():
 	for ability in card.activated_abilities:
 		if ability.can_activate():
 			abilities.append(ability)
-	var idx = await callback.choose("Choose ability:", abilities)
+	var idx = choose("ability", abilities)
 	card.activate_ability(ctx, idx)
 
 func shuffle(zone: ZoneMatch.ZoneEnum = ZoneMatch.ZoneEnum.deck):

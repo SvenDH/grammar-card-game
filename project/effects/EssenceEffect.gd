@@ -6,7 +6,7 @@ extends BaseEffect
 func activate(ctx: Dictionary):
 	var player = ctx["subject"]
 	if len(colors) > 1:
-		return [[player.callback.choose("essence", colors), amount]]
+		return [[player.choose("essence", colors), amount]]
 	elif len(colors) == 1:
 		return [[colors[0], amount]]
 	return [["U", amount]]
