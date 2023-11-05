@@ -3,10 +3,12 @@ class_name CardInstance
 
 const card_text_scene := preload("res://CardText.tscn")
 
-var player_owner
+signal on_click
+
 var card: Card
 var power := 1
 var health := 1
+var player_owner
 var controller
 var status: Array[CardStatus] = []
 var activated: bool = true
@@ -23,18 +25,24 @@ var activated_abilities: get = _get_activated_abilities
 var keyword_abilities: get = _get_keyword_abilities
 var color: get = _get_color
 
-@onready var picture = $Picture
-@onready var ability_text = $Abilities
+@onready var picture = $Control/Picture
+@onready var ability_text = $Control/Scroll/Abilities
 
 func _ready():
 	if card:
+		var text = null
 		for ability in card.abilities:
-			var text: RichTextLabel = card_text_scene.instantiate()
 			if ability is String:
+				if text == null:
+					text = card_text_scene.instantiate()
+				else:
+					text.append_text(", ")
 				text.append_text(ability)
 			else:
+				text = card_text_scene.instantiate()
 				text.append_text(ability.text)
-			ability_text.add_child(text)
+			if not text.get_parent():
+				ability_text.add_child(text)
 
 func _get_types() -> Array[Card.TypeEnum]:
 	return card.types  # TODO: add modified types
@@ -146,3 +154,8 @@ func on_activate():
 
 func on_deactivate():
 	pass
+
+func _on_gui_input(event):
+	if event is InputEventMouseButton:
+		if event.pressed:
+			on_click.emit()

@@ -2,26 +2,44 @@
 
 [ext_resource type="Script" path="res://CardInstance.gd" id="1_oy88a"]
 
-[node name="CardInstance" type="Panel"]
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_right = -1062.0
-offset_bottom = -541.0
+[node name="CardInstance" type="PanelContainer"]
+custom_minimum_size = Vector2(150, 164)
+anchors_preset = -1
+anchor_right = 0.13
+anchor_bottom = 0.253
+offset_right = 0.23999
+offset_bottom = 0.0559845
 grow_horizontal = 2
 grow_vertical = 2
+mouse_default_cursor_shape = 2
 script = ExtResource("1_oy88a")
 
-[node name="Picture" type="TextureRect" parent="."]
-layout_mode = 0
-offset_left = 4.0
-offset_top = 4.0
-offset_right = 87.0
-offset_bottom = 56.0
+[node name="Control" type="Control" parent="."]
+layout_mode = 2
+mouse_filter = 1
 
-[node name="Abilities" type="VBoxContainer" parent="."]
-layout_mode = 0
-offset_left = 4.0
-offset_top = 56.0
-offset_right = 87.0
-offset_bottom = 104.0
+[node name="Picture" type="TextureRect" parent="Control"]
+layout_mode = 2
+anchor_right = 1.0
+anchor_bottom = 0.551
+offset_left = 2.0
+offset_top = 2.0
+offset_right = -2.0
+offset_bottom = -5.364
+
+[node name="Scroll" type="ScrollContainer" parent="Control"]
+layout_mode = 2
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 2.0
+offset_top = 90.0
+offset_right = -2.0
+offset_bottom = -2.0
+grow_horizontal = 2
+grow_vertical = 2
+horizontal_scroll_mode = 3
+
+[node name="Abilities" type="VBoxContainer" parent="Control/Scroll"]
+layout_mode = 2
+
+[connection signal="gui_input" from="." to="." method="_on_gui_input"]

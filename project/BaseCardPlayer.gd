@@ -6,10 +6,6 @@ class_name CardPlayer
 @export var cards: Array[Card] = []
 @export var side: Array[Card] = []
 @export var card_scene: PackedScene
-@export var board_path: NodePath = "Board"
-@export var deck_path: NodePath = "Deck"
-@export var pile_path: NodePath = "Discard"
-@export var hand_path: NodePath = "Hand"
 
 var game = null
 var turnsafterthis: int = 0
@@ -17,10 +13,10 @@ var essence := []
 var ctx := {}
 var choices := ["play", "activate", "pass"]
 
-@onready var board: CardFields = get_node(board_path)
-@onready var deck: CardPile = get_node(deck_path)
-@onready var pile: CardPile = get_node(pile_path)
-@onready var hand: CardPile = get_node(hand_path)
+@onready var board: CardFields = $Board
+@onready var deck: CardPile = $Deck
+@onready var pile: CardPile = $Discard
+@onready var hand: CardPile = $Hand
 
 func _ready():
 	for card in cards:
@@ -32,6 +28,7 @@ func _ready():
 
 func choose(command: String, choices: Array):
 	print(command)
+	
 	return choices[len(choices)-1]
 
 func can_cast():
@@ -50,7 +47,7 @@ func can_activate():
 
 func choose_action():
 	# TODO: get possible actions
-	match await choose("action", choices):
+	match choose("action", choices):
 		"play":
 			cast()
 		"activate":
@@ -87,7 +84,7 @@ func draw(side_: bool = false):
 		place(card, ZoneMatch.ZoneEnum.hand)
 		on_draw(card)
 	else:
-		# TODO: Lose the game
+		# TODO: Lose game
 		pass
 
 func activate():

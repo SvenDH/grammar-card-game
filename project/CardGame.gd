@@ -33,7 +33,7 @@ func start():
 	
 	var player = players[randi() % players.size()]
 	while true:
-		do_turn(player)
+		await do_turn(player)
 		turn += 1
 		if player.turnsafterthis == 0:
 			var idx := players.find(player)
@@ -55,7 +55,7 @@ func do_turn(player: CardPlayer):
 
 	var done = false
 	while not done:
-		done = player.choose_action()
+		done = await player.choose_action()
 	
 	# TODO: combat
 	
@@ -76,7 +76,7 @@ func send(ctx: Dictionary, effects: Array):
 			player.ctx = ctx
 			var done = false
 			while not done:
-				done = player.choose_action()
+				done = await player.choose_action()
 		stack.pop_back().resolve(ctx)
 	
 	ctx["reaction"] = false
@@ -90,7 +90,7 @@ func pick(ctx: Dictionary, obj, place = null) -> Array:
 			var found = query(ctx, obj, place)
 			if len(found) == 0:
 				return ctx["targets"]
-			var choice = player.choose("target", found)
+			var choice = await player.choose("target", found)
 			ctx["targets"].append(choice)
 		return ctx["targets"]
 	

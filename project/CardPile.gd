@@ -1,7 +1,10 @@
 extends Node
 class_name CardPile
 
+signal on_click(card)
+
 func add(card: CardInstance):
+	card.on_click.connect(_on_click.bind(card))
 	add_child(card)
 
 func insert(card: CardInstance, index: int):
@@ -39,3 +42,7 @@ func cards():
 		if child is CardInstance:
 			cards.append(child)
 	return cards
+
+func _on_click(card: CardInstance):
+	print(card)
+	on_click.emit(card)
