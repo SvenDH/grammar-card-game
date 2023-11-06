@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://oer7ytplr5eq"]
 
 [ext_resource type="Script" path="res://CardGame.gd" id="1_cwwvb"]
-[ext_resource type="PackedScene" uid="uid://bt5d687nkg8rr" path="res://CardPlayer.tscn" id="2_3quxd"]
+[ext_resource type="PackedScene" uid="uid://fchwnecoto3j" path="res://CardPlayer.tscn" id="2_3quxd"]
 
 [node name="World" type="Node3D"]
 

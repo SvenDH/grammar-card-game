@@ -60,7 +60,7 @@ func do_turn(player: CardPlayer):
 
 	var done = false
 	while not done:
-		done = await player.choose_action()
+		done = await player.choose("action")
 	
 	# TODO: combat
 	
@@ -82,10 +82,10 @@ func send(ctx: Dictionary, effects: Array):
 			player.ctx = ctx
 			var done = false
 			while not done:
-				done = await player.choose_action()
+				done = await player.choose("action")
 		ability = stack.pop_back()
 		if ability:
-			ability.resolve(ctx)
+			await ability.resolve(ctx)
 	
 	ctx["reaction"] = false
 
@@ -93,7 +93,6 @@ func pick(ctx: Dictionary, obj, place = null) -> Array:
 	var n = obj.targets(ctx)
 	if n > 0:
 		var player: CardPlayer = ctx["controller"]
-		ctx["targets"] = []
 		for _i in n:
 			var found = query(ctx, obj, place)
 			if len(found) == 0:

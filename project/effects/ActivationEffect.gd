@@ -5,7 +5,7 @@ extends BaseEffect
 
 func activate(ctx: Dictionary):
 	var results = []
-	for d in ctx["game"].pick(ctx, objects, deactivate):
+	for d in await ctx["game"].pick(ctx, objects, deactivate):
 		results.append([d])
 	return results
 

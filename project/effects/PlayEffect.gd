@@ -6,8 +6,8 @@ extends BaseEffect
 func activate(ctx: Dictionary):
 	var player = ctx["subject"]
 	var results = []
-	for d in ctx["game"].pick(ctx, objects):
-		var index = player.pick_free_field(d)
+	for d in await ctx["game"].pick(ctx, objects):
+		var index = await player.pick_free_field(d)
 		if index == -1:
 			# TODO: No field places available, should it stop creating tokens?
 			break

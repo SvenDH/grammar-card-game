@@ -4,7 +4,7 @@ extends BaseEffect
 
 func activate(ctx: Dictionary):
 	var results = []
-	for d in ctx["game"].pick(ctx, objects, ZoneMatch.ZoneEnum.board):
+	for d in await ctx["game"].pick(ctx, objects, ZoneMatch.ZoneEnum.board):
 		results.append([d])
 	return results
 	

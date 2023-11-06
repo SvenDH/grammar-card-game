@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="Card" load_steps=16 format=3 uid="uid://gm7uelvkuocv"]
+[gd_resource type="Resource" script_class="Card" load_steps=16 format=3 uid="uid://c1gvldxoc3kfr"]
 
 [ext_resource type="Script" path="res://Card.gd" id="1"]
 [ext_resource type="Script" path="res://ActivatedAbility.gd" id="3"]
@@ -38,7 +38,7 @@ who_cant = false
 
 [sub_resource type="Resource" id="6"]
 script = ExtResource("7")
-effects = Array[Resource("res://BaseEffect.gd")]([SubResource("8")])
+effects = [SubResource("8")]
 subject = SubResource("14")
 action = ""
 

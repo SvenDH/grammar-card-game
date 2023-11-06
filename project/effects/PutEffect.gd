@@ -9,9 +9,9 @@ extends BaseEffect
 func activate(ctx: Dictionary):
 	var player = ctx["subject"]
 	var results = []
-	for d in ctx["game"].pick(ctx, objects):
+	for d in await ctx["game"].pick(ctx, objects):
 		var zone = ZoneMatch.ZoneEnum.board
-		var index = player.pick_free_field(d)
+		var index = await player.pick_free_field(d)
 		if into.place == ZoneMatch.PlaceEnum.bottom:
 			index = -index
 		# TODO: Fix zone and relative place picking

@@ -33,13 +33,11 @@ func _ready():
 		inst.card = card
 		deck.add(inst)
 
-func choose(command: String, choices: Array):
+func choose(command: String, choices := []):
+	if command == "action":
+		return true
 	# Overwrite with something smarter/ controlled by the player
 	return choices[len(choices)-1]
-
-func choose_action():
-	# Overwrite with something smarter/ controlled by the player
-	return true
 
 func pick_free_field(card: CardInstance) -> int:
 	var fields = board.free_fields(card)

@@ -38,7 +38,7 @@ func place(card: CardInstance, index: int):
 func remove(index: int):
 	var field = get_child(index)
 	if field.card:
-		field.card.hightlight(false)
+		field.card.highlight(false)
 		field.card.click.disconnect(_on_field_click.bind(field.card))
 	field.card = null
 

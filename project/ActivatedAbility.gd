@@ -5,6 +5,9 @@ class_name ActivatedAbility
 @export var effect: Effect
 
 func can_activate(ctx: Dictionary):
+	if ctx.self.location != ZoneMatch.ZoneEnum.board:
+		# TODO: check if activatable from other place
+		return false
 	# TODO: check if costs can be paid
 	return true
 
@@ -14,6 +17,6 @@ func pay_costs(ctx: Dictionary):
 	pass
 
 func activate(ctx: Dictionary):
-	pay_costs(ctx)
-	effect.activate(ctx)
+	await pay_costs(ctx)
+	await effect.activate(ctx)
 	return true

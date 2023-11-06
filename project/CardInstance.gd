@@ -137,7 +137,8 @@ func activate_ability(ctx: Dictionary, ability):
 	ctx["owner"] = player_owner
 	ctx["controller"] = player
 	ctx["ability"] = ability
-	return ability.activate(ctx)
+	ctx["targets"] = []
+	return await ability.activate(ctx)
 
 func reset():
 	power = card.power
@@ -153,6 +154,10 @@ func can_react(ctx: Dictionary):
 	return false
 
 func can_cast(ctx: Dictionary):
+	if location != ZoneMatch.ZoneEnum.hand:
+		# TODO: check castable from other locations
+		return false
+	ctx["self"] = self
 	var react = can_react(ctx)
 	if ctx["current_player"] != player_owner and not react:
 		return false
@@ -161,6 +166,7 @@ func can_cast(ctx: Dictionary):
 	return true
 
 func can_activate(ctx: Dictionary):
+	ctx["self"] = self
 	for ability in activated_abilities:
 		if ability.can_activate(ctx):
 			return true

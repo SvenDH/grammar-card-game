@@ -13,7 +13,7 @@ func activate(ctx: Dictionary):
 		card.power = stats[0]
 		card.health = stats[1]
 		card.types = [Card.TypeEnum.unit, Card.TypeEnum.token]
-		var index = player.pick_free_field(card)
+		var index = await player.pick_free_field(card)
 		if index == -1:
 			# TODO: No field places available, should it stop creeating tokens?
 			break

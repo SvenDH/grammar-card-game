@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="Card" load_steps=44 format=3 uid="uid://ne1e7xnwhb6p"]
+[gd_resource type="Resource" script_class="Card" load_steps=44 format=3 uid="uid://m51uxxct16ev"]
 
 [ext_resource type="Script" path="res://Card.gd" id="1"]
 [ext_resource type="Script" path="res://effects/TokenEffect.gd" id="9"]
@@ -29,7 +29,7 @@ who_cant = false
 
 [sub_resource type="Resource" id="6"]
 script = ExtResource("55")
-effects = Array[Resource("res://BaseEffect.gd")]([SubResource("8")])
+effects = [SubResource("8")]
 subject = SubResource("10")
 action = ""
 
@@ -74,7 +74,7 @@ who_cant = false
 
 [sub_resource type="Resource" id="16"]
 script = ExtResource("55")
-effects = Array[Resource("res://BaseEffect.gd")]([SubResource("18")])
+effects = [SubResource("18")]
 subject = SubResource("24")
 action = ""
 
@@ -104,7 +104,7 @@ who_cant = false
 
 [sub_resource type="Resource" id="30"]
 script = ExtResource("55")
-effects = Array[Resource("res://BaseEffect.gd")]([SubResource("32")])
+effects = [SubResource("32")]
 subject = SubResource("34")
 action = ""
 
@@ -138,7 +138,7 @@ who_cant = false
 
 [sub_resource type="Resource" id="38"]
 script = ExtResource("55")
-effects = Array[Resource("res://BaseEffect.gd")]([SubResource("40")])
+effects = [SubResource("40")]
 subject = SubResource("46")
 action = ""
 
@@ -151,7 +151,7 @@ who_cant = false
 
 [sub_resource type="Resource" id="36"]
 script = ExtResource("55")
-effects = Array[Resource("res://BaseEffect.gd")]([SubResource("38")])
+effects = [SubResource("38")]
 subject = SubResource("48")
 action = ""
 
@@ -195,7 +195,7 @@ who_cant = false
 
 [sub_resource type="Resource" id="54"]
 script = ExtResource("55")
-effects = Array[Resource("res://BaseEffect.gd")]([SubResource("56")])
+effects = [SubResource("56")]
 subject = SubResource("62")
 action = ""
 

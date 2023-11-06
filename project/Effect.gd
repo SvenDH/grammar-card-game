@@ -7,4 +7,4 @@ class_name Effect
 func activate(ctx: Dictionary):
 	# TODO: add optional check
 	for e in effects:
-		e.activate(ctx)
+		await e.activate(ctx)
