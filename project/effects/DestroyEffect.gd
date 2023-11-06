@@ -11,4 +11,4 @@ func activate(ctx: Dictionary):
 func resolve(player: CardPlayer, card: CardInstance):
 	player.remove(card)
 	player.place(card, ZoneMatch.ZoneEnum.pile)
-	player.on_destroy(card)
+	card.on_destroy()

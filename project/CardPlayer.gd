@@ -6,16 +6,15 @@ class_name CardPlayer
 @export var cards: Array[Card] = []
 @export var side: Array[Card] = []
 @export var card_scene: PackedScene
-@export var board_path: NodePath = "Board"
-@export var deck_path: NodePath = "Deck"
-@export var pile_path: NodePath = "Discard"
-@export var hand_path: NodePath = "Hand"
+@export var board_path: NodePath
+@export var deck_path: NodePath
+@export var pile_path: NodePath
+@export var hand_path: NodePath
 
 var game = null
 var turnsafterthis: int = 0
 var essence := []
 var ctx := {}
-var choices := ["play", "activate", "pass"]
 
 @onready var board: CardFields = get_node(board_path)
 @onready var deck: CardPile = get_node(deck_path)
@@ -23,16 +22,30 @@ var choices := ["play", "activate", "pass"]
 @onready var hand: CardPile = get_node(hand_path)
 
 func _ready():
+	board.player = self
+	deck.player = self
+	pile.player = self
+	hand.player = self
+	
 	for card in cards:
 		var inst = card_scene.instantiate()
 		inst.player_owner = self
 		inst.card = card
 		deck.add(inst)
-	get_parent().add_player(self)
 
 func choose(command: String, choices: Array):
-	print(command)
+	# Overwrite with something smarter/ controlled by the player
 	return choices[len(choices)-1]
+
+func choose_action():
+	# Overwrite with something smarter/ controlled by the player
+	return true
+
+func pick_free_field(card: CardInstance) -> int:
+	var fields = board.free_fields(card)
+	if not fields:
+		return -1
+	return await choose("field", fields)
 
 func can_cast():
 	# TODO: get castable cards not in hand
@@ -47,17 +60,6 @@ func can_activate():
 		if card != null and card.can_activate(ctx):
 			return true
 	return false
-
-func choose_action():
-	# TODO: get possible actions
-	match await choose("action", choices):
-		"play":
-			cast()
-		"activate":
-			activate()
-		"pass":
-			return true
-	return false
 	
 func start():
 	essence = []
@@ -67,12 +69,6 @@ func start():
 func end():
 	on_endturn()
 	essence = []
-
-func cast():
-	var card = choose("hand", hand.cards())
-	hand.remove(card)
-	card.cast(ctx)
-	on_cast(card)
 
 func draw(side_: bool = false):
 	var card: CardInstance
@@ -85,29 +81,10 @@ func draw(side_: bool = false):
 		card = deck.pop()
 	if card:
 		place(card, ZoneMatch.ZoneEnum.hand)
-		on_draw(card)
+		card.on_draw()
 	else:
 		# TODO: Lose the game
 		pass
-
-func activate():
-	# TODO: get payable and playable abilities
-	# TODO: include enemy abilities
-	# TODO: include abilities from other places
-	var card_options = []
-	for card in board.cards():
-		if card.activated_abilities():
-			card_options.append(card)
-	var index = choose("activation", card_options)
-	var card: CardInstance = board.get_card(index)
-	
-	
-	var abilities = []
-	for ability in card.activated_abilities:
-		if ability.can_activate():
-			abilities.append(ability)
-	var idx = choose("ability", abilities)
-	card.activate_ability(ctx, idx)
 
 func shuffle(zone: ZoneMatch.ZoneEnum = ZoneMatch.ZoneEnum.deck):
 	match zone:
@@ -140,13 +117,13 @@ func place(card: CardInstance, place: ZoneMatch.ZoneEnum, to_index = null, relat
 		card.location = ZoneMatch.ZoneEnum.hand
 		card.field_index = -1
 	elif place == ZoneMatch.ZoneEnum.board:
-		assert(to_index != null and 0 <= to_index < deck.num_fields)
+		assert(to_index != null and 0 <= to_index and to_index < board.num_fields)
 		assert(board.get_card(to_index) == null)     # TODO: should this be allowed?
 		board.place(card, to_index)
 		card.location = ZoneMatch.ZoneEnum.board
 		card.field_index = to_index
 		card.controller = self
-		on_enter(card)
+		card.on_enter()
 
 func remove(card: CardInstance):
 	card.reset()
@@ -162,9 +139,9 @@ func remove(card: CardInstance):
 	elif card.location == ZoneMatch.ZoneEnum.board:
 		assert(card in board.cards())
 		board.remove(board.index(card))
-		on_exit(card)
+		card.on_exit()
 
-func query(ctx: Dictionary, obj = null, place = null) -> Array[CardInstance]:
+func query(ctx: Dictionary, obj = null, place = null) -> Array:
 	var found = []
 	if _match_field(ctx, ZoneMatch.ZoneEnum.board, place):
 		for card in board.cards():
@@ -199,25 +176,7 @@ func _match_field(ctx: Dictionary, place: ZoneMatch.ZoneEnum, match_query) -> bo
 func on_startturn():
 	pass
 
-func on_enter(card: CardInstance):
-	pass
-
-func on_exit(card: CardInstance):
-	pass
-
-func on_draw(card: CardInstance):
-	pass
-
-func on_discard(card: CardInstance):
-	pass
-
-func on_cast(card: CardInstance):
-	pass
-
-func on_destroy(card: CardInstance):
-	pass
-
-func on_counter(ability):
+func on_search():
 	pass
 
 func on_endturn():

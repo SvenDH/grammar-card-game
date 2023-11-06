@@ -20,4 +20,4 @@ func resolve(player: CardPlayer, n: int = 1, query_match = null):
 		player.hand.remove(card)
 		player.pile.add(card)
 		card.location = ZoneMatch.ZoneEnum.pile
-		player.on_discard(card)
+		card.on_discard()

@@ -16,3 +16,4 @@ func resolve(player: CardPlayer, zones: ZoneMatch, query_match = null):
 	var card = player.choose("search", choices)
 	player.remove(card)
 	player.place(card, ZoneMatch.ZoneEnum.hand)
+	player.on_search()

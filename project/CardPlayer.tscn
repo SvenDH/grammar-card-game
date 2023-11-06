@@ -25,6 +25,8 @@ player_name = "player1"
 cards = Array[Resource("res://Card.gd")]([ExtResource("2_5g2gu"), ExtResource("3_777s0"), ExtResource("4_t2f2t"), ExtResource("5_7mqqi"), ExtResource("6_v2scs")])
 card_scene = ExtResource("7_8mdir")
 board_path = NodePath("Control2/Board")
+deck_path = NodePath("Deck")
+pile_path = NodePath("Discard")
 hand_path = NodePath("Control/Hand")
 
 [node name="Deck" type="Node" parent="."]
@@ -49,6 +51,8 @@ offset_left = 47.0
 offset_top = 17.0
 offset_right = -49.0
 offset_bottom = -15.0
+grow_horizontal = 2
+grow_vertical = 2
 text = "Pass"
 
 [node name="Control" type="Control" parent="."]
@@ -78,6 +82,9 @@ offset_bottom = 497.0
 [node name="Board" type="HBoxContainer" parent="Control2"]
 layout_mode = 2
 script = ExtResource("9_ol53p")
+num_fields = 5
 field_scene = ExtResource("10_iw6yk")
 
 [connection signal="pressed" from="PassButton" to="." method="_on_pass_button_pressed"]
+[connection signal="click" from="Control/Hand" to="." method="_on_hand_click"]
+[connection signal="click" from="Control2/Board" to="." method="_on_board_click"]

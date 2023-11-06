@@ -1,21 +1,29 @@
 extends Node
 class_name CardPile
 
-signal on_click(card)
+signal click(card: CardInstance)
+
+var player
+
+func highlight(cards: Array):
+	for card in get_children():
+		card.highlight(card in cards)
 
 func add(card: CardInstance):
-	card.on_click.connect(_on_click.bind(card))
 	add_child(card)
+	_add_card(card)
 
 func insert(card: CardInstance, index: int):
 	add_child(card)
 	move_child(card, index)
+	_add_card(card)
 
 func pop():
 	var num = get_child_count()
 	if num:
 		var card = get_child(num-1)
 		remove_child(card)
+		_remove_card(card)
 		return card
 	return null
 
@@ -23,6 +31,7 @@ func remove(card: CardInstance):
 	for child in get_children():
 		if child == card:
 			remove_child(child)
+			_remove_card(card)
 			return child
 	return null
 
@@ -43,6 +52,11 @@ func cards():
 			cards.append(child)
 	return cards
 
+func _add_card(card: CardInstance):
+	card.click.connect(_on_click.bind(card))
+	
+func _remove_card(card: CardInstance):
+	card.click.disconnect(_on_click.bind(card))
+
 func _on_click(card: CardInstance):
-	print(card)
-	on_click.emit(card)
+	click.emit(card)

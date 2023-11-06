@@ -18,6 +18,9 @@ var phase: PhaseEnum = PhaseEnum.activation
 var stack: Array = []
 
 func _ready():
+	for child in get_children():
+		if child is CardPlayer:
+			add_player(child)
 	start()
 
 func add_player(player: CardPlayer):
@@ -34,6 +37,7 @@ func start():
 	var player = players[randi() % players.size()]
 	while true:
 		await do_turn(player)
+		print(turn)
 		turn += 1
 		if player.turnsafterthis == 0:
 			var idx := players.find(player)
@@ -47,7 +51,8 @@ func do_turn(player: CardPlayer):
 		"game": self,
 		"turn": turn,
 		"current_player": player,
-		"reaction": false
+		"reaction": false,
+		"priority": player
 	}
 	player.start()
 	
@@ -73,11 +78,14 @@ func send(ctx: Dictionary, effects: Array):
 	while len(stack) > 0:
 		for priority in len(players):
 			var player = players[(turn + priority) % len(players)]
+			ctx["priority"] = player
 			player.ctx = ctx
 			var done = false
 			while not done:
 				done = await player.choose_action()
-		stack.pop_back().resolve(ctx)
+		ability = stack.pop_back()
+		if ability:
+			ability.resolve(ctx)
 	
 	ctx["reaction"] = false
 
@@ -99,7 +107,7 @@ func pick(ctx: Dictionary, obj, place = null) -> Array:
 func query(ctx: Dictionary, obj, place = null, n: int = -1) -> Array:
 	var found := []
 	for player in players:
-		if obj.match(ctx, player):
+		if obj.match_query(ctx, player):
 			found.append(player)
 		found.append_array(player.query(ctx, obj, place))
 	if n > 0:

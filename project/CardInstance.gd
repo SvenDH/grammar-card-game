@@ -1,9 +1,9 @@
-extends Node
+extends PanelContainer
 class_name CardInstance
 
 const card_text_scene := preload("res://CardText.tscn")
 
-signal on_click
+signal click
 
 var card: Card
 var power := 1
@@ -17,6 +17,7 @@ var blocking: bool = false
 var side: bool = false
 var location: ZoneMatch.ZoneEnum = ZoneMatch.ZoneEnum.deck
 var field_index: int = -1
+var highlighted := false
 var ctx: Dictionary
 
 var types: get = _get_types
@@ -44,13 +45,13 @@ func _ready():
 			if not text.get_parent():
 				ability_text.add_child(text)
 
-func _get_types() -> Array[Card.TypeEnum]:
+func _get_types() -> Array:
 	return card.types  # TODO: add modified types
 
 func _get_abilities() -> Array:
 	return card.abilities  # TODO: add modifiers
 
-func _get_activated_abilities() -> Array[ActivatedAbility]:
+func _get_activated_abilities() -> Array:
 	# TODO: add modifiers
 	var abs = []
 	for c in _get_abilities():
@@ -58,14 +59,14 @@ func _get_activated_abilities() -> Array[ActivatedAbility]:
 			abs.append(c)
 	return abs
 
-func _get_keyword_abilities() -> Array[Card.KeywordEnum]:
+func _get_keyword_abilities() -> Array:
 	var abs = []
 	for c in _get_abilities():
 		if c is String:
 			abs.append(card.convert_keyword(c))
 	return abs
 
-func _get_color() -> Array[Card.ColorEnum]:
+func _get_color() -> Array:
 	var colors = []
 	if card:
 		for c in card.cost:
@@ -81,6 +82,13 @@ func _get_color() -> Array[Card.ColorEnum]:
 		return colors
 	colors.append(Card.ColorEnum.multicolored)
 	return colors
+
+func highlight(enable: bool):
+	highlighted = enable
+	if enable:
+		mouse_default_cursor_shape = CURSOR_POINTING_HAND
+	else:
+		mouse_default_cursor_shape = CURSOR_ARROW
 
 func activate():
 	if not activated:
@@ -99,26 +107,35 @@ func add_status(status: CardStatus):
 func cast(ctx: Dictionary) -> bool:
 	if not can_cast(ctx):
 		return false
+	
+	var player = ctx["priority"]
+	var to_index = await player.pick_free_field(self)
+	if to_index == -1:
+		return false
 
+	player.remove(self)
 	location = ZoneMatch.ZoneEnum.stack
 	ctx["self"] = self
 	ctx["owner"] = player_owner
-	ctx["controller"] = player_owner
-	var to_index = player_owner.pick_free_field(self)
-	if to_index == -1:
-		return false
+	ctx["controller"] = player
+	ctx["ability"] = card
 	# TODO: pay card costs
-	player_owner.game.send(ctx, [[player_owner, "play", [self, to_index]]])
+	player.game.send(ctx, [[player, self, [self, to_index]]])
+	on_cast()
 	return true
 
-func activate_ability(ctx: Dictionary, index: int):
-	var ability = activated_abilities[index]
+func resolve(player: CardPlayer, card: CardInstance, to_index: int):
+	player.remove(card)
+	player.place(card, ZoneMatch.ZoneEnum.board, to_index)
+
+func activate_ability(ctx: Dictionary, ability):
 	if not ability.can_activate(ctx):
 		return false
 
+	var player = ctx["priority"]
 	ctx["self"] = self
 	ctx["owner"] = player_owner
-	ctx["controller"] = controller
+	ctx["controller"] = player
 	ctx["ability"] = ability
 	return ability.activate(ctx)
 
@@ -155,7 +172,29 @@ func on_activate():
 func on_deactivate():
 	pass
 
+func on_enter():
+	pass
+
+func on_exit():
+	pass
+
+func on_draw():
+	pass
+
+func on_discard():
+	pass
+
+func on_cast():
+	pass
+
+func on_destroy():
+	pass
+
+func on_counter():
+	pass
+
 func _on_gui_input(event):
-	if event is InputEventMouseButton:
-		if event.pressed:
-			on_click.emit()
+	if highlighted:
+		if event is InputEventMouseButton:
+			if event.pressed:
+				click.emit()

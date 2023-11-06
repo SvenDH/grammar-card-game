@@ -10,5 +10,5 @@ func activate(ctx: Dictionary):
 
 func resolve(player: CardPlayer, obj):
 	assert(obj in player.game.stack)
+	obj.on_counter()
 	player.game.stack.remove(obj)
-	player.on_counter(obj)
