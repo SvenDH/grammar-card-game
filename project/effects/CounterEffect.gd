@@ -4,11 +4,14 @@ extends BaseEffect
 
 func activate(ctx: Dictionary):
 	var results = []
-	for d in await ctx["game"].pick(ctx, objects, ZoneMatch.ZoneEnum.stack):
+	var res = await ctx.game.pick(ctx, objects, ZoneMatch.ZoneEnum.stack)
+	if res == null:
+		return null
+	for d in res:
 		results.append([d])
 	return results
 
 func resolve(player: CardPlayer, obj):
-	assert(obj in player.game.stack)
-	obj.on_counter()
-	player.game.stack.remove(obj)
+	if obj in player.game.stack:
+		obj.on_counter()
+		player.game.stack.remove(obj)

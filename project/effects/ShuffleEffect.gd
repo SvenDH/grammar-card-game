@@ -5,7 +5,7 @@ extends BaseEffect
 @export var zones: ZoneMatch
 
 func activate(ctx: Dictionary):
-	var player = ctx["subject"]
+	var player = ctx.subject
 	var results = []
 	for zone in zones.zones:
 		var w
@@ -21,9 +21,10 @@ func activate(ctx: Dictionary):
 		results.append([w, zone])
 	return results
 
-func resolve(player: CardPlayer, cards: Array[CardInstance], zone: ZoneMatch.ZoneEnum):
+func resolve(player: CardPlayer, cards: Array, zone: ZoneMatch.ZoneEnum):
 	assert(zone != ZoneMatch.ZoneEnum.hand and zone != ZoneMatch.ZoneEnum.board)
 	for card in cards:
+		# TODO: Check to see if cards have changed location
 		player.remove(card)
 		player.place(card, zone)
 	player.shuffle(zone)

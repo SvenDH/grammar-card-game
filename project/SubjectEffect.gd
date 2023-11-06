@@ -5,11 +5,19 @@ class_name SubjectEffect
 @export var subject: Match
 
 func activate(ctx: Dictionary):
-	var game = ctx["game"]
+	var game = ctx.game
 	var played = []
-	for player in await game.pick(ctx, subject):
-		ctx["subject"] = player
+	var subj = await game.pick(ctx, subject)
+	if subj == null:
+		return null
+	
+	for player in subj:
+		ctx.subject = player
 		for e in effects:
-			for action in await e.activate(ctx):
+			var res = await e.activate(ctx)
+			if res == null:
+				return null
+			
+			for action in res:
 				played.append([player, e, action])
-	await game.send(ctx, played)
+	return played

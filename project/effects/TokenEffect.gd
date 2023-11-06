@@ -5,7 +5,7 @@ extends BaseEffect
 @export var abilities: Array = []
 
 func activate(ctx: Dictionary):
-	var player = ctx["subject"]
+	var player = ctx.subject
 	var results = []
 	for _i in getnumber(number, ctx):
 		var card = Card.new()
@@ -17,6 +17,8 @@ func activate(ctx: Dictionary):
 		if index == -1:
 			# TODO: No field places available, should it stop creeating tokens?
 			break
+		elif index == null:
+			return null
 		results.append([card, index])
 	return results
 

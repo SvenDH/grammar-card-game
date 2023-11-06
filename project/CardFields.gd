@@ -60,4 +60,4 @@ func cards():
 	return cards
 
 func _on_field_click(card):
-	click.emit(card.field_index)
+	click.emit(card)

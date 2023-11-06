@@ -13,31 +13,27 @@ func choose(command: String, choices := []):
 		for card in hand.cards():
 			if card.can_cast(ctx):
 				castable_cards.append(card)
-		hand.highlight(castable_cards)
 		
 		var board_cards = []
 		for card in board.cards():
 			if card.can_activate(ctx):
 				board_cards.append(card)
+		if len(castable_cards) == 0 and len(board_cards) == 0:
+			# TODO: make auto pass optional for mutlipleyer
+			return true
+		
+		hand.highlight(castable_cards)
 		board.highlight(board_cards)
 		
 		hand.show()
-		var action = await action_done
+		var card = await action_done
 		hand.highlight([])
 		hand.hide()
 		pass_button.hide()
 		
-		var card: CardInstance
-		if action is String and action == "pass":
+		if card is String and card == "pass":
 			# Skip
 			return true
-		
-		elif action is int:
-			if action == -1:
-				return false
-			card = board.get_card(action)
-		elif action is CardInstance:
-			card = action
 		
 		var activatable = []
 		for ab in card.activated_abilities:
@@ -72,11 +68,16 @@ func choose(command: String, choices := []):
 		return action
 	
 	elif command == "target":
-		print(choices)
+		pass_button.show()
 		board.highlight(choices)
-		var action = await action_done
-		print(action)
-		return action
+		var card = await action_done
+		board.highlight([])
+		pass_button.hide()
+		
+		if card is String and card == "pass":
+			return null
+		
+		return card
 		
 	elif command == "ability":
 		pass

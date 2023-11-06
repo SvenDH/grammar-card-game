@@ -3,18 +3,24 @@ extends BaseEffect
 @export var objects: ObjectMatch
 
 func activate(ctx: Dictionary):
-	var player = ctx["subject"]
+	var player = ctx.subject
 	var results = []
-	for d in await ctx["game"].pick(ctx, objects, ZoneMatch.ZoneEnum.board):
+	var res = await ctx.game.pick(ctx, objects, ZoneMatch.ZoneEnum.board)
+	if res == null:
+		return null
+	for d in res:
 		var index = await player.pick_free_field(d)
 		if index == -1:
 			# TODO: No field places available, should it stop creating tokens?
 			return []
+		elif index == null:
+			return null
 		results.append([d])
 	return results
 
 func resolve(player: CardPlayer, card: CardInstance, to_index: int):
 	# TODO: add 'token' and 'copy' modifier
+	# TODO: check if card is valid target?
 	var inst = CardInstance.new()
 	inst.card = card.card
 	inst.controller = self

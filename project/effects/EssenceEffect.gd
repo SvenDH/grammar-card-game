@@ -4,7 +4,7 @@ extends BaseEffect
 @export var amount: int = 1
 
 func activate(ctx: Dictionary):
-	var player = ctx["subject"]
+	var player = ctx.subject
 	if len(colors) > 1:
 		return [[await player.choose("essence", colors), amount]]
 	elif len(colors) == 1:

@@ -12,7 +12,7 @@ class_name CardMatch
 
 func targets(ctx: Dictionary) -> int:
 	if ref == Reference.target:
-		if extra != null:
+		if extra != 0:
 			return getnumber(extra, ctx)
 		return 1
 	return -1
@@ -24,7 +24,7 @@ func match_query(ctx: Dictionary, other) -> bool:
 	if type and type not in other.card.types:
 		return false
 	
-	if ref == Reference.selfref and ctx["self"] != other:
+	if ref == Reference.selfref and ctx.self != other:
 		return false
 	elif ref in [Reference.it, Reference.this, Reference.that]:
 		if ctx["this"] != other:

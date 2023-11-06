@@ -6,5 +6,10 @@ class_name Effect
 
 func activate(ctx: Dictionary):
 	# TODO: add optional check
+	var played = []
 	for e in effects:
-		await e.activate(ctx)
+		var res = await e.activate(ctx)
+		if res == null:
+			return null
+		played.append_array(res)
+	return await ctx.game.send(ctx, played)

@@ -5,12 +5,16 @@ extends BaseEffect
 
 func activate(ctx: Dictionary):
 	var results = []
-	for d in await ctx["game"].pick(ctx, objects, deactivate):
+	var res = await ctx.game.pick(ctx, objects)
+	if res == null:
+		return null
+	for d in res:
 		results.append([d])
 	return results
 
 func resolve(player: CardPlayer, card: CardInstance, deactivate: bool):
-	if deactivate:
-		card.deactivate()
-	else:
-		card.activate()
+	if card.location == ZoneMatch.ZoneEnum.board:
+		if deactivate:
+			card.deactivate()
+		else:
+			card.activate()

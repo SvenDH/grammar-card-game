@@ -68,17 +68,17 @@ func do_turn(player: CardPlayer):
 
 func send(ctx: Dictionary, effects: Array):
 	var ability = PlayedAbility.new()
-	ability.source = ctx["self"]
-	ability.controller = ctx["controller"]
+	ability.source = ctx.self
+	ability.controller = ctx.controller
 	ability.ability = ctx.get("ability")
 	ability.effects = effects
 	stack.append(ability)
-	ctx["reaction"] = true
+	ctx.reaction = true
 	
 	while len(stack) > 0:
 		for priority in len(players):
 			var player = players[(turn + priority) % len(players)]
-			ctx["priority"] = player
+			ctx.priority = player
 			player.ctx = ctx
 			var done = false
 			while not done:
@@ -87,19 +87,21 @@ func send(ctx: Dictionary, effects: Array):
 		if ability:
 			await ability.resolve(ctx)
 	
-	ctx["reaction"] = false
+	ctx.reaction = false
 
-func pick(ctx: Dictionary, obj, place = null) -> Array:
+func pick(ctx: Dictionary, obj, place = null):
 	var n = obj.targets(ctx)
 	if n > 0:
-		var player: CardPlayer = ctx["controller"]
+		var player: CardPlayer = ctx.controller
 		for _i in n:
 			var found = query(ctx, obj, place)
 			if len(found) == 0:
-				return ctx["targets"]
+				return ctx.targets
 			var choice = await player.choose("target", found)
-			ctx["targets"].append(choice)
-		return ctx["targets"]
+			if choice == null:
+				return null
+			ctx.targets.append(choice)
+		return ctx.targets
 	
 	return query(ctx, obj, place)
 
