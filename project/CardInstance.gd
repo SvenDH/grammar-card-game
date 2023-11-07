@@ -163,6 +163,28 @@ func can_cast(ctx: Dictionary):
 		return false
 	if ctx["reaction"] and not react:
 		return false
+	
+	# TODO: add potential essence from essence sources
+	# TODO: add extra costs
+	var pool := Array(player_owner.essence)
+	for symbol in card.cost:
+		if symbol is String:
+			if symbol == "T" and not card.activated:
+				return false
+			elif symbol == "Q" and card.activated:
+				return false
+			elif symbol in Card.COLORS:
+				if symbol not in pool:
+					return false
+				pool.erase(symbol)
+		elif symbol is int:
+			if len(pool) < symbol:
+				return false
+			for _i in symbol:
+				if "U" in pool:
+					pool.erase("U")
+				else:
+					pool.pop_back()
 	return true
 
 func can_activate(ctx: Dictionary):

@@ -19,8 +19,9 @@ func choose(command: String, choices := []):
 			if card.can_activate(ctx):
 				board_cards.append(card)
 		if len(castable_cards) == 0 and len(board_cards) == 0:
-			# TODO: make auto pass optional for mutlipleyer
-			return true
+			if ctx.reaction:
+				# TODO: make auto pass optional for mutlipleyer
+				return true
 		
 		hand.highlight(castable_cards)
 		board.highlight(board_cards)

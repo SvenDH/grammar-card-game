@@ -9,6 +9,6 @@ func activate(ctx: Dictionary):
 func resolve(player: CardPlayer, n: int = 1, side_: bool = false):
 	# TODO: draw specific matched card
 	# TODO: lose game when deck is empty
-	assert(side_ or n <= player.deck.num_fields)
+	assert(side_ or n <= player.board.num_fields)
 	for _i in n:
 		player.draw(side_)

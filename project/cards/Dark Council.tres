@@ -1,220 +1,256 @@
-[gd_resource type="Resource" script_class="Card" load_steps=44 format=3 uid="uid://m51uxxct16ev"]
+[gd_resource load_steps=64 format=2 type="Resource" script_class="Card"]
 
-[ext_resource type="Script" path="res://Card.gd" id="1"]
-[ext_resource type="Script" path="res://effects/TokenEffect.gd" id="9"]
-[ext_resource type="Script" path="res://effects/PlayEffect.gd" id="19"]
-[ext_resource type="Script" path="res://effects/DrawEffect.gd" id="33"]
-[ext_resource type="Script" path="res://effects/DiscardEffect.gd" id="41"]
-[ext_resource type="Script" path="res://ActivatedAbility.gd" id="51"]
-[ext_resource type="Script" path="res://Effect.gd" id="53"]
-[ext_resource type="Script" path="res://SubjectEffect.gd" id="55"]
-[ext_resource type="Script" path="res://effects/DestroyEffect.gd" id="57"]
-[ext_resource type="Script" path="res://ir/Object.gd" id="59"]
-[ext_resource type="Script" path="res://ir/Card.gd" id="61"]
-[ext_resource type="Script" path="res://ir/Player.gd" id="63"]
+[ext_resource path="res://Card.gd" type="Script" id=1]
 
-[sub_resource type="Resource" id="8"]
-script = ExtResource("9")
+[ext_resource path="res://ActivatedAbility.gd" type="Script" id=3]
+
+[ext_resource path="res://Effect.gd" type="Script" id=5]
+
+[ext_resource path="res://SubjectEffect.gd" type="Script" id=7]
+
+[ext_resource path="res://effects/TokenEffect.gd" type="Script" id=9]
+
+[ext_resource path="res://ir/Player.gd" type="Script" id=11]
+
+[ext_resource path="res://ActivatedAbility.gd" type="Script" id=13]
+
+[ext_resource path="res://Effect.gd" type="Script" id=15]
+
+[ext_resource path="res://SubjectEffect.gd" type="Script" id=17]
+
+[ext_resource path="res://effects/PlayEffect.gd" type="Script" id=19]
+
+[ext_resource path="res://ir/Object.gd" type="Script" id=21]
+
+[ext_resource path="res://ir/Card.gd" type="Script" id=23]
+
+[ext_resource path="res://ir/Player.gd" type="Script" id=25]
+
+[ext_resource path="res://ActivatedAbility.gd" type="Script" id=27]
+
+[ext_resource path="res://Effect.gd" type="Script" id=29]
+
+[ext_resource path="res://SubjectEffect.gd" type="Script" id=31]
+
+[ext_resource path="res://effects/DrawEffect.gd" type="Script" id=33]
+
+[ext_resource path="res://ir/Player.gd" type="Script" id=35]
+
+[ext_resource path="res://SubjectEffect.gd" type="Script" id=37]
+
+[ext_resource path="res://SubjectEffect.gd" type="Script" id=39]
+
+[ext_resource path="res://effects/DiscardEffect.gd" type="Script" id=41]
+
+[ext_resource path="res://ir/Object.gd" type="Script" id=43]
+
+[ext_resource path="res://ir/Card.gd" type="Script" id=45]
+
+[ext_resource path="res://ir/Player.gd" type="Script" id=47]
+
+[ext_resource path="res://ir/Player.gd" type="Script" id=49]
+
+[ext_resource path="res://ActivatedAbility.gd" type="Script" id=51]
+
+[ext_resource path="res://Effect.gd" type="Script" id=53]
+
+[ext_resource path="res://SubjectEffect.gd" type="Script" id=55]
+
+[ext_resource path="res://effects/DestroyEffect.gd" type="Script" id=57]
+
+[ext_resource path="res://ir/Object.gd" type="Script" id=59]
+
+[ext_resource path="res://ir/Card.gd" type="Script" id=61]
+
+[ext_resource path="res://ir/Player.gd" type="Script" id=63]
+
+[sub_resource type="Resource" id=8]
+script = ExtResource( 9 )
 number = 1
-stats = [2, 2]
-abilities = ["flying", "siege"]
-action = ""
+stats = [ 2, 2 ]
+abilities = [ "flying", "siege" ]
 
-[sub_resource type="Resource" id="10"]
-script = ExtResource("63")
+[sub_resource type="Resource" id=10]
+script = ExtResource( 11 )
 player = 3
-ref = 0
 extra = 0
 who_cant = false
 
-[sub_resource type="Resource" id="6"]
-script = ExtResource("55")
-effects = [SubResource("8")]
-subject = SubResource("10")
-action = ""
+[sub_resource type="Resource" id=6]
+script = ExtResource( 7 )
+effects = [ SubResource( 8 ) ]
+subject = SubResource( 10 )
 
-[sub_resource type="Resource" id="4"]
-script = ExtResource("53")
-effects = Array[Resource("res://BaseEffect.gd")]([SubResource("6")])
+[sub_resource type="Resource" id=4]
+script = ExtResource( 5 )
+effects = [ SubResource( 6 ) ]
 optional = false
 
-[sub_resource type="Resource" id="2"]
-script = ExtResource("51")
-costs = [2]
-effect = SubResource("4")
+[sub_resource type="Resource" id=2]
+script = ExtResource( 3 )
+costs = [ 2 ]
+effect = SubResource( 4 )
 text = "{2}: create a 2/2 token with \"flying\" and \"siege\"."
 
-[sub_resource type="Resource" id="22"]
-script = ExtResource("61")
+[sub_resource type="Resource" id=22]
+script = ExtResource( 23 )
 ref = 0
 type = 0
 extra = 0
-prefixes = Array[Resource("res://ir/Prefix.gd")]([])
-suffixes = Array[Resource("res://ir/Suffix.gd")]([])
+prefixes = [  ]
+suffixes = [  ]
+withwhat = null
 without = 0
 copies = false
 
-[sub_resource type="Resource" id="20"]
-script = ExtResource("59")
-objects = Array[Resource("res://ir/Match.gd")]([SubResource("22")])
+[sub_resource type="Resource" id=20]
+script = ExtResource( 21 )
+objects = [ SubResource( 22 ) ]
 each = false
 
-[sub_resource type="Resource" id="18"]
-script = ExtResource("19")
-objects = SubResource("20")
+[sub_resource type="Resource" id=18]
+script = ExtResource( 19 )
+objects = SubResource( 20 )
 free = true
-action = ""
 
-[sub_resource type="Resource" id="24"]
-script = ExtResource("63")
+[sub_resource type="Resource" id=24]
+script = ExtResource( 25 )
 player = 3
-ref = 0
 extra = 0
 who_cant = false
 
-[sub_resource type="Resource" id="16"]
-script = ExtResource("55")
-effects = [SubResource("18")]
-subject = SubResource("24")
-action = ""
+[sub_resource type="Resource" id=16]
+script = ExtResource( 17 )
+effects = [ SubResource( 18 ) ]
+subject = SubResource( 24 )
 
-[sub_resource type="Resource" id="14"]
-script = ExtResource("53")
-effects = Array[Resource("res://BaseEffect.gd")]([SubResource("16")])
+[sub_resource type="Resource" id=14]
+script = ExtResource( 15 )
+effects = [ SubResource( 16 ) ]
 optional = false
 
-[sub_resource type="Resource" id="12"]
-script = ExtResource("51")
-costs = [1]
-effect = SubResource("14")
+[sub_resource type="Resource" id=12]
+script = ExtResource( 13 )
+costs = [ 1 ]
+effect = SubResource( 14 )
 text = "{1}: play unit cards without paying essence."
 
-[sub_resource type="Resource" id="32"]
-script = ExtResource("33")
+[sub_resource type="Resource" id=32]
+script = ExtResource( 33 )
 number = 1
-side = false
-action = ""
 
-[sub_resource type="Resource" id="34"]
-script = ExtResource("63")
+[sub_resource type="Resource" id=34]
+script = ExtResource( 35 )
 player = 3
-ref = 0
 extra = 0
 who_cant = false
 
-[sub_resource type="Resource" id="30"]
-script = ExtResource("55")
-effects = [SubResource("32")]
-subject = SubResource("34")
-action = ""
+[sub_resource type="Resource" id=30]
+script = ExtResource( 31 )
+effects = [ SubResource( 32 ) ]
+subject = SubResource( 34 )
 
-[sub_resource type="Resource" id="44"]
-script = ExtResource("61")
+[sub_resource type="Resource" id=44]
+script = ExtResource( 45 )
 ref = 0
 type = 0
 extra = 0
-prefixes = Array[Resource("res://ir/Prefix.gd")]([])
-suffixes = Array[Resource("res://ir/Suffix.gd")]([])
+prefixes = [  ]
+suffixes = [  ]
+withwhat = null
 without = 0
 copies = false
 
-[sub_resource type="Resource" id="42"]
-script = ExtResource("59")
-objects = Array[Resource("res://ir/Match.gd")]([SubResource("44")])
+[sub_resource type="Resource" id=42]
+script = ExtResource( 43 )
+objects = [ SubResource( 44 ) ]
 each = false
 
-[sub_resource type="Resource" id="40"]
-script = ExtResource("41")
+[sub_resource type="Resource" id=40]
+script = ExtResource( 41 )
 number = 1
-objects = SubResource("42")
-action = ""
+objects = SubResource( 42 )
 
-[sub_resource type="Resource" id="46"]
-script = ExtResource("63")
+[sub_resource type="Resource" id=46]
+script = ExtResource( 47 )
 player = 3
-ref = 0
 extra = 0
 who_cant = false
 
-[sub_resource type="Resource" id="38"]
-script = ExtResource("55")
-effects = [SubResource("40")]
-subject = SubResource("46")
-action = ""
+[sub_resource type="Resource" id=38]
+script = ExtResource( 39 )
+effects = [ SubResource( 40 ) ]
+subject = SubResource( 46 )
 
-[sub_resource type="Resource" id="48"]
-script = ExtResource("63")
+[sub_resource type="Resource" id=48]
+script = ExtResource( 49 )
 player = 3
-ref = 0
 extra = 0
 who_cant = false
 
-[sub_resource type="Resource" id="36"]
-script = ExtResource("55")
-effects = [SubResource("38")]
-subject = SubResource("48")
-action = ""
+[sub_resource type="Resource" id=36]
+script = ExtResource( 37 )
+effects = [ SubResource( 38 ) ]
+subject = SubResource( 48 )
 
-[sub_resource type="Resource" id="28"]
-script = ExtResource("53")
-effects = Array[Resource("res://BaseEffect.gd")]([SubResource("30"), SubResource("36")])
+[sub_resource type="Resource" id=28]
+script = ExtResource( 29 )
+effects = [ SubResource( 30 ), SubResource( 36 ) ]
 optional = false
 
-[sub_resource type="Resource" id="26"]
-script = ExtResource("51")
-costs = ["T"]
-effect = SubResource("28")
+[sub_resource type="Resource" id=26]
+script = ExtResource( 27 )
+costs = [ "T" ]
+effect = SubResource( 28 )
 text = "{t}: draw a card, then you discard a card for each unit card."
 
-[sub_resource type="Resource" id="60"]
-script = ExtResource("61")
+[sub_resource type="Resource" id=60]
+script = ExtResource( 61 )
 ref = 14
 type = 0
 extra = 0
-prefixes = Array[Resource("res://ir/Prefix.gd")]([])
-suffixes = Array[Resource("res://ir/Suffix.gd")]([])
+prefixes = [  ]
+suffixes = [  ]
+withwhat = null
 without = 0
 copies = false
 
-[sub_resource type="Resource" id="58"]
-script = ExtResource("59")
-objects = Array[Resource("res://ir/Match.gd")]([SubResource("60")])
+[sub_resource type="Resource" id=58]
+script = ExtResource( 59 )
+objects = [ SubResource( 60 ) ]
 each = false
 
-[sub_resource type="Resource" id="56"]
-script = ExtResource("57")
-objects = SubResource("58")
-action = ""
+[sub_resource type="Resource" id=56]
+script = ExtResource( 57 )
+objects = SubResource( 58 )
 
-[sub_resource type="Resource" id="62"]
-script = ExtResource("63")
+[sub_resource type="Resource" id=62]
+script = ExtResource( 63 )
 player = 3
-ref = 0
 extra = 0
 who_cant = false
 
-[sub_resource type="Resource" id="54"]
-script = ExtResource("55")
-effects = [SubResource("56")]
-subject = SubResource("62")
-action = ""
+[sub_resource type="Resource" id=54]
+script = ExtResource( 55 )
+effects = [ SubResource( 56 ) ]
+subject = SubResource( 62 )
 
-[sub_resource type="Resource" id="52"]
-script = ExtResource("53")
-effects = Array[Resource("res://BaseEffect.gd")]([SubResource("54")])
+[sub_resource type="Resource" id=52]
+script = ExtResource( 53 )
+effects = [ SubResource( 54 ) ]
 optional = false
 
-[sub_resource type="Resource" id="50"]
-script = ExtResource("51")
-costs = ["Q"]
-effect = SubResource("52")
+[sub_resource type="Resource" id=50]
+script = ExtResource( 51 )
+costs = [ "Q" ]
+effect = SubResource( 52 )
 text = "{q}: destroy target card."
 
 [resource]
-script = ExtResource("1")
-cost = [3, "B"]
-types = Array[int]([1])
-subtypes = Array[String]([])
-abilities = ["flying", "siege", SubResource("2"), SubResource("12"), SubResource("26"), SubResource("50")]
+script = ExtResource( 1 )
+cost = [ 3, "B" ]
+types = [ 1 ]
+subtypes = [  ]
+abilities = [ "flying", "siege", SubResource( 2 ), SubResource( 12 ), SubResource( 26 ), SubResource( 50 ) ]
 power = 1
 health = 1
