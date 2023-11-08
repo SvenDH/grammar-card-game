@@ -1,12 +1,13 @@
-[gd_resource load_steps=2 format=2 type="Resource" script_class="Card"]
+[gd_resource type="Resource" script_class="Card" load_steps=2 format=3 uid="uid://dawo7mrutckuq"]
 
-[ext_resource path="res://Card.gd" type="Script" id=1]
+[ext_resource type="Script" path="res://Card.gd" id="1"]
 
 [resource]
-script = ExtResource( 1 )
-cost = [ 2, "R" ]
-types = [ 1 ]
-subtypes = [  ]
-abilities = [ "siege" ]
+script = ExtResource("1")
+name = "Knight"
+cost = ["R"]
+types = [1]
+subtypes = []
+abilities = ["siege"]
 power = 2
 health = 2

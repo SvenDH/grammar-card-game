@@ -1,15 +1,17 @@
-[gd_scene load_steps=11 format=3 uid="uid://fchwnecoto3j"]
+[gd_scene load_steps=13 format=3 uid="uid://fchwnecoto3j"]
 
 [ext_resource type="Script" path="res://HumanPlayer.gd" id="1_51yit"]
-[ext_resource type="Resource" uid="uid://bv5gg1xn44g0g" path="res://cards/Advisor.tres" id="2_5g2gu"]
-[ext_resource type="Resource" uid="uid://m51uxxct16ev" path="res://cards/Dark Council.tres" id="3_777s0"]
-[ext_resource type="Resource" uid="uid://bv0pdk1ey1rcg" path="res://cards/Knight.tres" id="4_t2f2t"]
-[ext_resource type="Resource" uid="uid://0gl6r7yb7wng" path="res://cards/Soldier.tres" id="5_7mqqi"]
-[ext_resource type="Resource" uid="uid://c1gvldxoc3kfr" path="res://cards/Super Soldier.tres" id="6_v2scs"]
+[ext_resource type="Resource" uid="uid://dw3pjw4qg3xoi" path="res://cards/Advisor.tres" id="2_5g2gu"]
+[ext_resource type="Resource" uid="uid://2hnw70sutdkt" path="res://cards/Dark Council.tres" id="3_777s0"]
+[ext_resource type="Resource" uid="uid://dawo7mrutckuq" path="res://cards/Knight.tres" id="4_t2f2t"]
+[ext_resource type="Resource" uid="uid://dkki54sb4e18e" path="res://cards/Soldier.tres" id="5_7mqqi"]
+[ext_resource type="Resource" uid="uid://bbtkqr8jvyuqd" path="res://cards/Super Soldier.tres" id="6_v2scs"]
 [ext_resource type="PackedScene" uid="uid://cnakiw5fb25w4" path="res://CardInstance.tscn" id="7_8mdir"]
 [ext_resource type="Script" path="res://CardPile.gd" id="8_0n5mo"]
 [ext_resource type="Script" path="res://CardFields.gd" id="9_ol53p"]
 [ext_resource type="PackedScene" uid="uid://dojm7b3or6gun" path="res://Field.tscn" id="10_iw6yk"]
+[ext_resource type="Script" path="res://EssencePool.gd" id="11_mux16"]
+[ext_resource type="Script" path="res://AbilityMenu.gd" id="11_yr25d"]
 
 [node name="CardPlayer" type="Control"]
 layout_mode = 3
@@ -57,9 +59,9 @@ text = "Pass"
 
 [node name="Control" type="Control" parent="."]
 anchors_preset = 0
-offset_left = 196.0
+offset_left = 250.0
 offset_top = 508.0
-offset_right = 805.0
+offset_right = 859.0
 offset_bottom = 644.0
 
 [node name="Hand" type="HBoxContainer" parent="Control"]
@@ -67,9 +69,10 @@ layout_mode = 2
 anchor_top = -0.365
 anchor_right = 1.043
 anchor_bottom = 1.0
-offset_top = 32.12
-offset_right = -647.703
+offset_top = 31.64
+offset_right = 1.81299
 offset_bottom = -88.0
+alignment = 1
 script = ExtResource("8_0n5mo")
 
 [node name="Control2" type="Control" parent="."]
@@ -85,6 +88,40 @@ script = ExtResource("9_ol53p")
 num_fields = 5
 field_scene = ExtResource("10_iw6yk")
 
+[node name="Control3" type="Control" parent="."]
+anchors_preset = 0
+offset_left = 1035.0
+offset_top = 311.0
+offset_right = 1146.0
+offset_bottom = 459.0
+
+[node name="EssencePool" type="VBoxContainer" parent="Control3"]
+layout_mode = 0
+offset_left = 1.0
+offset_top = 1.0
+offset_right = 105.0
+offset_bottom = 1.0
+script = ExtResource("11_mux16")
+
+[node name="Control4" type="Control" parent="."]
+anchors_preset = 0
+offset_left = 9.0
+offset_top = 638.0
+offset_right = 9.0
+offset_bottom = 638.0
+
+[node name="AbilityMenu" type="PanelContainer" parent="Control4"]
+layout_mode = 2
+offset_left = 2.0
+offset_right = 225.0
+grow_vertical = 0
+script = ExtResource("11_yr25d")
+
+[node name="List" type="VBoxContainer" parent="Control4/AbilityMenu"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
 [connection signal="pressed" from="PassButton" to="." method="_on_pass_button_pressed"]
 [connection signal="click" from="Control/Hand" to="." method="_on_hand_click"]
 [connection signal="click" from="Control2/Board" to="." method="_on_board_click"]
+[connection signal="click" from="Control4/AbilityMenu" to="." method="_on_ability_menu_click"]

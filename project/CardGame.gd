@@ -1,7 +1,7 @@
 extends Node
 class_name CardGame
 
-const START_CARDS := 5
+const START_CARDS := 7
 
 enum PhaseEnum {
 	turn,
@@ -31,9 +31,8 @@ func add_player(player: CardPlayer):
 func start():
 	# TODO: add muligan
 	for player in players:
-		for _i in range(START_CARDS):
+		for _i in START_CARDS:
 			player.draw()
-	
 	var player = players[randi() % players.size()]
 	while true:
 		await do_turn(player)
@@ -85,6 +84,10 @@ func send(ctx: Dictionary, effects: Array):
 				done = await player.choose("action")
 		ability = stack.pop_back()
 		if ability:
+			if ability.ability:
+				print("Resolved ", ability.ability.text)
+			else:
+				print("Resolved ", ability.source.card.name)
 			await ability.resolve(ctx)
 	
 	ctx.reaction = false

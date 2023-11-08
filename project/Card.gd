@@ -4,6 +4,8 @@ class_name Card
 enum TypeEnum {
 	none,
 	unit,
+	item,
+	source,
 	spell,
 	token
 }
@@ -15,9 +17,10 @@ enum KeywordEnum {
 	poison
 }
 
+@export var name: String
 @export var cost: Array = [0]
-@export var types: Array[TypeEnum] = []
-@export var subtypes: Array[String] = []
+@export var types: Array = []
+@export var subtypes: Array = []
 @export var abilities: Array = []
 @export var power: int = 1
 @export var health: int = 1

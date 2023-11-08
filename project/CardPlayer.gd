@@ -39,7 +39,7 @@ func choose(command: String, choices := []):
 	# Overwrite with something smarter/ controlled by the player
 	return choices[len(choices)-1]
 
-func pick_free_field(card: CardInstance) -> int:
+func pick_free_field(card) -> int:
 	var fields = board.free_fields(card)
 	if not fields:
 		return -1
@@ -60,13 +60,22 @@ func can_activate():
 	return false
 	
 func start():
-	essence = []
+	clear_essence()
 	# TODO: activate cards
 	on_startturn()
 
 func end():
 	on_endturn()
+	clear_essence()
+
+func clear_essence():
 	essence = []
+
+func add_essence(color):
+	essence.append(color)
+
+func remove_essence(color):
+	essence.erase(color)
 
 func draw(side_: bool = false):
 	var card: CardInstance

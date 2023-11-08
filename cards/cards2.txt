@@ -2,11 +2,11 @@ Land
 Source
 {T}: Add {R}.
 
-Soldier {R}
+Soldier {1}{R}
 Unit - Human
 1/1
 
-Super Soldier {R}
+Super Soldier {1}{R}
 Unit
 Flying, Siege
 {Q}: Destroy target card.
@@ -19,7 +19,7 @@ Unit
 {1}, Sacrifice Jacks Steadfast Pendant: Draw two cards, then each player discards two cards.
 2/0
 
-Dwarven Strike {R}
+Dwarven Strike {1}{R}
 Spell
 Unit cards without flying have this ability.
 2/0
@@ -29,7 +29,7 @@ Unit
 {T}: Wizard deals 1 damage to any target.
 1/2
 
-Knight {R}
+Knight {2}{R}
 Unit
 Siege
 2/2
@@ -40,16 +40,16 @@ Unit - Elemental
 {R}{B}, {Q}, Activate two deactivated blue units you control: Return target unit to its owner's hand.
 2/2
 
-Advisor {R}
+Advisor {1}{Y}
 Unit
 {T}: Activate target unit.
 0/2
 
-Dark Council
+Dark Council {3}{B}
 Unit
 Flying, Siege
-{0}: Create a 2/2 token with "Flying" and "Siege".
-{0}: Play unit cards without paying essence.
+{2}: Create a 2/2 token with "Flying" and "Siege".
+{1}: Play unit cards without paying essence.
 {T}: Draw a card, then you discard a card for each unit card.
 {Q}: Destroy target card.
 1/1

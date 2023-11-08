@@ -13,4 +13,4 @@ func activate(ctx: Dictionary):
 
 func resolve(player: CardPlayer, color, amount):
 	for _i in amount:
-		player.essence.append(color)
+		player.add_essence(color)

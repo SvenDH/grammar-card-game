@@ -23,7 +23,7 @@ func activate(ctx: Dictionary):
 	return results
 
 func resolve(player: CardPlayer, card: Card, to_index: int):
-	assert(to_index >= 0 and to_index < len(player.board.cards()))
+	assert(to_index >= 0 and to_index < player.board.num_fields)
 	assert(player.board.get_card(to_index) == null)  # TODO: should this be allowed?
 	var inst = CardInstance.new()
 	inst.card = card

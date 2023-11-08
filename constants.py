@@ -37,6 +37,7 @@ class TypeEnum(str, GrammarEnum):
     none = ""
     unit = "unit"
     item = "item"
+    source = "source"
     spell = "spell"
     token = "token"
 

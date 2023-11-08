@@ -5,6 +5,10 @@ signal click(card: CardInstance)
 
 var player
 
+func reset():
+	for card in get_children():
+		card.highlight(false)
+
 func highlight(cards: Array):
 	for card in get_children():
 		card.highlight(card in cards)

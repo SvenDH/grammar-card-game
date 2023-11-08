@@ -1,6 +1,7 @@
-root: NAME " " essencecost "\n" types "\n" abilities stats "\n\n"?
+root: NAME cardcost "\n" types abilities ("\n" stats)? "\n\n"?
 types: TYPE (" " TYPE)* (" - " /[a-zA-Z]+/ (" " /[a-zA-Z]+/)*)?
-abilities: (ability "\n")*
+cardcost: (" " essencecost)?
+abilities: ("\n" ability)*
 stats: numberorx "/" numberorx
 
 abilitycosts: essencecost ", " activationcost ", " imperativescost 
@@ -308,7 +309,7 @@ yellow: "yellow"
 colorless: "colorless"
 multicolored: "multicolored"
 selfref: NAME
-esscolor: COLOR
+esscolor: "{{" COLOR "}}"
 smallnumber: /[1]?[0-9]/
 
 COLOR: "R" | "G" | "B" | "Y"

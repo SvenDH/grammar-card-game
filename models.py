@@ -669,13 +669,14 @@ class Card(BaseModel):
         
         card = GDSection(GDSectionHeader("resource"))
         card["script"] = resource.add_ext_resource("res://Card.gd", "Script").reference
+        card["name"] = self.name
         card["cost"] = self.cost
         card["types"] = [TypeEnum.to_int(t) for t in self.types]
         card["subtypes"] = self.subtypes
         card["abilities"] = [ability_to_godot(resource, a) for a in self.abilities]
         for text, ref in zip(self.rule_texts, card["abilities"]):
             if isinstance(ref, SubResource):
-                resource.find_section(id=ref.id)["text"] = text.capitalize()
+                resource.find_section(id=ref.id)["text"] = text
 
         card["power"] = encode_numberorx(self.power)
         card["health"] = encode_numberorx(self.health)

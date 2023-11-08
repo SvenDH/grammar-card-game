@@ -319,6 +319,8 @@ class PrefixMixin:
         return item[0], True
     def color(self, item):
         return item[0], False
+    def esscolor(self, item):
+        return item[0]
     
 
 class SuffixMixin:
@@ -571,7 +573,7 @@ class EffectTransformer(Transformer):
     def switchdmghp(self, objects, *args):
         return SwitchStatsEffect(objects=objects, until=args[0] if args else None)
     def addessence(self, *args):
-        a = [c for c in args if isinstance(c, NumberOrX)]
+        a = [c for c in args if isinstance(c, int) or c == "X"]
         colors = [c for c in args if isinstance(c, ColorEnum)]
         if not colors:
             colors = [ColorEnum.yellow, ColorEnum.red, ColorEnum.green, ColorEnum.blue]
@@ -728,14 +730,19 @@ class CardTransformer(Transformer):
     def abilities(self, *args):
         return [i for a in args for i in a]
     
-    def root(self, _, cardcosts, types, abilities, stats):
+    def cardcost(self, *items):
+        if items:
+            return items[0]
+        return []
+    
+    def root(self, _, cardcosts, types, abilities, *items):
         return Card(
             cost=cardcosts,
             types=[t.lower() for t in types[0]],   # TODO: add more types and subtypes
             subtypes=[t.lower() for t in types[1]],
             abilities=abilities,
-            power=stats.power,
-            health=stats.health,
+            power=items[0].power if items else 0,
+            health=items[0].health if items else 0,
         )
 
 
@@ -755,14 +762,14 @@ class Parser:
 
     def parse(self, card: str, name: str | None = None):
         if name is None:
-            name = " ".join(card.split("\n", 1)[0].split(" ")[:-1])
+            name = card.split("\n", 1)[0].split(" {", 1)[0]
         card_txt = card.split("\n\n", 1)[0].replace(name, "~")
         t = self.lark.parse(card_txt)
         for tf in self.transformers:
             t = tf.transform(t)
         t.name = name
         rule_texts = []
-        for line in card_txt.split("\n")[2:-1]:
+        for line in card_txt.split("\n")[2:]:
             if is_keyword_line(line):
                 for l in line.split(", "):
                     rule_texts.append(l)

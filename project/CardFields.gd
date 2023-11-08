@@ -14,13 +14,19 @@ func _ready():
 		field.index = i
 		add_child(field)
 
+func reset():
+	for field in get_children():
+		field.highlight(false)
+		if field.card:
+			field.card.highlight(false)
+
 func highlight(fields: Array):
 	for field in get_children():
 		field.highlight(field.index in fields)
 		if field.card:
 			field.card.highlight(field.card in fields)
 
-func free_fields(card: CardInstance):
+func free_fields(card):
 	# TODO: check card stacking
 	var fields = []
 	for i in num_fields:
