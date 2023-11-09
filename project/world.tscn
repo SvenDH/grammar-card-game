@@ -17,4 +17,4 @@
 script = ExtResource("1_cwwvb")
 
 [node name="CardPlayer" parent="CardGame" instance=ExtResource("2_3quxd")]
-cards = Array[Resource("res://Card.gd")]([ExtResource("3_4rxfn"), ExtResource("4_8hmlc"), ExtResource("5_jul0h"), ExtResource("6_nrx2b"), ExtResource("7_1f7se"), ExtResource("8_6k7is")])
+cards = Array[Resource("res://Card.gd")]([ExtResource("4_8hmlc"), ExtResource("6_nrx2b"), ExtResource("5_jul0h"), ExtResource("3_4rxfn"), ExtResource("6_nrx2b"), ExtResource("7_1f7se"), ExtResource("4_8hmlc"), ExtResource("8_6k7is"), ExtResource("8_6k7is")])

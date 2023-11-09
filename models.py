@@ -117,7 +117,7 @@ class Effect(BaseEffect):
 
     def to_godot(self, resource: GDResource):
         ability = resource.add_sub_resource("Resource")
-        ability["script"] = resource.add_ext_resource("res://Effect.gd", "Script").reference
+        ability["script"] = resource.add_ext_resource("res://ir/Effect.gd", "Script").reference
         ability["effects"] = [e.to_godot(resource) for e in self.effects]
         ability["optional"] = self.op == OperatorEnum.OPTIONAL
         return ability.reference
@@ -242,28 +242,25 @@ class AbilityObject(BaseObject):
 
 class SubjEffect(BaseEffect):
     effects: list[BaseEffect] = []
+    foreach: ObjectMatch | None = None
+    condition: Condition | None = None
+    
+    def to_godot(self, resource: GDResource):
+        ability = resource.add_sub_resource("Resource")
+        ability["script"] = resource.add_ext_resource("res://ir/SubjectEffect.gd", "Script").reference
+        ability["effects"] = [o.to_godot(resource) for o in self.effects]
+        ability["subject"] = self.subj.to_godot(resource)
+        ability["foreach"] = self.foreach.to_godot(resource) if self.foreach else None
+        ability["condition"] = self.condition.to_godot(resource) if self.condition else None
+        return ability.reference
 
 
 class PlayerEffect(SubjEffect):
     subj: PlayerMatch = PlayerMatch(player=PlayerEnum.you)
-    
-    def to_godot(self, resource: GDResource):
-        ability = resource.add_sub_resource("Resource")
-        ability["script"] = resource.add_ext_resource("res://SubjectEffect.gd", "Script").reference
-        ability["effects"] = [o.to_godot(resource) for o in self.effects]
-        ability["subject"] = self.subj.to_godot(resource)
-        return ability.reference
 
 
 class ObjectEffect(SubjEffect):
     subj: ObjectMatch = ObjectMatch(objects=[BaseObject(object=Reference.it)])
-
-    def to_godot(self, resource: GDResource):
-        ability = resource.add_sub_resource("Resource")
-        ability["script"] = resource.add_ext_resource("res://SubjectEffect.gd", "Script").reference
-        ability["effects"] = [o.to_godot(resource) for o in self.effects]
-        ability["subject"] = self.subj.to_godot(resource)
-        return ability.reference
 
 
 class CreateTokenEffect(BaseEffect):

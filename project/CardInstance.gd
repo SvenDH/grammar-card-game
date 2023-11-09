@@ -28,9 +28,14 @@ var color: get = _get_color
 
 @onready var picture = $Control/Picture
 @onready var ability_text = $Control/Scroll/Abilities
+@onready var name_label = $Control/Name
+@onready var cost_label = $Control/Essence
 
 func _ready():
 	if card:
+		name_label.text = card.name
+		for c in card.cost:
+			cost_label.append_text(str(c))
 		var text = null
 		for ability in card.abilities:
 			if ability is String:
@@ -53,27 +58,27 @@ func _get_abilities() -> Array:
 
 func _get_activated_abilities() -> Array:
 	# TODO: add modifiers
-	var abs = []
+	var results = []
 	for c in _get_abilities():
 		if c is ActivatedAbility:
-			abs.append(c)
-	return abs
+			results.append(c)
+	return results
 
 func _get_keyword_abilities() -> Array:
-	var abs = []
+	var results = []
 	for c in _get_abilities():
 		if c is String:
-			abs.append(card.convert_keyword(c))
-	return abs
+			results.append(card.convert_keyword(c))
+	return results
 
 func _get_color() -> Array:
 	var colors = []
 	if card:
 		for c in card.cost:
 			if not c is int:
-				var color = card.convert_color(c)
-				if color not in colors:
-					colors.append(color)
+				var color_id = card.convert_color(c)
+				if color_id not in colors:
+					colors.append(color_id)
 	# TODO: add modifiers
 	if len(colors) == 0:
 		return [Card.ColorEnum.colorless]
@@ -100,9 +105,9 @@ func deactivate():
 		activated = false
 		on_deactivate()
 
-func add_status(status: CardStatus):
+func add_status(new_status: CardStatus):
 	# TODO: subscribe for 'until' condition check
-	status.append(status)
+	status.append(new_status)
 
 func cast(ctx: Dictionary) -> bool:
 	if not can_cast(ctx):
@@ -166,8 +171,8 @@ func can_cast(ctx: Dictionary):
 		return false
 	if ctx.reaction and not react:
 		return false
-	player_owner.can_pay(self, card.cost)
-	return true
+	
+	return player_owner.can_pay(self, card.cost)
 
 func can_activate(ctx: Dictionary):
 	ctx.self = self
@@ -206,5 +211,5 @@ func on_counter():
 func _on_gui_input(event):
 	if highlighted:
 		if event is InputEventMouseButton:
-			if event.pressed:
+			if event.is_pressed():
 				click.emit()

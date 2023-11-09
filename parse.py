@@ -655,11 +655,21 @@ class EffectTransformer(Transformer):
         effect.subj = obj
         return effect
     def objectphrase(self, *args):
-        p = [c for c in args if isinstance(c, BaseEffect)]
-        o = [c for c in args if isinstance(c, OperatorEnum)]
-        return ObjectEffect(effects=p, op=o[0] if o else None)  # TODO: add condition
+        condition = [c for c in args if isinstance(c, Condition)]
+        foreach = [c for c in args if isinstance(c, ObjectMatch)]
+        return ObjectEffect(
+            effects=[c for c in args if isinstance(c, BaseEffect)],
+            foreach=foreach[0] if foreach else None,
+            condition=condition[0] if condition else None
+        )  # TODO: add condition
     def playerphrase(self, *args):
-        return PlayerEffect(effects=[c for c in args if isinstance(c, BaseEffect)])  # TODO: add for each
+        condition = [c for c in args if isinstance(c, Condition)]
+        foreach = [c for c in args if isinstance(c, ObjectMatch)]
+        return PlayerEffect(
+            effects=[c for c in args if isinstance(c, BaseEffect)],
+            foreach=foreach[0] if foreach else None,
+            condition=condition[0] if condition else None
+        )  # TODO: add for each
     def hasability(self, abilities, *args):
         return GetAbility(abilities=abilities, until=args[0] if args else None)
     def getsability(self, acquiredability, *args):

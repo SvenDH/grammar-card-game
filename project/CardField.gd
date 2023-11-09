@@ -26,4 +26,5 @@ func highlight(enable: bool):
 func _on_gui_input(event):
 	if highlighted:
 		if event is InputEventMouseButton:
-			board.click.emit(index)
+			if event.is_pressed() or event.is_released():
+				board.click.emit(index)

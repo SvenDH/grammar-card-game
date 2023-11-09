@@ -34,15 +34,15 @@ func free_fields(card):
 			fields.append(i)
 	return fields
 
-func place(card: CardInstance, index: int):
-	var field = get_child(index)
+func place(card: CardInstance, field_index: int):
+	var field = get_child(field_index)
 	if not field.card:
 		field.card = card
 		card.click.connect(_on_field_click.bind(card))
 	# TODO: check card stacking
 
-func remove(index: int):
-	var field = get_child(index)
+func remove(field_index: int):
+	var field = get_child(field_index)
 	if field.card:
 		field.card.highlight(false)
 		field.card.click.disconnect(_on_field_click.bind(field.card))
@@ -54,16 +54,16 @@ func index(card: CardInstance):
 			return i
 	return -1
 
-func get_card(index: int):
-	return get_child(index).card
+func get_card(field_index: int):
+	return get_child(field_index).card
 
 func cards():
-	var cards := []
+	var results := []
 	for child in get_children():
 		if child.card:
-			cards.append(child.card)
+			results.append(child.card)
 	# TODO: check card stacking
-	return cards
+	return results
 
 func _on_field_click(card):
 	click.emit(card)

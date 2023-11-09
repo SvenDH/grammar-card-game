@@ -1,48 +1,52 @@
-[gd_resource type="Resource" script_class="Card" load_steps=12 format=3 uid="uid://svgcbk2n206g"]
+[gd_resource load_steps=12 format=2 type="Resource" script_class="Card"]
 
-[ext_resource type="Script" path="res://Card.gd" id="1"]
-[ext_resource type="Script" path="res://ActivatedAbility.gd" id="3"]
-[ext_resource type="Script" path="res://Effect.gd" id="5"]
-[ext_resource type="Script" path="res://SubjectEffect.gd" id="7"]
-[ext_resource type="Script" path="res://effects/EssenceEffect.gd" id="9"]
-[ext_resource type="Script" path="res://ir/Player.gd" id="11"]
+[ext_resource path="res://Card.gd" type="Script" id=1]
 
-[sub_resource type="Resource" id="8"]
-script = ExtResource("9")
-colors = Array[String](["R"])
+[ext_resource path="res://ActivatedAbility.gd" type="Script" id=3]
+
+[ext_resource path="res://ir/Effect.gd" type="Script" id=5]
+
+[ext_resource path="res://ir/SubjectEffect.gd" type="Script" id=7]
+
+[ext_resource path="res://effects/EssenceEffect.gd" type="Script" id=9]
+
+[ext_resource path="res://ir/Player.gd" type="Script" id=11]
+
+[sub_resource type="Resource" id=8]
+script = ExtResource( 9 )
+colors = [ "R" ]
 amount = 1
-action = ""
 
-[sub_resource type="Resource" id="10"]
-script = ExtResource("11")
+[sub_resource type="Resource" id=10]
+script = ExtResource( 11 )
 player = 3
-ref = 0
 extra = 0
 who_cant = false
 
-[sub_resource type="Resource" id="6"]
-script = ExtResource("7")
-effects = [SubResource("8")]
-subject = SubResource("10")
-action = ""
+[sub_resource type="Resource" id=6]
+script = ExtResource( 7 )
+effects = [ SubResource( 8 ) ]
+subject = SubResource( 10 )
+foreach = null
+condition = null
 
-[sub_resource type="Resource" id="4"]
-script = ExtResource("5")
-effects = Array[Resource("res://BaseEffect.gd")]([SubResource("6")])
+[sub_resource type="Resource" id=4]
+script = ExtResource( 5 )
+effects = [ SubResource( 6 ) ]
 optional = false
 
-[sub_resource type="Resource" id="2"]
-script = ExtResource("3")
-costs = ["T"]
-effect = SubResource("4")
+[sub_resource type="Resource" id=2]
+script = ExtResource( 3 )
+costs = [ "T" ]
+effect = SubResource( 4 )
 text = "{T}: Add {R}."
 
 [resource]
-script = ExtResource("1")
+script = ExtResource( 1 )
 name = "Land"
-cost = []
-types = [3]
-subtypes = []
-abilities = [SubResource("2")]
+cost = [  ]
+types = [ 3 ]
+subtypes = [  ]
+abilities = [ SubResource( 2 ) ]
 power = 0
 health = 0

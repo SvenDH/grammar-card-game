@@ -11,8 +11,7 @@ func can_activate(ctx: Dictionary):
 	# TODO: add potential essence from essence sources
 	var card = ctx.self
 	var controller = card.controller
-	controller.can_pay(card, costs)
-	return true
+	return controller.can_pay(card, costs)
 
 func activate(ctx: Dictionary):
 	await effect.activate(ctx)

@@ -38,8 +38,8 @@ enum NumbericalEnum {
 
 const Countables = [Reference.exactly, Reference.atleast, Reference.ormore, Reference.fewerthan, Reference.upto, Reference.oneof, Reference.anynumberof]
 
-func targets(ctx: Dictionary) -> int:
+func targets(_ctx: Dictionary) -> int:
 	return -1
 
-func match_query(ctx: Dictionary, other) -> bool:
+func match_query(_ctx: Dictionary, _other) -> bool:
 	return false

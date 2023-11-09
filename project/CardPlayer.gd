@@ -56,18 +56,18 @@ func pay_costs(card: CardInstance, costs: Array):
 				card.activate()
 			elif symbol in Card.COLORS:
 				remove_essence(symbol)
-		elif symbol is int:
+	for symbol in costs:
+		if symbol is int:
 			for _i in symbol:
 				if "U" in essence:
 					remove_essence("U")
-				else:
+				elif len(essence) > 0:
 					remove_essence(essence[0])
 
 func can_pay(card: CardInstance, costs: Array) -> bool:
 	# TODO: add potential essence from essence sources
 	# TODO: add extra costs
-	print(card.card.name)
-	var pool := Array(essence)
+	var pool := essence.duplicate()
 	for symbol in costs:
 		if symbol is String:
 			if symbol == "T" and not card.activated:
@@ -78,8 +78,8 @@ func can_pay(card: CardInstance, costs: Array) -> bool:
 				if symbol not in pool:
 					return false
 				pool.erase(symbol)
-				print("Can't pay ", card.card.name)
-		elif symbol is int:
+	for symbol in costs:
+		if symbol is int:
 			if len(pool) < symbol:
 				return false
 			for _i in symbol:
@@ -87,7 +87,6 @@ func can_pay(card: CardInstance, costs: Array) -> bool:
 					pool.erase("U")
 				else:
 					pool.pop_back()
-	print("Can pay ", card.card.name)
 	return true
 
 func can_cast() -> bool:

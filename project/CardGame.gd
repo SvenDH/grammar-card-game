@@ -1,7 +1,7 @@
 extends Node
 class_name CardGame
 
-const START_CARDS := 7
+const START_CARDS := 5
 
 enum PhaseEnum {
 	turn,

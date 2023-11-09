@@ -43,8 +43,7 @@ conditionaleffect: I "f " (playercondition | objectcondition) (imperative | obje
 
 imperative: action (" for each " pureobject)? (", where X is " numberdefinition)? (" unless " condition)?
 objectphrase: op (("," op)* opandorthen op)? (" if " condition)?
-playerphrase: pp | pp " for each " object | pp " for the first time each turn" | pp ", then " pp
-| pp " this way"
+playerphrase: pp | pp " for each " object | pp " " firsttimeeachturn | pp ", then " pp | pp " this way"
 
 action: createtoken | destroy | copy | play | draw | search | shuffle | counter | activate | deactivate | extraturn | look
 | put | gaincontrol | switchdmghp | addessence | returncard | discard | reveals | sacrifice | payessence | paylife
@@ -266,6 +265,7 @@ doesnt: "doesn't" | "don't"
 does: "does" | "do"
 free: "without paying essence"
 whocant: "who can't"
+firsttimeeachturn: "for the first time each turn"
 
 plusminusnumber: plusminus numberorx
 plusminus: /[+-]/

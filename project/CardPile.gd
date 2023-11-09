@@ -9,9 +9,9 @@ func reset():
 	for card in get_children():
 		card.highlight(false)
 
-func highlight(cards: Array):
+func highlight(highlighted_cards: Array):
 	for card in get_children():
-		card.highlight(card in cards)
+		card.highlight(card in highlighted_cards)
 
 func add(card: CardInstance):
 	add_child(card)
@@ -40,21 +40,21 @@ func remove(card: CardInstance):
 	return null
 
 func shuffle():
-	var cards = []
+	var temp = []
 	for child in get_children():
 		if child is CardInstance:
-			cards.append(child)
+			temp.append(child)
 			remove_child(child)
-	cards.shuffle()
-	for card in cards:
+	temp.shuffle()
+	for card in temp:
 		add_child(card)
 
 func cards():
-	var cards = []
+	var temp = []
 	for child in get_children():
 		if child is CardInstance:
-			cards.append(child)
-	return cards
+			temp.append(child)
+	return temp
 
 func _add_card(card: CardInstance):
 	card.click.connect(_on_click.bind(card))

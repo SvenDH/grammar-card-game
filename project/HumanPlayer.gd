@@ -55,6 +55,7 @@ func choose(command: String, choices := []):
 				if ability == null:
 					return false
 				await card.activate_ability(ctx, ability)
+		
 		elif card.can_cast(ctx):
 			# Cast card
 			await card.cast(ctx)
