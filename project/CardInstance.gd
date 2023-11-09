@@ -108,18 +108,19 @@ func cast(ctx: Dictionary) -> bool:
 	if not can_cast(ctx):
 		return false
 	
-	var player = ctx["priority"]
+	var player = ctx.priority
 	var to_index = await player.pick_free_field(self)
 	if to_index == -1:
 		return false
 
 	player.remove(self)
 	location = ZoneMatch.ZoneEnum.stack
-	ctx["self"] = self
-	ctx["owner"] = player_owner
-	ctx["controller"] = player
-	ctx["ability"] = card
-	# TODO: pay card costs
+	ctx.self = self
+	ctx.owner = player_owner
+	ctx.controller = player
+	ctx.ability = card
+	# TODO: add additional costs (from status etc)
+	await player.pay_costs(self, card.cost)
 	player.game.send(ctx, [[player, self, [self, to_index]]])
 	on_cast()
 	return true
@@ -132,12 +133,13 @@ func activate_ability(ctx: Dictionary, ability):
 	if not ability.can_activate(ctx):
 		return false
 
-	var player = ctx["priority"]
-	ctx["self"] = self
-	ctx["owner"] = player_owner
-	ctx["controller"] = player
-	ctx["ability"] = ability
-	ctx["targets"] = []
+	var player = ctx.priority
+	ctx.self = self
+	ctx.owner = player_owner
+	ctx.controller = player
+	ctx.ability = ability
+	ctx.targets = []
+	await player.pay_costs(self, ability.costs)
 	return await ability.activate(ctx)
 
 func reset():
@@ -157,38 +159,18 @@ func can_cast(ctx: Dictionary):
 	if location != ZoneMatch.ZoneEnum.hand:
 		# TODO: check castable from other locations
 		return false
-	ctx["self"] = self
-	var react = can_react(ctx)
-	if ctx["current_player"] != player_owner and not react:
-		return false
-	if ctx["reaction"] and not react:
-		return false
 	
-	# TODO: add potential essence from essence sources
-	# TODO: add extra costs
-	var pool := Array(player_owner.essence)
-	for symbol in card.cost:
-		if symbol is String:
-			if symbol == "T" and not card.activated:
-				return false
-			elif symbol == "Q" and card.activated:
-				return false
-			elif symbol in Card.COLORS:
-				if symbol not in pool:
-					return false
-				pool.erase(symbol)
-		elif symbol is int:
-			if len(pool) < symbol:
-				return false
-			for _i in symbol:
-				if "U" in pool:
-					pool.erase("U")
-				else:
-					pool.pop_back()
+	ctx.self = self
+	var react = can_react(ctx)
+	if ctx.current_player != player_owner and not react:
+		return false
+	if ctx.reaction and not react:
+		return false
+	player_owner.can_pay(self, card.cost)
 	return true
 
 func can_activate(ctx: Dictionary):
-	ctx["self"] = self
+	ctx.self = self
 	for ability in activated_abilities:
 		if ability.can_activate(ctx):
 			return true

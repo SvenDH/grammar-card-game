@@ -39,7 +39,7 @@ func choose(command: String, choices := []):
 		if card is String and card == "pass":
 			# Skip
 			return true
-		
+		# Can cast and can activate add another menu
 		if card.can_activate(ctx):
 			var activatable = []
 			for ab in card.activated_abilities:

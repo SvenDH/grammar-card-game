@@ -45,26 +45,72 @@ func pick_free_field(card) -> int:
 		return -1
 	return await choose("field", fields)
 
-func can_cast():
+func pay_costs(card: CardInstance, costs: Array):
+	# TODO: Pay action costs
+	# TODO: add choice of mana sources etc
+	for symbol in costs:
+		if symbol is String:
+			if symbol == "T":
+				card.deactivate()
+			elif symbol == "Q":
+				card.activate()
+			elif symbol in Card.COLORS:
+				remove_essence(symbol)
+		elif symbol is int:
+			for _i in symbol:
+				if "U" in essence:
+					remove_essence("U")
+				else:
+					remove_essence(essence[0])
+
+func can_pay(card: CardInstance, costs: Array) -> bool:
+	# TODO: add potential essence from essence sources
+	# TODO: add extra costs
+	print(card.card.name)
+	var pool := Array(essence)
+	for symbol in costs:
+		if symbol is String:
+			if symbol == "T" and not card.activated:
+				return false
+			elif symbol == "Q" and card.activated:
+				return false
+			elif symbol in Card.COLORS:
+				if symbol not in pool:
+					return false
+				pool.erase(symbol)
+				print("Can't pay ", card.card.name)
+		elif symbol is int:
+			if len(pool) < symbol:
+				return false
+			for _i in symbol:
+				if "U" in pool:
+					pool.erase("U")
+				else:
+					pool.pop_back()
+	print("Can pay ", card.card.name)
+	return true
+
+func can_cast() -> bool:
 	# TODO: get castable cards not in hand
 	for card in hand.cards():
 		if card.can_cast(ctx):
 			return true
 	return false
 
-func can_activate():
+func can_activate() -> bool:
 	# TODO: get activatable cards not on board
 	for card in board.cards():
 		if card != null and card.can_activate(ctx):
 			return true
 	return false
 	
-func start():
+func start_turn():
 	clear_essence()
-	# TODO: activate cards
+	for card in board.cards():
+		card.activate()
 	on_startturn()
 
-func end():
+func end_turn():
 	on_endturn()
 	clear_essence()
 

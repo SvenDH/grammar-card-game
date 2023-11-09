@@ -53,7 +53,7 @@ func do_turn(player: CardPlayer):
 		"reaction": false,
 		"priority": player
 	}
-	player.start()
+	player.start_turn()
 	
 	player.draw()
 
@@ -63,7 +63,7 @@ func do_turn(player: CardPlayer):
 	
 	# TODO: combat
 	
-	player.end()
+	player.end_turn()
 
 func send(ctx: Dictionary, effects: Array):
 	var ability = PlayedAbility.new()
@@ -85,7 +85,7 @@ func send(ctx: Dictionary, effects: Array):
 		ability = stack.pop_back()
 		if ability:
 			if ability.ability:
-				print("Resolved ", ability.ability.text)
+				print("Resolved ", ability.source.card.name, " - ", ability.ability.text)
 			else:
 				print("Resolved ", ability.source.card.name)
 			await ability.resolve(ctx)

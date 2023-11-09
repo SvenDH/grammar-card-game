@@ -15,7 +15,7 @@ enum ColorEnum {
 const XNUM := 9999999999999999
 const THATNUM := 8888888888888888
 
-const COLORS := ["Y", "R", "G", "B", "U"]
+const COLORS := ["Y", "R", "G", "B"]
 
 func getnumber(n, ctx: Dictionary):
 	if n is int:

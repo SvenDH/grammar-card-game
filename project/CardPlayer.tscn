@@ -39,10 +39,10 @@ script = ExtResource("8_0n5mo")
 
 [node name="PassButton" type="Button" parent="."]
 layout_mode = 0
-offset_left = 979.0
-offset_top = 555.0
-offset_right = 1115.0
-offset_bottom = 613.0
+offset_left = 1004.0
+offset_top = 577.0
+offset_right = 1140.0
+offset_bottom = 635.0
 
 [node name="Label" type="Label" parent="PassButton"]
 layout_mode = 1
@@ -112,8 +112,10 @@ offset_bottom = 638.0
 
 [node name="AbilityMenu" type="PanelContainer" parent="Control4"]
 layout_mode = 2
-offset_left = 2.0
-offset_right = 225.0
+offset_left = 4.0
+offset_top = -2.0
+offset_right = 227.0
+offset_bottom = -2.0
 grow_vertical = 0
 script = ExtResource("11_yr25d")
 
