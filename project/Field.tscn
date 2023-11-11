@@ -5,10 +5,15 @@
 [node name="Field" type="PanelContainer"]
 custom_minimum_size = Vector2(150, 164)
 anchors_preset = -1
-anchor_right = 0.161
-anchor_bottom = 0.308
-offset_right = -185.472
-offset_bottom = -199.584
+anchor_right = 0.13
+anchor_bottom = 0.253
+offset_right = -149.76
+offset_bottom = -163.944
+focus_mode = 2
+mouse_filter = 1
 script = ExtResource("1_h2ot6")
 
+[connection signal="focus_entered" from="." to="." method="_on_focus_entered"]
+[connection signal="focus_exited" from="." to="." method="_on_focus_exited"]
 [connection signal="gui_input" from="." to="." method="_on_gui_input"]
+[connection signal="mouse_entered" from="." to="." method="_on_mouse_entered"]

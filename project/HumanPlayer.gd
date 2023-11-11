@@ -27,8 +27,8 @@ func choose(command: String, choices := []):
 				# TODO: make auto pass optional for multiplayer
 				return true
 		
-		hand.highlight(castable_cards)
 		board.highlight(board_cards)
+		hand.highlight(castable_cards)
 		pass_button.show()
 		hand.show()
 		var card = await action_done
@@ -93,11 +93,10 @@ func choose(command: String, choices := []):
 		var ability = await action_done
 		ability_menu.reset()
 		ability_menu.hide()
+		if ability is ActivatedAbility:
+			return ability
 		
-		if ability is String and ability == "pass":
-			return null
-		
-		return ability
+		return null
 	
 	return choices[len(choices)-1]
 

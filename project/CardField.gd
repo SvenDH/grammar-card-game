@@ -1,9 +1,12 @@
 extends PanelContainer
 
+@export var spread := false
+@export var can_focus := false
+
 var card = null : set = _set_card, get = _get_card
 var highlighted := false
+var selected := false
 var index := -1
-
 @onready var board = get_parent()
 
 func _set_card(new_card):
@@ -23,8 +26,18 @@ func highlight(enable: bool):
 	else:
 		mouse_default_cursor_shape = CURSOR_ARROW
 
+func _on_focus_entered():
+	selected = true
+
+func _on_focus_exited():
+	selected = false
+
+func _on_mouse_entered():
+	grab_focus()
+
 func _on_gui_input(event):
 	if highlighted:
-		if event is InputEventMouseButton:
-			if event.is_pressed() or event.is_released():
-				board.click.emit(index)
+		if selected and event.is_action_pressed("ui_accept") or \
+		  (event is InputEventMouseButton and \
+		   event.button_index == MOUSE_BUTTON_LEFT and event.pressed):
+			board.click.emit(index)

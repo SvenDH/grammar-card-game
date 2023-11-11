@@ -44,7 +44,7 @@ text = "{T}: Add {R}."
 [resource]
 script = ExtResource( 1 )
 name = "Land"
-cost = [  ]
+costs = [  ]
 types = [ 3 ]
 subtypes = [  ]
 abilities = [ SubResource( 2 ) ]

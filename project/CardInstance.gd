@@ -1,4 +1,4 @@
-extends PanelContainer
+extends Control
 class_name CardInstance
 
 const card_text_scene := preload("res://CardText.tscn")
@@ -18,23 +18,25 @@ var side: bool = false
 var location: ZoneMatch.ZoneEnum = ZoneMatch.ZoneEnum.deck
 var field_index: int = -1
 var highlighted := false
+var selected := false
 var ctx: Dictionary
-
+var can_focus := false
 var types: get = _get_types
 var abilities: get = _get_abilities
 var activated_abilities: get = _get_activated_abilities
 var keyword_abilities: get = _get_keyword_abilities
 var color: get = _get_color
 
-@onready var picture = $Control/Picture
-@onready var ability_text = $Control/Scroll/Abilities
-@onready var name_label = $Control/Name
-@onready var cost_label = $Control/Essence
+@onready var panel = $Panel
+@onready var picture = $Panel/Control/Picture
+@onready var ability_text = $Panel/Control/Scroll/Abilities
+@onready var name_label = $Panel/Control/Name
+@onready var cost_label = $Panel/Control/Essence
 
 func _ready():
 	if card:
 		name_label.text = card.name
-		for c in card.cost:
+		for c in card.costs:
 			cost_label.append_text(str(c))
 		var text = null
 		for ability in card.abilities:
@@ -50,50 +52,22 @@ func _ready():
 			if not text.get_parent():
 				ability_text.add_child(text)
 
-func _get_types() -> Array:
-	return card.types  # TODO: add modified types
-
-func _get_abilities() -> Array:
-	return card.abilities  # TODO: add modifiers
-
-func _get_activated_abilities() -> Array:
-	# TODO: add modifiers
-	var results = []
-	for c in _get_abilities():
-		if c is ActivatedAbility:
-			results.append(c)
-	return results
-
-func _get_keyword_abilities() -> Array:
-	var results = []
-	for c in _get_abilities():
-		if c is String:
-			results.append(card.convert_keyword(c))
-	return results
-
-func _get_color() -> Array:
-	var colors = []
-	if card:
-		for c in card.cost:
-			if not c is int:
-				var color_id = card.convert_color(c)
-				if color_id not in colors:
-					colors.append(color_id)
-	# TODO: add modifiers
-	if len(colors) == 0:
-		return [Card.ColorEnum.colorless]
-	elif len(colors) == 1:
-		colors.append(Card.ColorEnum.monocolored)
-		return colors
-	colors.append(Card.ColorEnum.multicolored)
-	return colors
+func _process(delta):
+	var container = get_parent()
+	if container.spread:
+		var bound = container.get_parent().size
+		var new_size = bound / container.get_child_count()
+		if container is VBoxContainer:
+			custom_minimum_size.y = min(new_size.y, container.max_card_size.y)
+		elif container is HBoxContainer:
+			custom_minimum_size.x = min(new_size.x, container.max_card_size.x)
 
 func highlight(enable: bool):
 	highlighted = enable
 	if enable:
-		mouse_default_cursor_shape = CURSOR_POINTING_HAND
+		panel.mouse_default_cursor_shape = CURSOR_POINTING_HAND
 	else:
-		mouse_default_cursor_shape = CURSOR_ARROW
+		panel.mouse_default_cursor_shape = CURSOR_ARROW
 
 func activate():
 	if not activated:
@@ -125,7 +99,7 @@ func cast(ctx: Dictionary) -> bool:
 	ctx.controller = player
 	ctx.ability = card
 	# TODO: add additional costs (from status etc)
-	await player.pay_costs(self, card.cost)
+	await player.pay_costs(self, card.costs)
 	player.game.send(ctx, [[player, self, [self, to_index]]])
 	on_cast()
 	return true
@@ -172,7 +146,7 @@ func can_cast(ctx: Dictionary):
 	if ctx.reaction and not react:
 		return false
 	
-	return player_owner.can_pay(self, card.cost)
+	return player_owner.can_pay(self, card.costs)
 
 func can_activate(ctx: Dictionary):
 	ctx.self = self
@@ -208,8 +182,72 @@ func on_destroy():
 func on_counter():
 	pass
 
-func _on_gui_input(event):
-	if highlighted:
-		if event is InputEventMouseButton:
-			if event.is_pressed():
-				click.emit()
+func _get_types() -> Array:
+	return card.types  # TODO: add modified types
+
+func _get_abilities() -> Array:
+	return card.abilities  # TODO: add modifiers
+
+func _get_activated_abilities() -> Array:
+	# TODO: add modifiers
+	var results = []
+	for c in _get_abilities():
+		if c is ActivatedAbility:
+			results.append(c)
+	return results
+
+func _get_keyword_abilities() -> Array:
+	var results = []
+	for c in _get_abilities():
+		if c is String:
+			results.append(card.convert_keyword(c))
+	return results
+
+func _get_color() -> Array:
+	var colors = []
+	if card:
+		for c in card.cost:
+			if not c is int:
+				var color_id = card.convert_color(c)
+				if color_id not in colors:
+					colors.append(color_id)
+	# TODO: add modifiers
+	if len(colors) == 0:
+		return [Card.ColorEnum.colorless]
+	elif len(colors) == 1:
+		colors.append(Card.ColorEnum.monocolored)
+		return colors
+	colors.append(Card.ColorEnum.multicolored)
+	return colors
+
+func _input(event):
+	if highlighted and selected and event.is_action_pressed("ui_accept"):
+		click.emit()
+
+func _on_focus_entered():
+	selected = true
+	z_index = 1
+	var container = get_parent()
+	if container.can_focus:
+		if container is VBoxContainer:
+			panel.position.x = 20
+			#panel.position.y = 0
+		elif container is HBoxContainer:
+			#panel.position.x = 0
+			panel.position.y = -20
+
+func _on_focus_exited():
+	selected = false
+	z_index = 0
+	var container = get_parent()
+	if container.can_focus:
+		panel.position = Vector2.ZERO
+
+func _on_panel_mouse_entered():
+	grab_focus()
+
+func _on_panel_gui_input(event):
+	if highlighted and \
+	  (event is InputEventMouseButton and \
+	   event.button_index == MOUSE_BUTTON_LEFT and event.pressed):
+		click.emit()

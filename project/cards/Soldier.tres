@@ -1,11 +1,11 @@
-[gd_resource type="Resource" script_class="Card" load_steps=2 format=3 uid="uid://dkki54sb4e18e"]
+[gd_resource type="Resource" script_class="Card" load_steps=2 format=3 uid="uid://d1m1ndt1uxbu3"]
 
 [ext_resource type="Script" path="res://Card.gd" id="1"]
 
 [resource]
 script = ExtResource("1")
 name = "Soldier"
-cost = ["R"]
+costs = ["R"]
 types = [1]
 subtypes = ["human"]
 abilities = []

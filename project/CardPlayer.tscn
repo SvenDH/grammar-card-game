@@ -1,11 +1,11 @@
 [gd_scene load_steps=13 format=3 uid="uid://fchwnecoto3j"]
 
 [ext_resource type="Script" path="res://HumanPlayer.gd" id="1_51yit"]
-[ext_resource type="Resource" uid="uid://dw3pjw4qg3xoi" path="res://cards/Advisor.tres" id="2_5g2gu"]
-[ext_resource type="Resource" uid="uid://2hnw70sutdkt" path="res://cards/Dark Council.tres" id="3_777s0"]
-[ext_resource type="Resource" uid="uid://dawo7mrutckuq" path="res://cards/Knight.tres" id="4_t2f2t"]
-[ext_resource type="Resource" uid="uid://dkki54sb4e18e" path="res://cards/Soldier.tres" id="5_7mqqi"]
-[ext_resource type="Resource" uid="uid://bbtkqr8jvyuqd" path="res://cards/Super Soldier.tres" id="6_v2scs"]
+[ext_resource type="Resource" uid="uid://cj24vkpnhjh4j" path="res://cards/Advisor.tres" id="2_5g2gu"]
+[ext_resource type="Resource" uid="uid://td1b0ku881wy" path="res://cards/Dark Council.tres" id="3_777s0"]
+[ext_resource type="Resource" uid="uid://cae8pk33r2mtr" path="res://cards/Knight.tres" id="4_t2f2t"]
+[ext_resource type="Resource" uid="uid://d1m1ndt1uxbu3" path="res://cards/Soldier.tres" id="5_7mqqi"]
+[ext_resource type="Resource" uid="uid://bpdmrbkt8jtla" path="res://cards/Super Soldier.tres" id="6_v2scs"]
 [ext_resource type="PackedScene" uid="uid://cnakiw5fb25w4" path="res://CardInstance.tscn" id="7_8mdir"]
 [ext_resource type="Script" path="res://CardPile.gd" id="8_0n5mo"]
 [ext_resource type="Script" path="res://CardFields.gd" id="9_ol53p"]
@@ -66,25 +66,30 @@ offset_bottom = 644.0
 
 [node name="Hand" type="HBoxContainer" parent="Control"]
 layout_mode = 2
-anchor_top = -0.365
-anchor_right = 1.043
-anchor_bottom = 1.0
-offset_top = 31.64
-offset_right = 1.81299
-offset_bottom = -88.0
+anchor_top = -0.132
+anchor_bottom = -0.132
+offset_top = -0.0480003
+offset_bottom = -0.0480003
+focus_neighbor_top = NodePath("../../Control2/Board")
 alignment = 1
 script = ExtResource("8_0n5mo")
+max_card_size = Vector2(150, 164)
+can_focus = true
+spread = true
 
 [node name="Control2" type="Control" parent="."]
 anchors_preset = 0
-offset_left = 172.0
-offset_top = 302.0
-offset_right = 939.0
-offset_bottom = 497.0
+offset_left = 190.0
+offset_top = 304.0
+offset_right = 957.0
+offset_bottom = 499.0
 
 [node name="Board" type="HBoxContainer" parent="Control2"]
 layout_mode = 2
+focus_neighbor_bottom = NodePath("../../Control/Hand")
+theme_override_constants/separation = 5
 script = ExtResource("9_ol53p")
+max_card_size = Vector2(150, 164)
 num_fields = 5
 field_scene = ExtResource("10_iw6yk")
 

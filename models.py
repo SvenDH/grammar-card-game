@@ -667,7 +667,7 @@ class Card(BaseModel):
         card = GDSection(GDSectionHeader("resource"))
         card["script"] = resource.add_ext_resource("res://Card.gd", "Script").reference
         card["name"] = self.name
-        card["cost"] = self.cost
+        card["costs"] = self.cost
         card["types"] = [TypeEnum.to_int(t) for t in self.types]
         card["subtypes"] = self.subtypes
         card["abilities"] = [ability_to_godot(resource, a) for a in self.abilities]

@@ -3,16 +3,22 @@ class_name CardFields
 
 signal click(index: int)
 
+@export var max_card_size: Vector2
 @export var num_fields := 4
 @export var field_scene: PackedScene
 
 var player
 
 func _ready():
+	var last = null
 	for i in num_fields:
 		var field = field_scene.instantiate()
 		field.index = i
 		add_child(field)
+		if last:
+			field.focus_neighbor_left = last.get_path()
+			last.focus_neighbor_right = field.get_path()
+		last = field
 
 func reset():
 	for field in get_children():
@@ -21,10 +27,19 @@ func reset():
 			field.card.highlight(false)
 
 func highlight(fields: Array):
+	var first = false
 	for field in get_children():
-		field.highlight(field.index in fields)
+		var isin = field.index in fields
+		field.highlight(isin)
+		if not first and isin:
+			field.grab_focus()
+			first = true
 		if field.card:
-			field.card.highlight(field.card in fields)
+			isin = field.card in fields
+			field.card.highlight(isin)
+			if not first and isin:
+				field.grab_focus()
+				first = true
 
 func free_fields(card):
 	# TODO: check card stacking
