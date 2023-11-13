@@ -105,7 +105,7 @@ class ZoneMatch(BaseModel):
         ability = resource.add_sub_resource("Resource")
         ability["script"] = resource.add_ext_resource("res://ir/Zone.gd", "Script").reference
         ability["zones"] = [ZoneEnum.to_int(z) for z in self.zones]
-        ability["ref"] = self.ref.to_grammar(resource) if self.ref else None
+        ability["ref"] = self.ref.to_godot(resource) if self.ref else None
         ability["place"] = PlaceEnum.to_int(self.place)
         ability["random"] = self.random
         return ability.reference
@@ -121,10 +121,6 @@ class Effect(BaseEffect):
         ability["effects"] = [e.to_godot(resource) for e in self.effects]
         ability["optional"] = self.op == OperatorEnum.OPTIONAL
         return ability.reference
-
-
-class ActionCost(BaseModel):
-    cost: list[BaseEffect] = []
 
 
 class Condition(BaseModel):
@@ -143,6 +139,15 @@ class PlayedCondition(Condition):
     object: ObjectMatch
     duration: Condition
 
+    def to_godot(self, resource: GDResource):
+        ability = resource.add_sub_resource("Resource")
+        ability["script"] = resource.add_ext_resource("res://ir/PlayedCondition.gd", "Script").reference
+        ability["condition"] = ConditonEnum.to_int(self.condition)
+        ability["until"] = self.until
+        ability["object"] = self.object.to_godot(resource)
+        ability["duration"] = self.duration.to_godot(resource)
+        return ability.reference
+
 
 class NumberCondition(Condition):
     number: str
@@ -156,17 +161,38 @@ class PlayerCondition(Condition):
 
 class ObjectCondition(Condition):
     object: ObjectMatch
-    phrase: str   # TODO: implement objectphrase
+    phrase: ObjectPhrase
+    
 
 
 class Phase(BaseModel):
-    ref: TurnQualifierEnum | Reference | PlayerMatch | None = None
     phase: PhaseEnum
+    turn: TurnQualifierEnum = TurnQualifierEnum.none
+    ref: Reference = Reference.none
+    player: PlayerMatch | None = None
+
+    def to_godot(self, resource: GDResource):
+        ability = resource.add_sub_resource("Resource")
+        ability["script"] = resource.add_ext_resource("res://ir/Trigger.gd", "Script").reference
+        ability["phase"] = PhaseEnum.to_int(self.phase)
+        ability["turn"] = TurnQualifierEnum.to_int(self.turn)
+        ability["ref"] = Reference.to_int(self.ref)
+        ability["player"] = self.player.to_godot(resource) if self.player else None
+        return ability.reference
     
 
 class Trigger(BaseModel):
     trigger: TriggerEnum
-    objects: ObjectMatch | PlayerMatch | Phase | None = None
+    objects: ObjectMatch | PlayerMatch | None = None
+    phase: Phase | None = None
+
+    def to_godot(self, resource: GDResource):
+        ability = resource.add_sub_resource("Resource")
+        ability["script"] = resource.add_ext_resource("res://ir/Trigger.gd", "Script").reference
+        ability["trigger"] = TriggerEnum.to_int(self.trigger)
+        ability["objects"] = self.objects.to_godot(resource) if self.objects else None
+        ability["phase"] = self.phase.to_godot(resource) if self.phase else None
+        return ability.reference
 
 
 class NumberDef(BaseModel):
@@ -187,17 +213,17 @@ class TriggeredAbility(BaseModel):
 
 
 class ActivatedAbility(BaseModel):
-    costs: list[ColorEnum | NumberOrX | Activation | ActionCost] = []
+    costs: list[ColorEnum | NumberOrX | Activation | BaseEffect] = []
     effect: Effect
 
     def to_godot(self, resource: GDResource):
         ability = resource.add_sub_resource("Resource")
         ability["script"] = resource.add_ext_resource("res://ActivatedAbility.gd", "Script").reference
-        ability["costs"] = [c.to_godot(resource) if isinstance(c, ActionCost) else c for c in self.costs]
+        ability["costs"] = [c.to_godot(resource) if isinstance(c, BaseEffect) else c for c in self.costs]
         ability["effect"] = self.effect.to_godot(resource)
         return ability.reference
 
-AquiredAbilities = KeywordEnum | TriggeredAbility | ActivatedAbility | ActionCost | Effect | Literal["this"]
+AquiredAbilities = KeywordEnum | TriggeredAbility | ActivatedAbility | BaseEffect | Effect | Literal["this"]
 
 
 def ability_to_godot(resource: GDResource, ability: AquiredAbilities | None = None):
@@ -206,7 +232,7 @@ def ability_to_godot(resource: GDResource, ability: AquiredAbilities | None = No
     if isinstance(ability, BaseModel):
         return ability.to_godot(resource)
     # TODO: keyword to resource
-    return ability
+    return ability.capitalize()
 
 
 class CardObject(BaseObject):
@@ -236,8 +262,6 @@ class CardObject(BaseObject):
 class AbilityObject(BaseObject):
     ref: Reference | NumberOrX | None = None
     extra: NumberOrX = 0
-    prefixes: list[Prefix] = []
-    suffixes: list[Suffix] = []
 
 
 class SubjEffect(BaseEffect):
@@ -352,8 +376,7 @@ class ShuffleEffect(BaseEffect):
     def to_godot(self, resource: GDResource):
         ability = resource.add_sub_resource("Resource")
         ability["script"] = resource.add_ext_resource("res://effects/ShuffleEffect.gd", "Script").reference
-        if self.what:
-            ability["what"] = self.what.to_godot(resource)
+        ability["what"] = self.what.to_godot(resource) if self.what else None
         ability["zones"] = self.zones.to_godot(resource)
         return ability.reference
 
@@ -516,15 +539,14 @@ class ModAbility(BaseEffect):
 
     def to_godot(self, resource: GDResource):
         ability = resource.add_sub_resource("Resource")
-        ability["script"] = resource.add_ext_resource("res://effects/MoveEffect.gd", "Script").reference
-        ability["objects"] = self.objects.to_godot(resource)
-        ability["tozone"] = self.tozone.to_godot(resource)
-        ability["fromzone"] = self.fromzone.to_godot(resource) if self.fromzone else None
+        ability["script"] = resource.add_ext_resource("res://ir/ModAbility.gd", "Script").reference
+        ability["stats"] = [self.stats.power, self.stats.health]
+        ability["foreach"] = self.foreach.to_godot(resource) if self.foreach else None
         return ability.reference
 
 
 class GetAbility(BaseEffect):
-    abilities: list[AquiredAbilities | ModAbility | Literal["this"]] = []
+    abilities: list[AquiredAbilities | ModAbility] = []
     until: Condition | None = None
 
     def to_godot(self, resource: GDResource):
@@ -549,10 +571,22 @@ class CantAbility(BaseEffect):
 
 class NoActivationAbility(BaseEffect):
     moment: Phase
+    
+    def to_godot(self, resource: GDResource):
+        ability = resource.add_sub_resource("Resource")
+        ability["script"] = resource.add_ext_resource("res://effects/NoActivationAbility.gd", "Script").reference
+        ability["moment"] = self.moment.to_godot(resource)
+        return ability.reference
 
 
 class LoseAbilitiesAbility(BaseEffect):
     until: Condition | None = None
+    
+    def to_godot(self, resource: GDResource):
+        ability = resource.add_sub_resource("Resource")
+        ability["script"] = resource.add_ext_resource("res://effects/LoseAbilitiesAbility.gd", "Script").reference
+        ability["until"] = self.until.to_godot(resource) if self.until else None
+        return ability.reference
 
 
 class CostsAbility(BaseEffect):
@@ -575,6 +609,14 @@ class DealsAbility(BaseEffect):
     amount: NumberOrX | NumberDef = 1
     recipients: list[PlayerMatch | ObjectMatch | Reference] = []
     spread: bool = False
+
+    def to_godot(self, resource: GDResource):
+        ability = resource.add_sub_resource("Resource")
+        ability["script"] = resource.add_ext_resource("res://effects/DealsAbility.gd", "Script").reference
+        ability["amount"] = self.amount.to_godot(resource) if isinstance(self.amount, NumberDef) else self.amount
+        ability["recipients"] = [r.to_godot(resource) if isinstance(r, (PlayerMatch, ObjectMatch)) else Reference.to_int(r) for r in self.recipients]
+        ability["spread"] = self.spread
+        return ability.reference
 
 
 class Godot4Resource(GDResource):

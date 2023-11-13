@@ -6,6 +6,9 @@ extends BaseEffect
 @export var second_objects: ObjectMatch
 @export var second_into: ZoneMatch
 
+func targets(ctx):
+	return objects.targets(ctx)
+
 func activate(ctx: Dictionary):
 	var player = ctx.subject
 	var results = []

@@ -1,0 +1,65 @@
+[gd_resource load_steps=14 format=2 type="Resource" script_class="Card"]
+
+[ext_resource path="res://Card.gd" type="Script" id=1]
+
+[ext_resource path="res://ActivatedAbility.gd" type="Script" id=3]
+
+[ext_resource path="res://ir/Effect.gd" type="Script" id=5]
+
+[ext_resource path="res://ir/SubjectEffect.gd" type="Script" id=7]
+
+[ext_resource path="res://effects/DealsAbility.gd" type="Script" id=9]
+
+[ext_resource path="res://ir/Object.gd" type="Script" id=11]
+
+[ext_resource path="res://ir/Card.gd" type="Script" id=13]
+
+[sub_resource type="Resource" id=8]
+script = ExtResource( 9 )
+amount = 1
+recipients = [ 25 ]
+spread = false
+
+[sub_resource type="Resource" id=12]
+script = ExtResource( 13 )
+ref = 1
+type = 0
+extra = 0
+prefixes = [  ]
+suffixes = [  ]
+withwhat = null
+without = 0
+copies = false
+
+[sub_resource type="Resource" id=10]
+script = ExtResource( 11 )
+objects = [ SubResource( 12 ) ]
+each = false
+
+[sub_resource type="Resource" id=6]
+script = ExtResource( 7 )
+effects = [ SubResource( 8 ) ]
+subject = SubResource( 10 )
+foreach = null
+condition = null
+
+[sub_resource type="Resource" id=4]
+script = ExtResource( 5 )
+effects = [ SubResource( 6 ) ]
+optional = false
+
+[sub_resource type="Resource" id=2]
+script = ExtResource( 3 )
+costs = [ "T" ]
+effect = SubResource( 4 )
+text = "{T}: ~ deals 1 damage to any target."
+
+[resource]
+script = ExtResource( 1 )
+name = "Wizard"
+costs = [ 2, "B" ]
+types = [ 1 ]
+subtypes = [  ]
+abilities = [ SubResource( 2 ) ]
+power = 1
+health = 2

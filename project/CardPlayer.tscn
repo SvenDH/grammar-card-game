@@ -1,11 +1,11 @@
 [gd_scene load_steps=13 format=3 uid="uid://fchwnecoto3j"]
 
 [ext_resource type="Script" path="res://HumanPlayer.gd" id="1_51yit"]
-[ext_resource type="Resource" uid="uid://cj24vkpnhjh4j" path="res://cards/Advisor.tres" id="2_5g2gu"]
-[ext_resource type="Resource" uid="uid://td1b0ku881wy" path="res://cards/Dark Council.tres" id="3_777s0"]
-[ext_resource type="Resource" uid="uid://cae8pk33r2mtr" path="res://cards/Knight.tres" id="4_t2f2t"]
-[ext_resource type="Resource" uid="uid://d1m1ndt1uxbu3" path="res://cards/Soldier.tres" id="5_7mqqi"]
-[ext_resource type="Resource" uid="uid://bpdmrbkt8jtla" path="res://cards/Super Soldier.tres" id="6_v2scs"]
+[ext_resource type="Resource" uid="uid://bf74wibopcom4" path="res://cards/Advisor.tres" id="2_5g2gu"]
+[ext_resource type="Resource" uid="uid://b60bmoeeiw087" path="res://cards/Dark Council.tres" id="3_777s0"]
+[ext_resource type="Resource" uid="uid://dx24bdvah7o7w" path="res://cards/Knight.tres" id="4_t2f2t"]
+[ext_resource type="Resource" uid="uid://b8qr5uhovbosh" path="res://cards/Soldier.tres" id="5_7mqqi"]
+[ext_resource type="Resource" uid="uid://cf2jh85iihy7" path="res://cards/Super Soldier.tres" id="6_v2scs"]
 [ext_resource type="PackedScene" uid="uid://cnakiw5fb25w4" path="res://CardInstance.tscn" id="7_8mdir"]
 [ext_resource type="Script" path="res://CardPile.gd" id="8_0n5mo"]
 [ext_resource type="Script" path="res://CardFields.gd" id="9_ol53p"]
@@ -26,10 +26,10 @@ script = ExtResource("1_51yit")
 player_name = "player1"
 cards = Array[Resource("res://Card.gd")]([ExtResource("2_5g2gu"), ExtResource("3_777s0"), ExtResource("4_t2f2t"), ExtResource("5_7mqqi"), ExtResource("6_v2scs")])
 card_scene = ExtResource("7_8mdir")
-board_path = NodePath("Control2/Board")
+board_path = NodePath("Control/Board")
 deck_path = NodePath("Deck")
 pile_path = NodePath("Discard")
-hand_path = NodePath("Control/Hand")
+hand_path = NodePath("Control2/Hand")
 
 [node name="Deck" type="Node" parent="."]
 script = ExtResource("8_0n5mo")
@@ -43,6 +43,7 @@ offset_left = 1004.0
 offset_top = 577.0
 offset_right = 1140.0
 offset_bottom = 635.0
+focus_neighbor_left = NodePath("../Control2/Hand")
 
 [node name="Label" type="Label" parent="PassButton"]
 layout_mode = 1
@@ -59,53 +60,53 @@ text = "Pass"
 
 [node name="Control" type="Control" parent="."]
 anchors_preset = 0
-offset_left = 250.0
-offset_top = 508.0
-offset_right = 859.0
-offset_bottom = 644.0
-
-[node name="Hand" type="HBoxContainer" parent="Control"]
-layout_mode = 2
-anchor_top = -0.132
-anchor_bottom = -0.132
-offset_top = -0.0480003
-offset_bottom = -0.0480003
-focus_neighbor_top = NodePath("../../Control2/Board")
-alignment = 1
-script = ExtResource("8_0n5mo")
-max_card_size = Vector2(150, 164)
-can_focus = true
-spread = true
-
-[node name="Control2" type="Control" parent="."]
-anchors_preset = 0
 offset_left = 190.0
 offset_top = 304.0
 offset_right = 957.0
 offset_bottom = 499.0
 
-[node name="Board" type="HBoxContainer" parent="Control2"]
+[node name="Board" type="HBoxContainer" parent="Control"]
 layout_mode = 2
-focus_neighbor_bottom = NodePath("../../Control/Hand")
+focus_neighbor_left = NodePath("../../Control4/AbilityMenu")
+focus_neighbor_bottom = NodePath("../../Control2/Hand")
 theme_override_constants/separation = 5
 script = ExtResource("9_ol53p")
 max_card_size = Vector2(150, 164)
 num_fields = 5
 field_scene = ExtResource("10_iw6yk")
 
+[node name="Control2" type="Control" parent="."]
+anchors_preset = 0
+offset_left = 250.0
+offset_top = 508.0
+offset_right = 859.0
+offset_bottom = 644.0
+
+[node name="Hand" type="HBoxContainer" parent="Control2"]
+layout_mode = 2
+anchor_top = -0.132
+anchor_bottom = -0.132
+offset_top = -0.0480003
+offset_bottom = -0.0480003
+focus_neighbor_left = NodePath("../../Control4/AbilityMenu")
+focus_neighbor_top = NodePath("../../Control/Board")
+focus_neighbor_right = NodePath("../../PassButton")
+alignment = 1
+script = ExtResource("8_0n5mo")
+max_card_size = Vector2(150, 164)
+can_focus = true
+spread = true
+
 [node name="Control3" type="Control" parent="."]
 anchors_preset = 0
-offset_left = 1035.0
+offset_left = 1077.0
 offset_top = 311.0
 offset_right = 1146.0
 offset_bottom = 459.0
 
 [node name="EssencePool" type="VBoxContainer" parent="Control3"]
 layout_mode = 0
-offset_left = 1.0
-offset_top = 1.0
-offset_right = 105.0
-offset_bottom = 1.0
+offset_right = 71.0
 script = ExtResource("11_mux16")
 
 [node name="Control4" type="Control" parent="."]
@@ -122,6 +123,8 @@ offset_top = -2.0
 offset_right = 227.0
 offset_bottom = -2.0
 grow_vertical = 0
+focus_neighbor_top = NodePath("../../Control/Board")
+focus_neighbor_right = NodePath("../../Control2/Hand")
 script = ExtResource("11_yr25d")
 
 [node name="List" type="VBoxContainer" parent="Control4/AbilityMenu"]
@@ -129,6 +132,6 @@ layout_mode = 2
 theme_override_constants/separation = 2
 
 [connection signal="pressed" from="PassButton" to="." method="_on_pass_button_pressed"]
-[connection signal="click" from="Control/Hand" to="." method="_on_hand_click"]
-[connection signal="click" from="Control2/Board" to="." method="_on_board_click"]
+[connection signal="click" from="Control/Board" to="." method="_on_board_click"]
+[connection signal="click" from="Control2/Hand" to="." method="_on_hand_click"]
 [connection signal="click" from="Control4/AbilityMenu" to="." method="_on_ability_menu_click"]

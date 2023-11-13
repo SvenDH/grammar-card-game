@@ -1,0 +1,12 @@
+[gd_resource type="Theme" load_steps=3 format=3 uid="uid://b21veaaftvef5"]
+
+[ext_resource type="Texture2D" uid="uid://htbx3nx1gwmy" path="res://textures/card.png" id="1_v1uq3"]
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_uhkgb"]
+texture = ExtResource("1_v1uq3")
+region_rect = Rect2(0, 0, 74, 82)
+
+[resource]
+Label/colors/font_color = Color(1, 1, 0.627451, 1)
+PanelContainer/styles/panel = SubResource("StyleBoxTexture_uhkgb")
+RichTextLabel/colors/default_color = Color(1, 1, 0.627451, 1)

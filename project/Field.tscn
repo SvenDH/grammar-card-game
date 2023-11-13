@@ -3,6 +3,7 @@
 [ext_resource type="Script" path="res://CardField.gd" id="1_h2ot6"]
 
 [node name="Field" type="PanelContainer"]
+modulate = Color(0.7, 0.7, 0.7, 1)
 custom_minimum_size = Vector2(150, 164)
 anchors_preset = -1
 anchor_right = 0.13

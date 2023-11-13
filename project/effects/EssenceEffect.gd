@@ -3,6 +3,9 @@ extends BaseEffect
 @export var colors: Array[String] = []
 @export var amount: int = 1
 
+func is_essence_ability(_ctx: Dictionary):
+	return true
+
 func activate(ctx: Dictionary):
 	var player = ctx.subject
 	if len(colors) > 1:

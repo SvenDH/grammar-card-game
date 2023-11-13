@@ -515,8 +515,10 @@ class ObjectTransformer(PrefixMixin, SuffixMixin, ZoneMixin, PlayerMixin, Object
     
     def moment(self, items):
         if items:
-            return Phase(ref=items[0], phase=items[1])
-        return Phase(ref=Reference.your, phase=PhaseEnum.fight)
+            if isinstance(items[0], PlayerMatch):
+                return Phase(phase=items[1], player=items[0])
+            return Phase(phase=items[1], turn=items[0])
+        return Phase(phase=PhaseEnum.fight, ref=Reference.your)
     
     def turnqualifier(self, items):
         t = items[0]
@@ -616,7 +618,7 @@ class EffectTransformer(Transformer):
         if item == TriggerEnum.endofturn:
             return Trigger(trigger=TriggerEnum.endofturn)
         elif isinstance(item, Phase):
-            return Trigger(trigger=TriggerEnum.beginningofphase, objects=item)
+            return Trigger(trigger=TriggerEnum.beginningofphase, phase=item)
         return item
     def whenyouplay(self, item):
         return Trigger(trigger=TriggerEnum.whenplay, objects=item)
@@ -628,10 +630,10 @@ class EffectTransformer(Transformer):
         return Trigger(trigger=TriggerEnum.whendamaged, objects=item)
     def mod(self, power, health, *args):
         return ModAbility(stats=Stats(power=power, health=health), foreach=args[0] if args else None)
-    def extracosts(self, item):
-        return ActionCost(costs=item)
+    def extracosts(self, *args):
+        return list(args)
     def imperativescost(self, *args):
-        return ActionCost(costs=args)
+        return list(args)
     def imperativecost(self, item):
         return item
     def effects(self, item):
@@ -644,8 +646,9 @@ class EffectTransformer(Transformer):
     def effect(self, item):
         return item
     def imperative(self, item, *args):
-        # TODO: add for each, conditional and where X
-        return PlayerEffect(effects=[item])  
+        foreach = [c for c in args if isinstance(c, ObjectMatch)]
+        # TODO: add conditional and where X
+        return PlayerEffect(effects=[item], foreach=foreach[0] if foreach else None)
     def action(self, item):
         return item
     def objecteffect(self, obj, effect):
@@ -663,11 +666,12 @@ class EffectTransformer(Transformer):
             condition=condition[0] if condition else None
         )  # TODO: add condition
     def playerphrase(self, *args):
+        if isinstance(args[0], PlayerEffect):
+            # TODO: add other modifiers or seconds effect
+            return args[0]
         condition = [c for c in args if isinstance(c, Condition)]
-        foreach = [c for c in args if isinstance(c, ObjectMatch)]
         return PlayerEffect(
             effects=[c for c in args if isinstance(c, BaseEffect)],
-            foreach=foreach[0] if foreach else None,
             condition=condition[0] if condition else None
         )  # TODO: add for each
     def hasability(self, abilities, *args):

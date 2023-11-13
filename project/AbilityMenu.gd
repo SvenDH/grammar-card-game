@@ -8,12 +8,21 @@ signal click(ability)
 
 func set_abilities(activated_abilities: Array):
 	reset()
+	var last = null
+	var first = false
 	for ability in activated_abilities:
 		var text = card_text_scene.instantiate()
-		text.append_text(ability.text)
+		text.add_format_text(ability.text)
 		list.add_child(text)
 		text.highlight(true)
+		if not first:
+			text.grab_focus()
+			first = true
 		text.click.connect(_on_label_click.bind(ability))
+		if last:
+			text.focus_neighbor_top = last.get_path()
+			last.focus_neighbor_bottom = text.get_path()
+		last = text
 
 func reset():
 	for child in list.get_children():

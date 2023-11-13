@@ -3,12 +3,15 @@ extends BaseEffect
 @export var number: int = 1
 @export var objects: ObjectMatch
 
+func targets(ctx):
+	return objects.targets(ctx)
+
 func activate(ctx: Dictionary):
 	return [[getnumber(number, ctx), objects]]
 
 func resolve(player: CardPlayer, n: int = 1, query_match = null):
 	for _i in n:
-		if player.hand.cards():
+		if not player.hand.cards():
 			return
 			
 		var choices

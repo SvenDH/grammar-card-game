@@ -2,6 +2,9 @@ extends BaseEffect
 
 @export var objects: ObjectMatch
 
+func targets(ctx):
+	return objects.targets(ctx)
+
 func activate(ctx: Dictionary):
 	var results = []
 	var res = await ctx.game.pick(ctx, objects, ZoneMatch.ZoneEnum.board)

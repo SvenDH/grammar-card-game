@@ -3,6 +3,9 @@ extends BaseEffect
 @export var objects: ObjectMatch
 @export var free: bool = false
 
+func targets(ctx):
+	return objects.targets(ctx)
+
 func activate(ctx: Dictionary):
 	var player = ctx.subject
 	var results = []

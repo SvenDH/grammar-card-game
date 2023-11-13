@@ -28,16 +28,27 @@ func highlight(enable: bool):
 
 func _on_focus_entered():
 	selected = true
+	modulate = Color.WHITE
 
 func _on_focus_exited():
 	selected = false
+	modulate = Color(.7, .7, .7)
 
 func _on_mouse_entered():
 	grab_focus()
 
-func _on_gui_input(event):
-	if highlighted:
-		if selected and event.is_action_pressed("ui_accept") or \
-		  (event is InputEventMouseButton and \
-		   event.button_index == MOUSE_BUTTON_LEFT and event.pressed):
+func _input(event):
+	if selected and event.is_action_pressed("ui_accept"):
+		if highlighted:
 			board.click.emit(index)
+		elif card and card.highlighted:
+			board.click.emit(card)
+
+func _on_gui_input(event):
+	if event is InputEventMouseButton and \
+	   event.button_index == MOUSE_BUTTON_LEFT and \
+	   event.pressed:
+		if highlighted:
+			board.click.emit(index)
+		elif card and card.highlighted:
+			board.click.emit(card)

@@ -19,4 +19,7 @@ scroll_active = false
 autowrap_mode = 2
 script = ExtResource("1_bos47")
 
+[connection signal="focus_entered" from="." to="." method="_on_focus_entered"]
+[connection signal="focus_exited" from="." to="." method="_on_focus_exited"]
 [connection signal="gui_input" from="." to="." method="_on_input"]
+[connection signal="mouse_entered" from="." to="." method="_on_mouse_entered"]

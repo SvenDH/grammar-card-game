@@ -37,7 +37,10 @@ func _ready():
 	if card:
 		name_label.text = card.name
 		for c in card.costs:
-			cost_label.append_text(str(c))
+			if c in Card.COLORS:
+				cost_label.add_icon(c)
+			else:
+				cost_label.append_text(str(c))
 		var text = null
 		for ability in card.abilities:
 			if ability is String:
@@ -48,11 +51,11 @@ func _ready():
 				text.append_text(ability)
 			else:
 				text = card_text_scene.instantiate()
-				text.append_text(ability.text)
+				text.add_format_text(ability.text)
 			if not text.get_parent():
 				ability_text.add_child(text)
 
-func _process(delta):
+func _process(_delta):
 	var container = get_parent()
 	if container.spread:
 		var bound = container.get_parent().size
@@ -66,8 +69,10 @@ func highlight(enable: bool):
 	highlighted = enable
 	if enable:
 		panel.mouse_default_cursor_shape = CURSOR_POINTING_HAND
+		panel.modulate = Color.WHITE
 	else:
 		panel.mouse_default_cursor_shape = CURSOR_ARROW
+		panel.modulate = Color(.7, .7, .7)
 
 func activate():
 	if not activated:
@@ -82,6 +87,7 @@ func deactivate():
 func add_status(new_status: CardStatus):
 	# TODO: subscribe for 'until' condition check
 	status.append(new_status)
+	new_status.apply(self)
 
 func cast(ctx: Dictionary) -> bool:
 	if not can_cast(ctx):
@@ -109,11 +115,11 @@ func resolve(player: CardPlayer, card: CardInstance, to_index: int):
 	player.place(card, ZoneMatch.ZoneEnum.board, to_index)
 
 func activate_ability(ctx: Dictionary, ability):
+	ctx.self = self
 	if not ability.can_activate(ctx):
 		return false
 
 	var player = ctx.priority
-	ctx.self = self
 	ctx.owner = player_owner
 	ctx.controller = player
 	ctx.ability = ability
@@ -130,7 +136,13 @@ func reset():
 	blocking = false
 	field_index = -1
 
-func can_react(ctx: Dictionary):
+func is_source():
+	for type in types:
+		if type == Card.TypeEnum.source:
+			return true
+	return false
+
+func can_react(_ctx: Dictionary):
 	# TODO: Check if card has flash or is an instant
 	return false
 
@@ -138,7 +150,6 @@ func can_cast(ctx: Dictionary):
 	if location != ZoneMatch.ZoneEnum.hand:
 		# TODO: check castable from other locations
 		return false
-	
 	ctx.self = self
 	var react = can_react(ctx)
 	if ctx.current_player != player_owner and not react:
@@ -152,7 +163,8 @@ func can_activate(ctx: Dictionary):
 	ctx.self = self
 	for ability in activated_abilities:
 		if ability.can_activate(ctx):
-			return true
+			if not ability.is_essence_ability(ctx) or not ctx.reaction:
+				return true
 	return false
 
 func on_activate():
@@ -231,9 +243,7 @@ func _on_focus_entered():
 	if container.can_focus:
 		if container is VBoxContainer:
 			panel.position.x = 20
-			#panel.position.y = 0
 		elif container is HBoxContainer:
-			#panel.position.x = 0
 			panel.position.y = -20
 
 func _on_focus_exited():

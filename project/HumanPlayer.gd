@@ -3,10 +3,11 @@ extends CardPlayer
 signal action_done(param)
 
 @onready var pass_button := $PassButton
-@onready var ability_menu := $Control4/AbilityMenu
 @onready var essence_pool := $Control3/EssencePool
+@onready var ability_menu := $Control4/AbilityMenu
 
 func choose(command: String, choices := []):
+	get_viewport().set_input_as_handled()
 	pass_button.hide()
 	ability_menu.hide()
 	print(command)
@@ -56,11 +57,26 @@ func choose(command: String, choices := []):
 					return false
 				await card.activate_ability(ctx, ability)
 		
+		elif card.is_source():
+			var to_index = await pick_free_field(card)
+			if to_index == -1:
+				return false
+			remove(card)
+			place(card, ZoneMatch.ZoneEnum.board, to_index)
+		
 		elif card.can_cast(ctx):
 			# Cast card
 			await card.cast(ctx)
 		
 		return false
+	
+	elif command == "discard":
+		board.reset()
+		hand.highlight(choices)
+		hand.show()
+		pass_button.hide()
+		var card = await action_done
+		return card
 	
 	elif command == "field":
 		hand.hide()

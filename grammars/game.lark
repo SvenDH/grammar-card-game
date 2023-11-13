@@ -41,14 +41,14 @@ objecteffect: objects " " objectphrase
 playereffect: players " " playerphrase
 conditionaleffect: I "f " (playercondition | objectcondition) (imperative | objecteffect | playereffect)
 
-imperative: action (" for each " pureobject)? (", where X is " numberdefinition)? (" unless " condition)?
+imperative: action (" for each " objects)? (", where X is " numberdefinition)? (" unless " condition)?
 objectphrase: op (("," op)* opandorthen op)? (" if " condition)?
-playerphrase: pp | pp " for each " object | pp " " firsttimeeachturn | pp ", then " pp | pp " this way"
+playerphrase: pp | pp " " firsttimeeachturn | pp ", then " pp | pp " this way"
 
 action: createtoken | destroy | copy | play | draw | search | shuffle | counter | activate | deactivate | extraturn | look
 | put | gaincontrol | switchdmghp | addessence | returncard | discard | reveals | sacrifice | payessence | paylife
 
-createtoken: C "reate " number " " stats (" token" | " tokens") (" with " acquiredability)?
+createtoken: C "reate " number " " stats " token" "s"? (" with " acquiredability)?
 destroy: D "estroy " objects
 copy: C "opy " objects
 play: P "lay" "s"? " " objects (" " free)?

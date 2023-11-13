@@ -25,9 +25,6 @@ func activate(ctx: Dictionary):
 func resolve(player: CardPlayer, card: Card, to_index: int):
 	assert(to_index >= 0 and to_index < player.board.num_fields)
 	assert(player.board.get_card(to_index) == null)  # TODO: should this be allowed?
-	var inst = CardInstance.new()
-	inst.card = card
-	inst.controller = self
-	inst.player_owner = self
-	inst.field_index = to_index
+	var inst = player.create_card_instance(card)
+	inst.controller = player
 	player.place(inst, ZoneMatch.ZoneEnum.board, to_index)

@@ -18,7 +18,7 @@ enum KeywordEnum {
 }
 
 @export var name: String
-@export var costs: Array = [0]
+@export var costs: Array = []
 @export var types: Array = []
 @export var subtypes: Array = []
 @export var abilities: Array = []

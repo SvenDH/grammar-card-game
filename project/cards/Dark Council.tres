@@ -1,10 +1,10 @@
-[gd_resource type="Resource" script_class="Card" load_steps=44 format=3 uid="uid://td1b0ku881wy"]
+[gd_resource type="Resource" script_class="Card" load_steps=44 format=3 uid="uid://b60bmoeeiw087"]
 
 [ext_resource type="Script" path="res://Card.gd" id="1"]
 [ext_resource type="Script" path="res://effects/TokenEffect.gd" id="9"]
 [ext_resource type="Script" path="res://effects/PlayEffect.gd" id="19"]
 [ext_resource type="Script" path="res://effects/DrawEffect.gd" id="33"]
-[ext_resource type="Script" path="res://effects/DiscardEffect.gd" id="41"]
+[ext_resource type="Script" path="res://effects/DiscardEffect.gd" id="39"]
 [ext_resource type="Script" path="res://ActivatedAbility.gd" id="51"]
 [ext_resource type="Script" path="res://ir/Effect.gd" id="53"]
 [ext_resource type="Script" path="res://ir/SubjectEffect.gd" id="55"]
@@ -17,8 +17,7 @@
 script = ExtResource("9")
 number = 1
 stats = [2, 2]
-abilities = ["flying", "siege"]
-action = ""
+abilities = ["Flying", "Siege"]
 
 [sub_resource type="Resource" id="10"]
 script = ExtResource("63")
@@ -31,7 +30,6 @@ who_cant = false
 script = ExtResource("55")
 effects = [SubResource("8")]
 subject = SubResource("10")
-action = ""
 
 [sub_resource type="Resource" id="4"]
 script = ExtResource("53")
@@ -49,8 +47,8 @@ script = ExtResource("61")
 ref = 0
 type = 0
 extra = 0
-prefixes = Array[Resource("res://ir/Prefix.gd")]([])
-suffixes = Array[Resource("res://ir/Suffix.gd")]([])
+prefixes = []
+suffixes = []
 without = 0
 copies = false
 
@@ -63,7 +61,6 @@ each = false
 script = ExtResource("19")
 objects = SubResource("20")
 free = true
-action = ""
 
 [sub_resource type="Resource" id="24"]
 script = ExtResource("63")
@@ -76,7 +73,6 @@ who_cant = false
 script = ExtResource("55")
 effects = [SubResource("18")]
 subject = SubResource("24")
-action = ""
 
 [sub_resource type="Resource" id="14"]
 script = ExtResource("53")
@@ -93,7 +89,6 @@ text = "{0}: Play unit cards without paying essence."
 script = ExtResource("33")
 number = 1
 side = false
-action = ""
 
 [sub_resource type="Resource" id="34"]
 script = ExtResource("63")
@@ -106,43 +101,43 @@ who_cant = false
 script = ExtResource("55")
 effects = [SubResource("32")]
 subject = SubResource("34")
-action = ""
 
-[sub_resource type="Resource" id="44"]
+[sub_resource type="Resource" id="42"]
 script = ExtResource("61")
 ref = 0
 type = 0
 extra = 0
-prefixes = Array[Resource("res://ir/Prefix.gd")]([])
-suffixes = Array[Resource("res://ir/Suffix.gd")]([])
+prefixes = []
+suffixes = []
 without = 0
 copies = false
 
-[sub_resource type="Resource" id="42"]
+[sub_resource type="Resource" id="40"]
 script = ExtResource("59")
-objects = Array[Resource("res://ir/Match.gd")]([SubResource("44")])
+objects = Array[Resource("res://ir/Match.gd")]([SubResource("42")])
 each = false
 
-[sub_resource type="Resource" id="40"]
-script = ExtResource("41")
-number = 1
-objects = SubResource("42")
-action = ""
-
-[sub_resource type="Resource" id="46"]
-script = ExtResource("63")
-player = 3
-ref = 0
-extra = 0
-who_cant = false
-
 [sub_resource type="Resource" id="38"]
-script = ExtResource("55")
-effects = [SubResource("40")]
-subject = SubResource("46")
-action = ""
+script = ExtResource("39")
+number = 1
+objects = SubResource("40")
 
 [sub_resource type="Resource" id="48"]
+script = ExtResource("61")
+ref = 0
+type = 0
+extra = 0
+prefixes = []
+suffixes = []
+without = 0
+copies = false
+
+[sub_resource type="Resource" id="46"]
+script = ExtResource("59")
+objects = Array[Resource("res://ir/Match.gd")]([SubResource("48")])
+each = false
+
+[sub_resource type="Resource" id="44"]
 script = ExtResource("63")
 player = 3
 ref = 0
@@ -152,8 +147,8 @@ who_cant = false
 [sub_resource type="Resource" id="36"]
 script = ExtResource("55")
 effects = [SubResource("38")]
-subject = SubResource("48")
-action = ""
+subject = SubResource("44")
+foreach = SubResource("46")
 
 [sub_resource type="Resource" id="28"]
 script = ExtResource("53")
@@ -171,8 +166,8 @@ script = ExtResource("61")
 ref = 14
 type = 0
 extra = 0
-prefixes = Array[Resource("res://ir/Prefix.gd")]([])
-suffixes = Array[Resource("res://ir/Suffix.gd")]([])
+prefixes = []
+suffixes = []
 without = 0
 copies = false
 
@@ -184,7 +179,6 @@ each = false
 [sub_resource type="Resource" id="56"]
 script = ExtResource("57")
 objects = SubResource("58")
-action = ""
 
 [sub_resource type="Resource" id="62"]
 script = ExtResource("63")
@@ -197,7 +191,6 @@ who_cant = false
 script = ExtResource("55")
 effects = [SubResource("56")]
 subject = SubResource("62")
-action = ""
 
 [sub_resource type="Resource" id="52"]
 script = ExtResource("53")
@@ -216,6 +209,6 @@ name = "Dark Council"
 costs = []
 types = [1]
 subtypes = []
-abilities = ["flying", "siege", SubResource("2"), SubResource("12"), SubResource("26"), SubResource("50")]
+abilities = ["Flying", "Siege", SubResource("2"), SubResource("12"), SubResource("26"), SubResource("50")]
 power = 1
 health = 1

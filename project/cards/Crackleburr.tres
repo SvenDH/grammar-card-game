@@ -1,0 +1,224 @@
+[gd_resource load_steps=52 format=2 type="Resource" script_class="Card"]
+
+[ext_resource path="res://Card.gd" type="Script" id=1]
+
+[ext_resource path="res://ActivatedAbility.gd" type="Script" id=3]
+
+[ext_resource path="res://effects/ActivationEffect.gd" type="Script" id=5]
+
+[ext_resource path="res://ir/Object.gd" type="Script" id=7]
+
+[ext_resource path="res://ir/Card.gd" type="Script" id=9]
+
+[ext_resource path="res://ir/Prefix.gd" type="Script" id=11]
+
+[ext_resource path="res://ir/Prefix.gd" type="Script" id=13]
+
+[ext_resource path="res://ir/Effect.gd" type="Script" id=15]
+
+[ext_resource path="res://ir/SubjectEffect.gd" type="Script" id=17]
+
+[ext_resource path="res://effects/DealsAbility.gd" type="Script" id=19]
+
+[ext_resource path="res://ir/Object.gd" type="Script" id=21]
+
+[ext_resource path="res://ir/Card.gd" type="Script" id=23]
+
+[ext_resource path="res://ActivatedAbility.gd" type="Script" id=25]
+
+[ext_resource path="res://effects/ActivationEffect.gd" type="Script" id=27]
+
+[ext_resource path="res://ir/Object.gd" type="Script" id=29]
+
+[ext_resource path="res://ir/Card.gd" type="Script" id=31]
+
+[ext_resource path="res://ir/Prefix.gd" type="Script" id=33]
+
+[ext_resource path="res://ir/Prefix.gd" type="Script" id=35]
+
+[ext_resource path="res://ir/Effect.gd" type="Script" id=37]
+
+[ext_resource path="res://ir/SubjectEffect.gd" type="Script" id=39]
+
+[ext_resource path="res://effects/MoveEffect.gd" type="Script" id=41]
+
+[ext_resource path="res://ir/Object.gd" type="Script" id=43]
+
+[ext_resource path="res://ir/Card.gd" type="Script" id=45]
+
+[ext_resource path="res://ir/Zone.gd" type="Script" id=47]
+
+[ext_resource path="res://ir/Player.gd" type="Script" id=49]
+
+[ext_resource path="res://ir/Player.gd" type="Script" id=51]
+
+[sub_resource type="Resource" id=10]
+script = ExtResource( 11 )
+prefix = 1
+non = false
+
+[sub_resource type="Resource" id=12]
+script = ExtResource( 13 )
+color = 3
+non = false
+
+[sub_resource type="Resource" id=8]
+script = ExtResource( 9 )
+ref = 16
+type = 0
+extra = 2
+prefixes = [ SubResource( 10 ), SubResource( 12 ) ]
+suffixes = [  ]
+withwhat = null
+without = 0
+copies = false
+
+[sub_resource type="Resource" id=6]
+script = ExtResource( 7 )
+objects = [ SubResource( 8 ) ]
+each = false
+
+[sub_resource type="Resource" id=4]
+script = ExtResource( 5 )
+objects = SubResource( 6 )
+deactivate = true
+
+[sub_resource type="Resource" id=18]
+script = ExtResource( 19 )
+amount = 3
+recipients = [ 25 ]
+spread = false
+
+[sub_resource type="Resource" id=22]
+script = ExtResource( 23 )
+ref = 1
+type = 0
+extra = 0
+prefixes = [  ]
+suffixes = [  ]
+withwhat = null
+without = 0
+copies = false
+
+[sub_resource type="Resource" id=20]
+script = ExtResource( 21 )
+objects = [ SubResource( 22 ) ]
+each = false
+
+[sub_resource type="Resource" id=16]
+script = ExtResource( 17 )
+effects = [ SubResource( 18 ) ]
+subject = SubResource( 20 )
+foreach = null
+condition = null
+
+[sub_resource type="Resource" id=14]
+script = ExtResource( 15 )
+effects = [ SubResource( 16 ) ]
+optional = false
+
+[sub_resource type="Resource" id=2]
+script = ExtResource( 3 )
+costs = [ "R", "B", "T", SubResource( 4 ) ]
+effect = SubResource( 14 )
+text = "{R}{B}, {T}, Deactivate two activated red units you control: ~ deals 3 damage to any target."
+
+[sub_resource type="Resource" id=32]
+script = ExtResource( 33 )
+prefix = 1
+non = true
+
+[sub_resource type="Resource" id=34]
+script = ExtResource( 35 )
+color = 5
+non = false
+
+[sub_resource type="Resource" id=30]
+script = ExtResource( 31 )
+ref = 16
+type = 0
+extra = 2
+prefixes = [ SubResource( 32 ), SubResource( 34 ) ]
+suffixes = [  ]
+withwhat = null
+without = 0
+copies = false
+
+[sub_resource type="Resource" id=28]
+script = ExtResource( 29 )
+objects = [ SubResource( 30 ) ]
+each = false
+
+[sub_resource type="Resource" id=26]
+script = ExtResource( 27 )
+objects = SubResource( 28 )
+deactivate = false
+
+[sub_resource type="Resource" id=44]
+script = ExtResource( 45 )
+ref = 14
+type = 0
+extra = 0
+prefixes = [  ]
+suffixes = [  ]
+withwhat = null
+without = 0
+copies = false
+
+[sub_resource type="Resource" id=42]
+script = ExtResource( 43 )
+objects = [ SubResource( 44 ) ]
+each = false
+
+[sub_resource type="Resource" id=48]
+script = ExtResource( 49 )
+player = 3
+extra = 0
+who_cant = false
+
+[sub_resource type="Resource" id=46]
+script = ExtResource( 47 )
+zones = [ 3 ]
+ref = SubResource( 48 )
+place = 0
+random = false
+
+[sub_resource type="Resource" id=40]
+script = ExtResource( 41 )
+objects = SubResource( 42 )
+tozone = SubResource( 46 )
+fromzone = null
+
+[sub_resource type="Resource" id=50]
+script = ExtResource( 51 )
+player = 3
+extra = 0
+who_cant = false
+
+[sub_resource type="Resource" id=38]
+script = ExtResource( 39 )
+effects = [ SubResource( 40 ) ]
+subject = SubResource( 50 )
+foreach = null
+condition = null
+
+[sub_resource type="Resource" id=36]
+script = ExtResource( 37 )
+effects = [ SubResource( 38 ) ]
+optional = false
+
+[sub_resource type="Resource" id=24]
+script = ExtResource( 25 )
+costs = [ "R", "B", "Q", SubResource( 26 ) ]
+effect = SubResource( 36 )
+text = "{R}{B}, {Q}, Activate two deactivated blue units you control: Return target unit to its owner's hand."
+
+[resource]
+script = ExtResource( 1 )
+name = "Crackleburr"
+costs = [ 1, "R", "B" ]
+types = [ 1 ]
+subtypes = [ "elemental" ]
+abilities = [ SubResource( 2 ), SubResource( 24 ) ]
+power = 2
+health = 2

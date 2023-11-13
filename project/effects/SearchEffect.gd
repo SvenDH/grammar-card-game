@@ -7,7 +7,7 @@ extends BaseEffect
 func activate(ctx: Dictionary):
 	var results = []
 	for _i in getnumber(number, ctx):
-		results.append([objects, zones])
+		results.append([zones, objects])
 	return results
 
 func resolve(player: CardPlayer, zones: ZoneMatch, query_match = null):

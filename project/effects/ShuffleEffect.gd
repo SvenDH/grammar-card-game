@@ -4,6 +4,9 @@ extends BaseEffect
 @export var what: ObjectMatch
 @export var zones: ZoneMatch
 
+func targets(ctx):
+	return what.targets(ctx) if what else -1
+
 func activate(ctx: Dictionary):
 	var player = ctx.subject
 	var results = []

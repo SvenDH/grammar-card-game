@@ -13,7 +13,7 @@ func set_essence(essence: Array):
 				i += 1
 		if i > 0:
 			var text = card_text_scene.instantiate()
-			text.append_text(str(i) + "x {" + c + "}")
+			text.add_format_text(str(i) + "x {" + c + "}")
 			add_child(text)
 			text.highlight(true)
 			text.click.connect(_on_label_click.bind(c))

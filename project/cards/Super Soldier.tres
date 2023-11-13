@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="Card" load_steps=16 format=3 uid="uid://bpdmrbkt8jtla"]
+[gd_resource type="Resource" script_class="Card" load_steps=16 format=3 uid="uid://cf2jh85iihy7"]
 
 [ext_resource type="Script" path="res://Card.gd" id="1"]
 [ext_resource type="Script" path="res://ActivatedAbility.gd" id="3"]
@@ -14,8 +14,8 @@ script = ExtResource("13")
 ref = 14
 type = 0
 extra = 0
-prefixes = Array[Resource("res://ir/Prefix.gd")]([])
-suffixes = Array[Resource("res://ir/Suffix.gd")]([])
+prefixes = []
+suffixes = []
 without = 0
 copies = false
 
@@ -27,7 +27,6 @@ each = false
 [sub_resource type="Resource" id="8"]
 script = ExtResource("9")
 objects = SubResource("10")
-action = ""
 
 [sub_resource type="Resource" id="14"]
 script = ExtResource("15")
@@ -40,7 +39,6 @@ who_cant = false
 script = ExtResource("7")
 effects = [SubResource("8")]
 subject = SubResource("14")
-action = ""
 
 [sub_resource type="Resource" id="4"]
 script = ExtResource("5")
@@ -59,6 +57,6 @@ name = "Super Soldier"
 costs = ["R"]
 types = [1]
 subtypes = []
-abilities = ["flying", "siege", SubResource("2")]
+abilities = ["Flying", "Siege", SubResource("2")]
 power = 1
 health = 1

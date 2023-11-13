@@ -1,0 +1,50 @@
+[gd_resource load_steps=10 format=2 type="Resource" script_class="Card"]
+
+[ext_resource path="res://Card.gd" type="Script" id=1]
+
+[ext_resource path="res://ir/SubjectEffect.gd" type="Script" id=3]
+
+[ext_resource path="res://effects/GetAbility.gd" type="Script" id=5]
+
+[ext_resource path="res://ir/Object.gd" type="Script" id=7]
+
+[ext_resource path="res://ir/Card.gd" type="Script" id=9]
+
+[sub_resource type="Resource" id=4]
+script = ExtResource( 5 )
+abilities = [ "This" ]
+until = null
+
+[sub_resource type="Resource" id=8]
+script = ExtResource( 9 )
+ref = 0
+type = 0
+extra = 0
+prefixes = [  ]
+suffixes = [  ]
+withwhat = null
+without = 1
+copies = false
+
+[sub_resource type="Resource" id=6]
+script = ExtResource( 7 )
+objects = [ SubResource( 8 ) ]
+each = false
+
+[sub_resource type="Resource" id=2]
+script = ExtResource( 3 )
+effects = [ SubResource( 4 ) ]
+subject = SubResource( 6 )
+foreach = null
+condition = null
+text = "Unit cards without flying have this ability."
+
+[resource]
+script = ExtResource( 1 )
+name = "Dwarven Strike"
+costs = [ "R" ]
+types = [ 4 ]
+subtypes = [  ]
+abilities = [ SubResource( 2 ) ]
+power = 2
+health = 0

@@ -3,6 +3,9 @@ extends BaseEffect
 @export var objects: ObjectMatch
 @export var until: Condition
 
+func targets(ctx):
+	return objects.targets(ctx)
+
 func activate(ctx: Dictionary):
 	var results = []
 	var res = await ctx.game.pick(ctx, objects)
@@ -14,11 +17,6 @@ func activate(ctx: Dictionary):
 
 func resolve(player: CardPlayer, card: CardInstance, until = null):
 	if card.location == ZoneMatch.ZoneEnum.board:
-		var status = StatsChanged.new()
+		var status = StatsSwapped.new()
 		status.until = until
-		status.original_power = card.power
-		status.original_health = card.health
-		var temp = card.health
-		card.health = card.power
-		card.power = temp
 		card.add_status(status)

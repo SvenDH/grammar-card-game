@@ -2,12 +2,12 @@
 
 [ext_resource type="Script" path="res://CardGame.gd" id="1_cwwvb"]
 [ext_resource type="PackedScene" uid="uid://fchwnecoto3j" path="res://CardPlayer.tscn" id="2_3quxd"]
-[ext_resource type="Resource" uid="uid://dw3pjw4qg3xoi" path="res://cards/Advisor.tres" id="3_4rxfn"]
-[ext_resource type="Resource" uid="uid://2hnw70sutdkt" path="res://cards/Dark Council.tres" id="4_8hmlc"]
-[ext_resource type="Resource" uid="uid://dawo7mrutckuq" path="res://cards/Knight.tres" id="5_jul0h"]
-[ext_resource type="Resource" uid="uid://dkki54sb4e18e" path="res://cards/Soldier.tres" id="6_nrx2b"]
-[ext_resource type="Resource" uid="uid://bbtkqr8jvyuqd" path="res://cards/Super Soldier.tres" id="7_1f7se"]
-[ext_resource type="Resource" uid="uid://svgcbk2n206g" path="res://cards/Land.tres" id="8_6k7is"]
+[ext_resource type="Resource" uid="uid://bf74wibopcom4" path="res://cards/Advisor.tres" id="3_4rxfn"]
+[ext_resource type="Resource" uid="uid://b60bmoeeiw087" path="res://cards/Dark Council.tres" id="4_8hmlc"]
+[ext_resource type="Resource" uid="uid://dx24bdvah7o7w" path="res://cards/Knight.tres" id="5_jul0h"]
+[ext_resource type="Resource" uid="uid://b8qr5uhovbosh" path="res://cards/Soldier.tres" id="6_nrx2b"]
+[ext_resource type="Resource" uid="uid://cf2jh85iihy7" path="res://cards/Super Soldier.tres" id="7_1f7se"]
+[ext_resource type="Resource" uid="uid://cat6c0fxqp8sy" path="res://cards/Land.tres" id="8_6k7is"]
 
 [node name="World" type="Node3D"]
 

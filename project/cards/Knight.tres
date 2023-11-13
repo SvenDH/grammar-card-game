@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="Card" load_steps=2 format=3 uid="uid://cae8pk33r2mtr"]
+[gd_resource type="Resource" script_class="Card" load_steps=2 format=3 uid="uid://dx24bdvah7o7w"]
 
 [ext_resource type="Script" path="res://Card.gd" id="1"]
 
@@ -8,6 +8,6 @@ name = "Knight"
 costs = ["R"]
 types = [1]
 subtypes = []
-abilities = ["siege"]
+abilities = ["Siege"]
 power = 2
 health = 2

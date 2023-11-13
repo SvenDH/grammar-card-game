@@ -1,7 +1,11 @@
 extends CardResource
 class_name BaseEffect
 
-@export var action: String
+func targets(_ctx: Dictionary):
+	return -1
 
-func activate(ct: Dictionary):
+func is_essence_ability(_ctx: Dictionary):
+	return false
+
+func activate(_ctx: Dictionary):
 	pass

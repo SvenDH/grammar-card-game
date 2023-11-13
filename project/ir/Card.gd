@@ -4,8 +4,8 @@ class_name CardMatch
 @export var ref: Reference
 @export var type: Card.TypeEnum
 @export var extra: int
-@export var prefixes: Array[PrefixMatch] = []
-@export var suffixes: Array[SuffixMatch] = []
+@export var prefixes: Array = []
+@export var suffixes: Array = []
 @export var withwhat: Resource = null
 @export var without: Card.KeywordEnum
 @export var copies: bool = false

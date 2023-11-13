@@ -13,6 +13,8 @@ class GrammarEnum(Enum):
     
     @classmethod
     def to_int(cls, value):
+        if value is None:
+            return 0
         vals = list(cls.__members__.values())
         return vals.index(value)
 
@@ -181,6 +183,7 @@ class TriggerEnum(str, GrammarEnum):
 
 
 class PhaseEnum(str, GrammarEnum):
+    none = ""
     turn = "turn"
     activation = "activation"
     draw = "draw step"
@@ -189,7 +192,19 @@ class PhaseEnum(str, GrammarEnum):
     cleanup = "cleanup"
 
 
+class ObjectPhrase(str, GrammarEnum):
+    blocked = "block"
+    attacked = "attacks"
+    targets = "targets"
+    leaves = "leaves"
+    dies = "dies"
+    moveszone = "is put"
+    whenenters = "enters"
+    dealsdamage = "damage"
+
+
 class TurnQualifierEnum(str, GrammarEnum):
+    none = ""
     each = "each"
     this = "this"
     that = "that"

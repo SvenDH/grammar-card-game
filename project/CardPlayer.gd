@@ -28,10 +28,13 @@ func _ready():
 	hand.player = self
 	
 	for card in cards:
-		var inst = card_scene.instantiate()
-		inst.player_owner = self
-		inst.card = card
-		deck.add(inst)
+		deck.add(create_card_instance(card))
+
+func create_card_instance(card):
+	var inst = card_scene.instantiate()
+	inst.player_owner = self
+	inst.card = card
+	return inst
 
 func choose(command: String, choices := []):
 	if command == "action":
@@ -218,7 +221,7 @@ func query(ctx: Dictionary, obj = null, place = null) -> Array:
 					found.append(card)
 	return found
 
-func _match_field(ctx: Dictionary, place: ZoneMatch.ZoneEnum, match_query) -> bool:
+func _match_field(_ctx: Dictionary, place: ZoneMatch.ZoneEnum, match_query) -> bool:
 	if match_query == null:
 		return true
 	if match_query is ZoneMatch:

@@ -13,7 +13,7 @@ func resolve(ctx: Dictionary):
 		var params = [eff[0]]
 		params.append_array(eff[2])
 		# TODO: should targets be checked here?
-		eff[1].callv("resolve", params)
+		await eff[1].callv("resolve", params)
 
 func on_counter():
 	pass

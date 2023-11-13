@@ -3,6 +3,9 @@ extends BaseEffect
 @export var objects: ObjectMatch
 @export var deactivate: bool = true
 
+func targets(ctx):
+	return objects.targets(ctx)
+
 func activate(ctx: Dictionary):
 	var results = []
 	var res = await ctx.game.pick(ctx, objects)
@@ -12,7 +15,7 @@ func activate(ctx: Dictionary):
 		results.append([d])
 	return results
 
-func resolve(player: CardPlayer, card: CardInstance, deactivate: bool):
+func resolve(_player: CardPlayer, card: CardInstance):
 	if card.location == ZoneMatch.ZoneEnum.board:
 		if deactivate:
 			card.deactivate()
