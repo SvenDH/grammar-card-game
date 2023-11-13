@@ -9,6 +9,7 @@ anchor_right = 0.13
 anchor_bottom = 0.019
 offset_right = 0.23999
 offset_bottom = -12.312
+mouse_filter = 1
 theme_override_font_sizes/normal_font_size = 10
 theme_override_font_sizes/bold_font_size = 10
 theme_override_font_sizes/italics_font_size = 10

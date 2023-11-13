@@ -12,9 +12,11 @@ func highlight(enable: bool):
 	if enable:
 		mouse_default_cursor_shape = CURSOR_POINTING_HAND
 		focus_mode = Control.FOCUS_ALL
+		mouse_filter = Control.MOUSE_FILTER_STOP
 	else:
 		mouse_default_cursor_shape = CURSOR_ARROW
 		focus_mode = Control.FOCUS_NONE
+		mouse_filter = Control.MOUSE_FILTER_PASS
 
 func add_icon(chr):
 	var pos = null

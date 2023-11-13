@@ -123,6 +123,23 @@ class Effect(BaseEffect):
         return ability.reference
 
 
+class DamageRecipients(BaseModel):
+    recipients: list[PlayerMatch | ObjectMatch | Reference] = []
+    targets: bool = False
+
+    def to_godot(self, resource: GDResource):
+        ability = resource.add_sub_resource("Resource")
+        ability["script"] = resource.add_ext_resource("res://ir/DamageRecipients.gd", "Script").reference
+        ability["recipients"] = [Reference.to_int(r) if isinstance(r, Reference) else r.to_godot(resource) for r in self.recipients]
+        ability["targets"] = self.targets
+        return ability.reference
+
+
+class NumberDef(BaseModel):
+    amount: ObjectMatch | Reference
+    property: NumbericalEnum | None = None
+
+
 class Condition(BaseModel):
     condition: ConditonEnum
     until: bool = False
@@ -149,20 +166,38 @@ class PlayedCondition(Condition):
         return ability.reference
 
 
+class ObjectCondition(Condition):
+    subject: ObjectMatch
+    phrase: ObjectPhraseEnum
+    object: ObjectMatch | None = None
+    possesion: PlayerMatch | None = None
+    into_zone: ZoneMatch | None = None
+    from_zone: ZoneMatch | None = None
+    damagerecipients: DamageRecipients | None = None
+
+    def to_godot(self, resource: GDResource):
+        ability = resource.add_sub_resource("Resource")
+        ability["script"] = resource.add_ext_resource("res://ir/ObjectCondition.gd", "Script").reference
+        ability["condition"] = ConditonEnum.to_int(self.condition)
+        ability["until"] = self.until
+        ability["subject"] = self.subject.to_godot(resource)
+        ability["phrase"] = ObjectPhraseEnum.to_int(self.phrase)
+        ability["object"] = self.object.to_godot(resource) if self.object else None
+        ability["possesion"] = self.possesion.to_godot(resource) if self.possesion else None
+        ability["into"] = self.into_zone.to_godot(resource) if self.into_zone else None
+        ability["from"] = self.from_zone.to_godot(resource) if self.from_zone else None
+        ability["damagerecipients"] = self.damagerecipients.to_godot(resource) if self.damagerecipients else None
+        return ability.reference
+
+
 class NumberCondition(Condition):
     number: str
     compare: str   # TODO: implement compare
 
 
 class PlayerCondition(Condition):
-    player: PlayerMatch
+    subject: PlayerMatch
     phrase: str   # TODO: implement playerphrase
-
-
-class ObjectCondition(Condition):
-    object: ObjectMatch
-    phrase: ObjectPhrase
-    
 
 
 class Phase(BaseModel):
@@ -184,20 +219,18 @@ class Phase(BaseModel):
 class Trigger(BaseModel):
     trigger: TriggerEnum
     objects: ObjectMatch | PlayerMatch | None = None
+    condition: Condition | None = None
     phase: Phase | None = None
 
     def to_godot(self, resource: GDResource):
         ability = resource.add_sub_resource("Resource")
         ability["script"] = resource.add_ext_resource("res://ir/Trigger.gd", "Script").reference
         ability["trigger"] = TriggerEnum.to_int(self.trigger)
-        ability["objects"] = self.objects.to_godot(resource) if self.objects else None
+        ability["objects"] = self.objects.to_godot(resource) if isinstance(self.objects, ObjectMatch) else None
+        ability["players"] = self.objects.to_godot(resource) if isinstance(self.objects, PlayerMatch) else None
+        ability["condition"] = self.condition.to_godot(resource) if isinstance(self.condition, Condition) else None
         ability["phase"] = self.phase.to_godot(resource) if self.phase else None
         return ability.reference
-
-
-class NumberDef(BaseModel):
-    amount: ObjectMatch | Reference
-    property: NumbericalEnum | None = None
 
 
 class TriggeredAbility(BaseModel):

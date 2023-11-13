@@ -3,7 +3,7 @@ class_name CardGame
 
 const START_CARDS := 5
 
-signal 
+signal play(player: CardPlayer, what: CardInstance)
 
 var players: Array[CardPlayer] = []
 var turn: int = 0

@@ -173,15 +173,6 @@ class PlayerEnum(str, GrammarEnum):
     attacking = "attacking"
 
 
-class TriggerEnum(str, GrammarEnum):
-    whenplay = "when play"
-    whengainlife = "when gain life"
-    whenloselife = "when lose life"
-    whendamaged = "when damaged"
-    endofturn = "end of turn"
-    beginningofphase = "beginning of phase"
-
-
 class PhaseEnum(str, GrammarEnum):
     none = ""
     turn = "turn"
@@ -192,7 +183,25 @@ class PhaseEnum(str, GrammarEnum):
     cleanup = "cleanup"
 
 
-class ObjectPhrase(str, GrammarEnum):
+class TurnQualifierEnum(str, GrammarEnum):
+    none = ""
+    each = "each"
+    this = "this"
+    that = "that"
+    the = "the"
+
+
+class TriggerEnum(str, GrammarEnum):
+    whenplay = "when play"
+    whengainlife = "when gain life"
+    whenloselife = "when lose life"
+    whendamaged = "when damaged"
+    endofturn = "end of turn"
+    beginningofphase = "beginning of phase"
+    condition = "condition"
+
+
+class ObjectPhraseEnum(str, GrammarEnum):
     blocked = "block"
     attacked = "attacks"
     targets = "targets"
@@ -201,11 +210,3 @@ class ObjectPhrase(str, GrammarEnum):
     moveszone = "is put"
     whenenters = "enters"
     dealsdamage = "damage"
-
-
-class TurnQualifierEnum(str, GrammarEnum):
-    none = ""
-    each = "each"
-    this = "this"
-    that = "that"
-    the = "the"

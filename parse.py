@@ -619,6 +619,8 @@ class EffectTransformer(Transformer):
             return Trigger(trigger=TriggerEnum.endofturn)
         elif isinstance(item, Phase):
             return Trigger(trigger=TriggerEnum.beginningofphase, phase=item)
+        elif isinstance(item, Condition):
+            return Trigger(trigger=TriggerEnum.condition, condition=item)
         return item
     def whenyouplay(self, item):
         return Trigger(trigger=TriggerEnum.whenplay, objects=item)
@@ -712,9 +714,9 @@ class EffectTransformer(Transformer):
     def damagerecipient(self, item):
         return item
     def playercondition(self, player, phrase):
-        return PlayerCondition(condition=ConditonEnum.playercond, player=player, phrase=phrase)
+        return PlayerCondition(condition=ConditonEnum.playercond, subject=player, phrase=phrase)
     def objectcondition(self, object, phrase):
-        return ObjectCondition(condition=ConditonEnum.objectcond, object=object, phrase=phrase)
+        return ObjectCondition(condition=ConditonEnum.objectcond, subject=object, phrase=phrase)
     def pc(self, item):
         return item
     def oc(self, item):

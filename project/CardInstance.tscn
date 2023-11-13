@@ -1,8 +1,9 @@
-[gd_scene load_steps=4 format=3 uid="uid://cnakiw5fb25w4"]
+[gd_scene load_steps=5 format=3 uid="uid://cnakiw5fb25w4"]
 
 [ext_resource type="Script" path="res://CardInstance.gd" id="1_oy88a"]
 [ext_resource type="Theme" uid="uid://b21veaaftvef5" path="res://cardstyle.tres" id="2_4bgkv"]
 [ext_resource type="Script" path="res://CardText.gd" id="3_2h7og"]
+[ext_resource type="Texture2D" uid="uid://dpqbawr5d5r0u" path="res://textures/avatar.png" id="4_4pevt"]
 
 [node name="CardInstance" type="Control"]
 custom_minimum_size = Vector2(150, 164)
@@ -61,6 +62,7 @@ offset_left = 7.0
 offset_top = 16.0
 offset_right = -5.0
 offset_bottom = -5.364
+texture = ExtResource("4_4pevt")
 
 [node name="Scroll" type="ScrollContainer" parent="Panel/Control"]
 layout_mode = 2
