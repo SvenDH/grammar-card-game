@@ -59,9 +59,9 @@ layout_mode = 2
 anchor_right = 1.0
 anchor_bottom = 0.551
 offset_left = 7.0
-offset_top = 16.0
+offset_top = 19.0
 offset_right = -5.0
-offset_bottom = -5.364
+offset_bottom = -2.364
 texture = ExtResource("4_4pevt")
 
 [node name="Scroll" type="ScrollContainer" parent="Panel/Control"]

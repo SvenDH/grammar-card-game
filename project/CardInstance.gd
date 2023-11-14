@@ -174,10 +174,10 @@ func on_deactivate():
 	pass
 
 func on_enter():
-	pass
+	ctx.game.entered.emit(self)
 
 func on_exit():
-	pass
+	ctx.game.left.emit(self)
 
 func on_draw():
 	pass
@@ -192,7 +192,7 @@ func on_destroy():
 	pass
 
 func on_counter():
-	pass
+	player_owner.game.countered.emit(self)
 
 func _get_types() -> Array:
 	return card.types  # TODO: add modified types

@@ -2,7 +2,7 @@
 
 [ext_resource path="res://Card.gd" type="Script" id=1]
 
-[ext_resource path="res://ActivatedAbility.gd" type="Script" id=3]
+[ext_resource path="res://ir/ActivatedAbility.gd" type="Script" id=3]
 
 [ext_resource path="res://ir/Effect.gd" type="Script" id=5]
 
@@ -10,7 +10,7 @@
 
 [ext_resource path="res://effects/GetAbility.gd" type="Script" id=9]
 
-[ext_resource path="res://effects/ModAbility.gd" type="Script" id=11]
+[ext_resource path="res://ir/ModAbility.gd" type="Script" id=11]
 
 [ext_resource path="res://ir/Condition.gd" type="Script" id=13]
 
@@ -20,7 +20,7 @@
 
 [ext_resource path="res://ir/Prefix.gd" type="Script" id=19]
 
-[ext_resource path="res://ActivatedAbility.gd" type="Script" id=21]
+[ext_resource path="res://ir/ActivatedAbility.gd" type="Script" id=21]
 
 [ext_resource path="res://ir/Effect.gd" type="Script" id=23]
 
@@ -28,7 +28,7 @@
 
 [ext_resource path="res://effects/GetAbility.gd" type="Script" id=27]
 
-[ext_resource path="res://effects/ModAbility.gd" type="Script" id=29]
+[ext_resource path="res://ir/ModAbility.gd" type="Script" id=29]
 
 [ext_resource path="res://ir/Condition.gd" type="Script" id=31]
 
@@ -38,7 +38,7 @@
 
 [ext_resource path="res://ir/Prefix.gd" type="Script" id=37]
 
-[ext_resource path="res://ActivatedAbility.gd" type="Script" id=39]
+[ext_resource path="res://ir/ActivatedAbility.gd" type="Script" id=39]
 
 [ext_resource path="res://effects/SacrificeEffect.gd" type="Script" id=41]
 

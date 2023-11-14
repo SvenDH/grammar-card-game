@@ -125,21 +125,23 @@ func add_essence(color):
 func remove_essence(color):
 	essence.erase(color)
 
-func draw(side_: bool = false):
+func draw(amount: int = 1, side_: bool = false):
 	var card: CardInstance
-	if side_:
-		card = CardInstance.new()
-		card.player_owner = self
-		card.card = side[randi() % len(side)]
-		card.side = true
-	else:
-		card = deck.pop()
-	if card:
-		place(card, ZoneMatch.ZoneEnum.hand)
-		card.on_draw()
-	else:
-		# TODO: Lose the game
-		pass
+	game.drawn.emit(self, amount)
+	for _i in amount:
+		if side_:
+			card = CardInstance.new()
+			card.player_owner = self
+			card.card = side[randi() % len(side)]
+			card.side = true
+		else:
+			card = deck.pop()
+		if card:
+			place(card, ZoneMatch.ZoneEnum.hand)
+			card.on_draw()
+		else:
+			# TODO: Lose the game
+			pass
 
 func shuffle(zone: ZoneMatch.ZoneEnum = ZoneMatch.ZoneEnum.deck):
 	match zone:

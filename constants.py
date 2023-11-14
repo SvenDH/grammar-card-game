@@ -179,7 +179,6 @@ class PhaseEnum(str, GrammarEnum):
     activation = "activation"
     draw = "draw step"
     play = "play phase"
-    fight = "fight phase"
     cleanup = "cleanup"
 
 

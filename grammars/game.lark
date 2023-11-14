@@ -215,14 +215,13 @@ notyourturn: "it's not your turn"
 duration: thisturn | "for as long as " condition | until
 until: "until " (condition | "end of turn")
 thisturn: "this turn"
-moment: turnqualifier " " phase | "fight on your turn"
+moment: turnqualifier " " phase
 turnqualifier: (possesion | the) (" " next)? | each | (this | that) " turn's"?
-phase: turn | activationphase | drawphase | playphase | fightphase | cleanup
+phase: turn | activationphase | drawphase | playphase | cleanup
 turn: "turn"
 activationphase: "activation"
 drawphase: "draw step"
 playphase: "play phase"
-fightphase: "fight phase"
 cleanup: "cleanup"
 next: "next"
 itself: "itself"

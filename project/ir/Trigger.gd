@@ -16,12 +16,3 @@ enum TriggerEnum {
 @export var players: PlayerMatch
 @export var condition: Condition
 @export var phase: Phase
-
-func activate(ctx: Dictionary):
-	var game: CardGame = ctx.game
-	if trigger == TriggerEnum.whenplay:
-		game.play.connect(trigger)
-		
-
-func trigger(ctx: Dictionary):
-	pass

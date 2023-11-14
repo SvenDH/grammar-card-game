@@ -7,7 +7,6 @@ enum PhaseEnum {
 	activation,
 	draw,
 	play,
-	fight,
 	cleanup
 }
 
@@ -23,3 +22,17 @@ enum TurnQualifierEnum {
 @export var turn: TurnQualifierEnum
 @export var ref: Match.Reference
 @export var player: PlayerMatch
+
+func check(card: CardInstance):
+	var ctx = card.ctx
+	var game = ctx.game
+	var cardstate = ctx.state[card]
+	if phase != PhaseEnum.none and phase != PhaseEnum.turn:
+		if phase != game.phase:
+			return false
+	if turn == TurnQualifierEnum.this:
+		if cardstate[ctx.ability].turn != game.turn:
+			return false
+	if player and ctx.current_player not in game.query(ctx, player):
+		return false
+	return true

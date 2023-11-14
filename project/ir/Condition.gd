@@ -13,3 +13,7 @@ enum ConditionEnum {
 
 @export var condition: ConditionEnum
 @export var until: bool = false
+
+func check(card: CardInstance):
+	return false
+

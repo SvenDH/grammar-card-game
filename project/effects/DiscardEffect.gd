@@ -10,6 +10,7 @@ func activate(ctx: Dictionary):
 	return [[getnumber(number, ctx), objects]]
 
 func resolve(player: CardPlayer, n: int = 1, query_match = null):
+	player.game.discarded.emit(player, n)
 	for _i in n:
 		if not player.hand.cards():
 			return

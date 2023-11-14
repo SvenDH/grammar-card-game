@@ -2,7 +2,7 @@
 
 [ext_resource path="res://Card.gd" type="Script" id=1]
 
-[ext_resource path="res://ActivatedAbility.gd" type="Script" id=3]
+[ext_resource path="res://ir/ActivatedAbility.gd" type="Script" id=3]
 
 [ext_resource path="res://effects/ActivationEffect.gd" type="Script" id=5]
 
@@ -24,7 +24,7 @@
 
 [ext_resource path="res://ir/Card.gd" type="Script" id=23]
 
-[ext_resource path="res://ActivatedAbility.gd" type="Script" id=25]
+[ext_resource path="res://ir/ActivatedAbility.gd" type="Script" id=25]
 
 [ext_resource path="res://effects/ActivationEffect.gd" type="Script" id=27]
 

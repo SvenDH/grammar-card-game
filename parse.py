@@ -154,8 +154,6 @@ class KeywordTransformer(Transformer):
         return PhaseEnum.draw
     def playphase(self):
         return PhaseEnum.play
-    def fightphase(self):
-        return PhaseEnum.fight
     def cleanup(self):
         return PhaseEnum.cleanup
     
@@ -514,11 +512,9 @@ class ObjectTransformer(PrefixMixin, SuffixMixin, ZoneMixin, PlayerMixin, Object
         return item
     
     def moment(self, items):
-        if items:
-            if isinstance(items[0], PlayerMatch):
-                return Phase(phase=items[1], player=items[0])
-            return Phase(phase=items[1], turn=items[0])
-        return Phase(phase=PhaseEnum.fight, ref=Reference.your)
+        if isinstance(items[0], PlayerMatch):
+            return Phase(phase=items[1], player=items[0])
+        return Phase(phase=items[1], turn=items[0])
     
     def turnqualifier(self, items):
         t = items[0]

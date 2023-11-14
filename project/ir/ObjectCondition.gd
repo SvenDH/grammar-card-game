@@ -12,14 +12,11 @@ enum ObjectPhraseEnum {
 	dealsdamage
 }
 
-@export var subject: ObjectMatch
 @export var phrase: ObjectPhraseEnum
+@export var subject: ObjectMatch
 @export var object: ObjectMatch
 @export var possesion: PlayerMatch
 @export var into: ZoneMatch
 @export var from: ZoneMatch
 @export var damagerecipients: DamageRecipients
 
-func check():
-	
-	

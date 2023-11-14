@@ -240,7 +240,7 @@ class TriggeredAbility(BaseModel):
 
     def to_godot(self, resource: GDResource):
         ability = resource.add_sub_resource("Resource")
-        ability["script"] = resource.add_ext_resource("res://TriggeredAbility.gd", "Script").reference
+        ability["script"] = resource.add_ext_resource("res://ir/TriggeredAbility.gd", "Script").reference
 
         return ability.reference
 
@@ -251,7 +251,7 @@ class ActivatedAbility(BaseModel):
 
     def to_godot(self, resource: GDResource):
         ability = resource.add_sub_resource("Resource")
-        ability["script"] = resource.add_ext_resource("res://ActivatedAbility.gd", "Script").reference
+        ability["script"] = resource.add_ext_resource("res://ir/ActivatedAbility.gd", "Script").reference
         ability["costs"] = [c.to_godot(resource) if isinstance(c, BaseEffect) else c for c in self.costs]
         ability["effect"] = self.effect.to_godot(resource)
         return ability.reference

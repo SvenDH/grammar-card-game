@@ -3,21 +3,32 @@ class_name CardGame
 
 const START_CARDS := 5
 
+signal drawn(player: CardPlayer, amount: int)
+signal discarded(player: CardPlayer, amount: int)
 signal play(player: CardPlayer, what: CardInstance)
+signal lifechanged(player: CardPlayer, value: int, source)
+signal phasechanged(player: CardPlayer, phase: Phase.PhaseEnum)
+signal entered(card: CardInstance)
+signal left(card: CardInstance)
+signal healthchanged(card: CardInstance, value: int, source)
+signal countered(thing)
 
 var players: Array[CardPlayer] = []
-var turn: int = 0
+var turn := 0
 var phase: Phase.PhaseEnum = Phase.PhaseEnum.activation
-var stack: Array = []
+var stack := []
+var ctx := {}
 
 func _ready():
 	for child in get_children():
 		if child is CardPlayer:
 			add_player(child)
+	ctx.game = self
 	start()
 
 func add_player(player: CardPlayer):
 	player.game = self
+	player.ctx = ctx
 	players.append(player)
 	return player
 
@@ -38,23 +49,20 @@ func start():
 	
 func do_turn(player: CardPlayer):
 	# TODO: add phase to ctx
-	player.ctx = {
-		"game": self,
-		"turn": turn,
-		"current_player": player,
-		"reaction": false,
-		"priority": player
-	}
-	player.start_turn()
+	ctx.turn = turn
+	ctx.current_player = player
+	ctx.reaction = false
+	ctx.priority = player
 	
+	phase = Phase.PhaseEnum.activation
+	player.start_turn()
+	phase = Phase.PhaseEnum.draw
 	player.draw()
-
+	phase = Phase.PhaseEnum.play
 	var done = false
 	while not done:
 		done = await player.choose("action")
-	
-	# TODO: combat
-	
+	phase = Phase.PhaseEnum.cleanup
 	player.end_turn()
 
 func send(ctx: Dictionary, effects: Array, use_stack := true):
@@ -86,7 +94,7 @@ func send(ctx: Dictionary, effects: Array, use_stack := true):
 func pick(ctx: Dictionary, obj, place = null):
 	var n = obj.targets(ctx)
 	if n > 0:
-		var player: CardPlayer = ctx.controller
+		var player: CardPlayer = ctx.priority
 		for _i in n:
 			var found = query(ctx, obj, place)
 			if len(found) == 0:
