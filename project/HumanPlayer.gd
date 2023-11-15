@@ -15,16 +15,16 @@ func choose(command: String, choices := []):
 		# TODO: get castable cards and abilities from other places
 		var castable_cards = []
 		for card in hand.cards():
-			if card.can_cast(ctx):
+			if card.can_cast():
 				castable_cards.append(card)
 		
 		var board_cards = []
 		for card in board.cards():
-			if card.can_activate(ctx):
+			if card.can_activate():
 				board_cards.append(card)
 		
 		if len(castable_cards) == 0 and len(board_cards) == 0:
-			if ctx.reaction:
+			if game.reaction:
 				# TODO: make auto pass optional for multiplayer
 				return true
 		
@@ -41,10 +41,10 @@ func choose(command: String, choices := []):
 			# Skip
 			return true
 		# Can cast and can activate add another menu
-		if card.can_activate(ctx):
+		if card.can_activate():
 			var activatable = []
 			for ab in card.activated_abilities:
-				if ab.can_activate(ctx):
+				if ab.can_activate(card):
 					activatable.append(ab)
 			if activatable:
 				# Activate ability
@@ -55,7 +55,7 @@ func choose(command: String, choices := []):
 					ability = activatable[0]
 				if ability == null:
 					return false
-				await card.activate_ability(ctx, ability)
+				await card.activate_ability(ability)
 		
 		elif card.is_source():
 			var to_index = await pick_free_field(card)
@@ -64,9 +64,9 @@ func choose(command: String, choices := []):
 			remove(card)
 			place(card, ZoneMatch.ZoneEnum.board, to_index)
 		
-		elif card.can_cast(ctx):
+		elif card.can_cast():
 			# Cast card
-			await card.cast(ctx)
+			await card.cast()
 		
 		return false
 	

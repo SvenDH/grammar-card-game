@@ -6,6 +6,9 @@ extends BaseEffect
 func targets(ctx):
 	return objects.targets(ctx)
 
+func has_target():
+	return objects.has_target()
+
 func activate(ctx: Dictionary):
 	return [[getnumber(number, ctx), objects]]
 
@@ -17,7 +20,7 @@ func resolve(player: CardPlayer, n: int = 1, query_match = null):
 			
 		var choices
 		if query_match:
-			choices = player.query(player.ctx, query_match, ZoneMatch.ZoneEnum.hand)
+			choices = player.query(player.game.ctx, query_match, ZoneMatch.ZoneEnum.hand)
 		else:
 			choices = player.hand.cards()
 		if choices:

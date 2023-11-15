@@ -4,11 +4,11 @@ class_name Effect
 @export var effects: Array[BaseEffect] = []
 @export var optional: bool = false
 
-func is_essence_ability(ctx):
-	if targets(ctx) != -1:
+func is_essence_ability():
+	if has_target():
 		return false
 	for eff in effects:
-		if not eff.is_essence_ability(ctx):
+		if not eff.is_essence_ability():
 			return false
 	return true
 
@@ -24,6 +24,12 @@ func targets(ctx):
 		return total
 	return -1
 
+func has_target() -> bool:
+	for eff in effects:
+		if eff.has_target():
+			return true
+	return false
+
 func activate(ctx: Dictionary):
 	# TODO: add optional check
 	var played = []
@@ -32,4 +38,4 @@ func activate(ctx: Dictionary):
 		if res == null:
 			return null
 		played.append_array(res)
-	return await ctx.game.send(ctx, played, not is_essence_ability(ctx))
+	return await ctx.controller.game.send(ctx, played, not is_essence_ability())

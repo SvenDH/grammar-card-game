@@ -41,5 +41,8 @@ const Countables = [Reference.exactly, Reference.atleast, Reference.ormore, Refe
 func targets(_ctx: Dictionary) -> int:
 	return -1
 
+func has_target() -> bool:
+	return false
+
 func match_query(_ctx: Dictionary, _other) -> bool:
 	return false

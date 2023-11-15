@@ -7,9 +7,9 @@ class_name Ability
 @export var effects: Array
 
 func resolve(ctx: Dictionary):
+	ctx.controller.game.ctx = ctx
 	for eff in effects:
 		ctx.subject = eff[0]
-		eff[0].ctx = ctx
 		var params = [eff[0]]
 		params.append_array(eff[2])
 		# TODO: should targets be checked here?

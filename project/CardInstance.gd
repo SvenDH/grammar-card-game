@@ -19,7 +19,6 @@ var location: ZoneMatch.ZoneEnum = ZoneMatch.ZoneEnum.deck
 var field_index: int = -1
 var highlighted := false
 var selected := false
-var ctx: Dictionary
 var can_focus := false
 var types: get = _get_types
 var abilities: get = _get_abilities
@@ -89,21 +88,24 @@ func add_status(new_status: CardStatus):
 	status.append(new_status)
 	new_status.apply(self)
 
-func cast(ctx: Dictionary) -> bool:
-	if not can_cast(ctx):
+func cast() -> bool:
+	if not can_cast():
 		return false
 	
-	var player = ctx.priority
+	var game = player_owner.game
+	var player = game.priority
 	var to_index = await player.pick_free_field(self)
 	if to_index == -1:
 		return false
 
 	player.remove(self)
 	location = ZoneMatch.ZoneEnum.stack
-	ctx.self = self
-	ctx.owner = player_owner
-	ctx.controller = player
-	ctx.ability = card
+	
+	var ctx = {
+		'self': self,
+		'controller': player,
+		'ability': card,
+	}
 	# TODO: add additional costs (from status etc)
 	await player.pay_costs(self, card.costs)
 	player.game.send(ctx, [[player, self, [self, to_index]]])
@@ -114,16 +116,17 @@ func resolve(player: CardPlayer, card: CardInstance, to_index: int):
 	player.remove(card)
 	player.place(card, ZoneMatch.ZoneEnum.board, to_index)
 
-func activate_ability(ctx: Dictionary, ability):
-	ctx.self = self
-	if not ability.can_activate(ctx):
+func activate_ability(ability):
+	if not ability.can_activate(self):
 		return false
-
-	var player = ctx.priority
-	ctx.owner = player_owner
-	ctx.controller = player
-	ctx.ability = ability
-	ctx.targets = []
+	var game = player_owner.game
+	var player = game.priority
+	var ctx = {
+		'self': self,
+		'controller': player,
+		'ability': ability,
+		'targets': []
+	}
 	await player.pay_costs(self, ability.costs)
 	return await ability.activate(ctx)
 
@@ -142,28 +145,28 @@ func is_source():
 			return true
 	return false
 
-func can_react(_ctx: Dictionary):
+func can_react():
 	# TODO: Check if card has flash or is an instant
 	return false
 
-func can_cast(ctx: Dictionary):
+func can_cast():
 	if location != ZoneMatch.ZoneEnum.hand:
 		# TODO: check castable from other locations
 		return false
-	ctx.self = self
-	var react = can_react(ctx)
-	if ctx.current_player != player_owner and not react:
+	var react = can_react()
+	var game = player_owner.game
+	if game.current_player != player_owner and not react:
 		return false
-	if ctx.reaction and not react:
+	if game.reaction and not react:
 		return false
 	
 	return player_owner.can_pay(self, card.costs)
 
-func can_activate(ctx: Dictionary):
-	ctx.self = self
+func can_activate():
+	var game = player_owner.game
 	for ability in activated_abilities:
-		if ability.can_activate(ctx):
-			if not ability.is_essence_ability(ctx) or not ctx.reaction:
+		if ability.can_activate(self):
+			if not ability.is_essence_ability() or not game.reaction:
 				return true
 	return false
 
@@ -174,10 +177,10 @@ func on_deactivate():
 	pass
 
 func on_enter():
-	ctx.game.entered.emit(self)
+	player_owner.game.entered.emit(self)
 
 func on_exit():
-	ctx.game.left.emit(self)
+	player_owner.game.left.emit(self)
 
 func on_draw():
 	pass

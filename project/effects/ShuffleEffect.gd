@@ -7,6 +7,9 @@ extends BaseEffect
 func targets(ctx):
 	return what.targets(ctx) if what else -1
 
+func has_target():
+	return what.has_target()
+
 func activate(ctx: Dictionary):
 	var player = ctx.subject
 	var results = []

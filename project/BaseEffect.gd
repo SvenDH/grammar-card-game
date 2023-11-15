@@ -4,7 +4,10 @@ class_name BaseEffect
 func targets(_ctx: Dictionary):
 	return -1
 
-func is_essence_ability(_ctx: Dictionary):
+func has_target():
+	return false
+
+func is_essence_ability():
 	return false
 
 func activate(_ctx: Dictionary):

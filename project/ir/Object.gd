@@ -5,11 +5,17 @@ class_name ObjectMatch
 @export var each: bool = false
 
 func targets(ctx: Dictionary) -> int:
-	for obj in objects:
-		var n = obj.targets(ctx)
+	for o in objects:
+		var n = o.targets(ctx)
 		if n > 0:
 			return n
 	return -1
+
+func has_target() -> bool:
+	for o in objects:
+		if o.has_target():
+			return true
+	return false
 
 func match_query(ctx: Dictionary, other) -> bool:
 	for o in objects:

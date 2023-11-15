@@ -16,6 +16,9 @@ func targets(ctx: Dictionary) -> int:
 			return getnumber(extra, ctx)
 		return 1
 	return -1
+	
+func has_target() -> bool:
+	return ref == Reference.target
 
 func match_query(ctx: Dictionary, other) -> bool:
 	if not other is CardInstance:

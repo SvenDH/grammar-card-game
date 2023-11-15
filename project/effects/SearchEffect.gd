@@ -4,6 +4,12 @@ extends BaseEffect
 @export var zones: ZoneMatch
 @export var objects: ObjectMatch
 
+func targets(ctx):
+	return objects.targets(ctx)
+
+func has_target():
+	return objects.has_target()
+
 func activate(ctx: Dictionary):
 	var results = []
 	for _i in getnumber(number, ctx):

@@ -6,11 +6,11 @@ class_name SubjectEffect
 @export var foreach: Match
 @export var condition: Condition
 
-func is_essence_ability(ctx):
-	if targets(ctx) != -1:
+func is_essence_ability():
+	if has_target():
 		return false
 	for eff in effects:
-		if not eff.is_essence_ability(ctx):
+		if not eff.is_essence_ability():
 			return false
 	return true
 
@@ -26,8 +26,14 @@ func targets(ctx):
 		return total
 	return -1
 
+func has_target() -> bool:
+	for eff in effects:
+		if eff.has_target():
+			return true
+	return false
+
 func activate(ctx: Dictionary):
-	var game = ctx.game
+	var game = ctx.controller.game
 	var subj = await game.pick(ctx, subject)
 	if subj == null:
 		return null

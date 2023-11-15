@@ -24,13 +24,13 @@ enum SuffixEnum {
 
 func match_query(ctx: Dictionary, other) -> bool:
 	if suffix == SuffixEnum.control:
-		return subj.match_query(ctx, other.control)
+		return subj.match_query(ctx, other.controller)
 	elif suffix == SuffixEnum.nocontrol:
-		return not subj.match_query(ctx, other.control)
+		return not subj.match_query(ctx, other.controller)
 	elif suffix == SuffixEnum.own:
-		return subj.match_query(ctx, other.owner)
+		return subj.match_query(ctx, other.player_owner)
 	elif suffix == SuffixEnum.noown:
-		return not subj.match_query(ctx, other.owner)
+		return not subj.match_query(ctx, other.player_owner)
 	elif suffix == SuffixEnum.inzone:
 		for place in zones:
 			if not place.match_query(ctx, other):
@@ -38,7 +38,7 @@ func match_query(ctx: Dictionary, other) -> bool:
 	elif suffix == SuffixEnum.youplay:
 		if "played" not in ctx or ctx["played"] != other:
 			return false
-		if ctx["controller"] != other.control:
+		if ctx["self"].controller != other.controller:
 			return false
 	elif suffix == SuffixEnum.targets:
 		if "targets" not in ctx or "targeting" not in ctx:

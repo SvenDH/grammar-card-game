@@ -14,7 +14,6 @@ class_name CardPlayer
 var game = null
 var turnsafterthis: int = 0
 var essence := []
-var ctx := {}
 
 @onready var board: CardFields = get_node(board_path)
 @onready var deck: CardPile = get_node(deck_path)
@@ -95,14 +94,14 @@ func can_pay(card: CardInstance, costs: Array) -> bool:
 func can_cast() -> bool:
 	# TODO: get castable cards not in hand
 	for card in hand.cards():
-		if card.can_cast(ctx):
+		if card.can_cast():
 			return true
 	return false
 
 func can_activate() -> bool:
 	# TODO: get activatable cards not on board
 	for card in board.cards():
-		if card != null and card.can_activate(ctx):
+		if card != null and card.can_activate():
 			return true
 	return false
 	
@@ -223,7 +222,7 @@ func query(ctx: Dictionary, obj = null, place = null) -> Array:
 					found.append(card)
 	return found
 
-func _match_field(_ctx: Dictionary, place: ZoneMatch.ZoneEnum, match_query) -> bool:
+func _match_field(ctx: Dictionary, place: ZoneMatch.ZoneEnum, match_query) -> bool:
 	if match_query == null:
 		return true
 	if match_query is ZoneMatch:

@@ -6,6 +6,9 @@ extends BaseEffect
 func targets(ctx):
 	return objects.targets(ctx)
 
+func has_target():
+	return objects.has_target()
+
 func activate(ctx: Dictionary):
 	var results = []
 	var res = await ctx.game.pick(ctx, objects)

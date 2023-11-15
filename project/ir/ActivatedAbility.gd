@@ -4,20 +4,22 @@ class_name ActivatedAbility
 @export var costs: Array = []
 @export var effect: Effect
 
-func is_essence_ability(ctx: Dictionary):
-	if targets(ctx) != -1:
+func is_essence_ability() -> bool:
+	if has_target():
 		return false
-	return effect.is_essence_ability(ctx)
+	return effect.is_essence_ability()
 
-func targets(ctx: Dictionary):
+func targets(ctx: Dictionary) -> int:
 	return effect.targets(ctx)
 
-func can_activate(ctx: Dictionary):
-	if ctx.self.location != ZoneMatch.ZoneEnum.board:
+func has_target() -> bool:
+	return effect.has_target()
+
+func can_activate(card: CardInstance):
+	if card.location != ZoneMatch.ZoneEnum.board:
 		# TODO: check if activatable from other place
 		return false
 	# TODO: add potential essence from essence sources
-	var card = ctx.self
 	var controller = card.controller
 	return controller.can_pay(card, costs)
 
