@@ -61,7 +61,8 @@ func do_turn(player: CardPlayer):
 	phase = Phase.PhaseEnum.play
 	var done = false
 	while not done:
-		done = await player.choose("action")
+		var choices = player.get_playable_cards()
+		done = await player.choose("action", choices)
 	phase = Phase.PhaseEnum.cleanup
 	player.end_turn()
 
@@ -81,7 +82,8 @@ func send(ctx: Dictionary, effects: Array, use_stack := true):
 				priority = player
 				var done = false
 				while not done:
-					done = await player.choose("action")
+					var choices = player.get_playable_cards()
+					done = await player.choose("action", choices)
 			ability = stack.pop_back()
 			if ability:
 				await ability.resolve(ctx)

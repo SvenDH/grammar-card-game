@@ -29,11 +29,29 @@ func _ready():
 	for card in cards:
 		deck.add(create_card_instance(card))
 
+func _start():
+	pass
+
+func _end():
+	pass
+
 func create_card_instance(card):
 	var inst = card_scene.instantiate()
 	inst.player_owner = self
 	inst.card = card
 	return inst
+
+func get_playable_cards():
+	# TODO: get castable cards and abilities from other places
+	var castable_cards = []
+	for card in hand.cards():
+		if card.can_cast():
+			castable_cards.append(card)
+	var board_cards = []
+	for card in board.cards():
+		if card.can_activate():
+			board_cards.append(card)
+	return castable_cards + board_cards
 
 func choose(command: String, choices := []):
 	if command == "action":
@@ -106,6 +124,7 @@ func can_activate() -> bool:
 	return false
 	
 func start_turn():
+	_start()
 	clear_essence()
 	for card in board.cards():
 		card.activate()
@@ -114,6 +133,7 @@ func start_turn():
 func end_turn():
 	on_endturn()
 	clear_essence()
+	_end()
 
 func clear_essence():
 	essence = []

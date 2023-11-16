@@ -1,0 +1,60 @@
+[gd_scene load_steps=6 format=3 uid="uid://5lnisp7xta8e"]
+
+[ext_resource type="Script" path="res://CardBot.gd" id="1_4mwl4"]
+[ext_resource type="PackedScene" uid="uid://cnakiw5fb25w4" path="res://CardInstance.tscn" id="2_6cyq3"]
+[ext_resource type="Script" path="res://CardPile.gd" id="2_a27qd"]
+[ext_resource type="Script" path="res://CardFields.gd" id="3_ornyf"]
+[ext_resource type="PackedScene" uid="uid://dojm7b3or6gun" path="res://Field.tscn" id="4_syh88"]
+
+[node name="CardBot" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = -1152.0
+offset_bottom = -648.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_4mwl4")
+player_name = "player 2"
+card_scene = ExtResource("2_6cyq3")
+board_path = NodePath("Control/Board")
+deck_path = NodePath("Deck")
+pile_path = NodePath("Discard")
+hand_path = NodePath("Hand")
+
+[node name="Deck" type="Control" parent="."]
+visible = false
+anchors_preset = 0
+script = ExtResource("2_a27qd")
+
+[node name="Discard" type="Control" parent="."]
+visible = false
+anchors_preset = 0
+script = ExtResource("2_a27qd")
+
+[node name="Control" type="Control" parent="."]
+anchors_preset = 0
+offset_left = 190.0
+offset_top = 122.0
+offset_right = 957.0
+offset_bottom = 317.0
+
+[node name="Board" type="HBoxContainer" parent="Control"]
+layout_mode = 2
+focus_neighbor_bottom = NodePath("../../Hand")
+theme_override_constants/separation = 5
+script = ExtResource("3_ornyf")
+max_card_size = Vector2(150, 164)
+num_fields = 5
+field_scene = ExtResource("4_syh88")
+
+[node name="Hand" type="Control" parent="."]
+visible = false
+anchors_preset = 0
+script = ExtResource("2_a27qd")
+max_card_size = Vector2(150, 164)
+can_focus = true
+spread = true
+
+[connection signal="click" from="Control/Board" to="." method="_on_board_click" flags=18]
