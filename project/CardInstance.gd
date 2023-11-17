@@ -5,6 +5,10 @@ const card_text_scene := preload("res://CardText.tscn")
 
 signal click
 
+@export var highlight_color := Color.WHITE
+@export var disabled_color := Color.LIGHT_SLATE_GRAY
+
+var game = null
 var card: Card
 var power := 1
 var health := 1
@@ -69,10 +73,10 @@ func highlight(enable: bool):
 	highlighted = enable
 	if enable:
 		panel.mouse_default_cursor_shape = CURSOR_POINTING_HAND
-		panel.modulate = Color.WHITE
+		panel.modulate = highlight_color
 	else:
 		panel.mouse_default_cursor_shape = CURSOR_ARROW
-		panel.modulate = Color(.7, .7, .7)
+		panel.modulate = disabled_color
 
 func activate():
 	if not activated:

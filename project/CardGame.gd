@@ -35,7 +35,6 @@ func add_player(player: CardPlayer):
 	return player
 
 func start():
-	# TODO: add muligan
 	for player in players:
 		for _i in START_CARDS:
 			player.draw()
@@ -50,11 +49,9 @@ func start():
 			player.turnsafterthis -= 1
 	
 func do_turn(player: CardPlayer):
-	# TODO: add phase to ctx
-	current_player = player
 	reaction = false
+	current_player = player
 	priority = player
-	
 	phase = Phase.PhaseEnum.activation
 	player.start_turn()
 	phase = Phase.PhaseEnum.draw
@@ -62,6 +59,7 @@ func do_turn(player: CardPlayer):
 	phase = Phase.PhaseEnum.play
 	var done = false
 	while not done:
+		priority = player
 		var choices = player.get_playable_cards()
 		done = await player.choose("action", choices)
 	phase = Phase.PhaseEnum.cleanup

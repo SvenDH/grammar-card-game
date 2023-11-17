@@ -1,9 +1,17 @@
-[gd_scene load_steps=2 format=3 uid="uid://dojm7b3or6gun"]
+[gd_scene load_steps=5 format=3 uid="uid://dojm7b3or6gun"]
 
 [ext_resource type="Script" path="res://CardField.gd" id="1_h2ot6"]
+[ext_resource type="Texture2D" uid="uid://dnm0sk0a851wl" path="res://textures/field.png" id="1_wkrgv"]
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_67lyw"]
+texture = ExtResource("1_wkrgv")
+
+[sub_resource type="Theme" id="Theme_w1d55"]
+PanelContainer/styles/panel = SubResource("StyleBoxTexture_67lyw")
 
 [node name="Field" type="PanelContainer"]
-modulate = Color(0.7, 0.7, 0.7, 1)
+self_modulate = Color(0.47, 0.53, 0.6, 1)
+texture_filter = 1
 custom_minimum_size = Vector2(150, 164)
 anchors_preset = -1
 anchor_right = 0.13
@@ -12,6 +20,7 @@ offset_right = -149.76
 offset_bottom = -163.944
 focus_mode = 2
 mouse_filter = 1
+theme = SubResource("Theme_w1d55")
 script = ExtResource("1_h2ot6")
 
 [connection signal="focus_entered" from="." to="." method="_on_focus_entered"]

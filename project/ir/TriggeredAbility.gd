@@ -31,9 +31,10 @@ func activate(ctx: Dictionary):
 
 func on_entered(card: CardInstance, controller: CardPlayer):
 	if card in controller.game.query(controller.game.ctx, trigger.condition.subject):
-		if trigger.codnition.possesion and card.controller not in controller.game.query(controller.game.ctx, trigger.condition.possesion):
+		if trigger.condition.possesion and card.controller not in controller.game.query(controller.game.ctx, trigger.condition.possesion):
 			return
 		await effect.activate(controller.game.ctx)
+		print("hi")
 
 func on_left(card: CardInstance, controller: CardPlayer):
 	if card in controller.game.query(controller.game.ctx, trigger.condition.subject):

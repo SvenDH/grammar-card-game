@@ -14,8 +14,8 @@ Flying, Siege
 
 Jacks Steadfast Pendant {Y}{B}
 Unit
-{2}: Attacking unit cards in your hand get -3/-3 until end of turn.
-{B}: Attacking unit cards in your deck get -2/-2 until end of turn.
+{2}: Attacking unit cards your opponent controls get -3/-3 until end of turn.
+{B}: Attacking unit cards get -2/-2 until end of turn.
 {1}, Sacrifice Jacks Steadfast Pendant: Draw two cards, then each player discards two cards.
 2/0
 

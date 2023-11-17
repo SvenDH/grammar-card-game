@@ -116,7 +116,7 @@ optional = false
 script = ExtResource( 3 )
 costs = [ 2 ]
 effect = SubResource( 4 )
-text = "{2}: Attacking unit cards in your hand get -3/-3 until end of turn."
+text = "{2}: Attacking unit cards your opponent controls get -3/-3 until end of turn."
 
 [sub_resource type="Resource" id=28]
 script = ExtResource( 29 )
@@ -170,7 +170,7 @@ optional = false
 script = ExtResource( 21 )
 costs = [ "B" ]
 effect = SubResource( 22 )
-text = "{B}: Attacking unit cards in your deck get -2/-2 until end of turn."
+text = "{B}: Attacking unit cards get -2/-2 until end of turn."
 
 [sub_resource type="Resource" id=44]
 script = ExtResource( 45 )

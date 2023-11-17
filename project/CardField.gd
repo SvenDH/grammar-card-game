@@ -2,6 +2,8 @@ extends PanelContainer
 
 @export var spread := false
 @export var can_focus := false
+@export var highlight_color := Color.WHITE
+@export var disabled_color := Color.LIGHT_SLATE_GRAY
 
 var card = null : set = _set_card, get = _get_card
 var highlighted := false
@@ -28,11 +30,11 @@ func highlight(enable: bool):
 
 func _on_focus_entered():
 	selected = true
-	modulate = Color.WHITE
+	self_modulate = highlight_color
 
 func _on_focus_exited():
 	selected = false
-	modulate = Color(.7, .7, .7)
+	self_modulate = disabled_color
 
 func _on_mouse_entered():
 	grab_focus()
