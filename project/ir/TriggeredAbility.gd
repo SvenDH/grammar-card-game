@@ -31,39 +31,48 @@ func activate(ctx: Dictionary):
 
 func on_entered(card: CardInstance, controller: CardPlayer):
 	if card in controller.game.query(controller.game.ctx, trigger.condition.subject):
-		if trigger.condition.possesion and card.controller not in controller.game.query(controller.game.ctx, trigger.condition.possesion):
-			return
+		if trigger.condition.possesion and \
+			card.controller not in controller.game.query(controller.game.ctx, trigger.condition.possesion):
+			return controller.game.triggered.emit()
 		await effect.activate(controller.game.ctx)
-		print("hi")
+	controller.game.triggered.emit()
 
 func on_left(card: CardInstance, controller: CardPlayer):
 	if card in controller.game.query(controller.game.ctx, trigger.condition.subject):
 		await effect.activate(controller.game.ctx)
+	controller.game.triggered.emit()
 
 func on_died(card: CardInstance, controller: CardPlayer):
 	if card in controller.game.query(controller.game.ctx, trigger.condition.subject):
 		await effect.activate(controller.game.ctx)
+	controller.game.triggered.emit()
 
 func on_play(player: CardPlayer, card: CardInstance, controller: CardPlayer):
 	if controller == player and card in player.query(controller.game.ctx, trigger.objects):
 		await effect.activate(controller.game.ctx)
+	controller.game.triggered.emit()
 
 func on_lifegained(player: CardPlayer, value: int, source, controller: CardPlayer):
 	if value > 0 and player in player.game.query(controller.game.ctx, trigger.players):
 		await effect.activate(controller.game.ctx)
+	controller.game.triggered.emit()
 
 func on_lifelost(player: CardPlayer, value: int, source, controller: CardPlayer):
 	if value < 0 and player in player.game.query(controller.game.ctx, trigger.players):
 		await effect.activate(controller.game.ctx)
+	controller.game.triggered.emit()
 
 func on_damaged(card: CardInstance, value: int, source, controller: CardPlayer):
 	if value < 0 and card in card.game.query(controller.game.ctx, trigger.objects):
 		await effect.activate(controller.game.ctx)
+	controller.game.triggered.emit()
 
 func on_endofturn(player: CardPlayer, phase: Phase.PhaseEnum, controller: CardPlayer):
 	if phase == Phase.PhaseEnum.cleanup:
 		await effect.activate(controller.game.ctx)
+	controller.game.triggered.emit()
 
 func on_beginningofphase(player: CardPlayer, phase: Phase.PhaseEnum, controller: CardPlayer):
 	if phase == Phase.PhaseEnum.cleanup:
 		await effect.activate(controller.game.ctx)
+	controller.game.triggered.emit()

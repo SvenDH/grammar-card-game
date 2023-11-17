@@ -43,5 +43,5 @@ func resolve(
 	deactivated = false
 ):
 	# Check to see if card has changed location?
-	player.remove(card)
-	player.place(card, zone, to_index)
+	await player.remove(card)
+	await player.place(card, zone, to_index)

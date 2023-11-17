@@ -21,6 +21,6 @@ func activate(ctx: Dictionary):
 func resolve(_player: CardPlayer, card: CardInstance):
 	if card.location == ZoneMatch.ZoneEnum.board:
 		if deactivate:
-			card.deactivate()
+			await card.deactivate()
 		else:
-			card.activate()
+			await card.activate()

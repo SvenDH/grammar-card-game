@@ -13,7 +13,7 @@ func activate(ctx: Dictionary):
 	return [[getnumber(number, ctx), objects]]
 
 func resolve(player: CardPlayer, n: int = 1, query_match = null):
-	player.game.discarded.emit(player, n)
+	await player.game.trigger(player.game.discarded, [player, n])
 	for _i in n:
 		if not player.hand.cards():
 			return
@@ -25,7 +25,6 @@ func resolve(player: CardPlayer, n: int = 1, query_match = null):
 			choices = player.hand.cards()
 		if choices:
 			var card = await player.choose("discard", choices)
-			player.hand.remove(card)
-			player.pile.add(card)
-			card.location = ZoneMatch.ZoneEnum.pile
-			card.on_discard()
+			await player.remove(card)
+			await player.place(card, ZoneMatch.ZoneEnum.pile)
+			await card.on_discard()

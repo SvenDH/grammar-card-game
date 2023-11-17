@@ -31,6 +31,6 @@ func resolve(player: CardPlayer, cards: Array, zone: ZoneMatch.ZoneEnum):
 	assert(zone != ZoneMatch.ZoneEnum.hand and zone != ZoneMatch.ZoneEnum.board)
 	for card in cards:
 		# TODO: Check to see if cards have changed location
-		player.remove(card)
-		player.place(card, zone)
-	player.shuffle(zone)
+		await player.remove(card)
+		await player.place(card, zone)
+	await player.shuffle(zone)

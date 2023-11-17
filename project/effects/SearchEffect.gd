@@ -20,6 +20,6 @@ func resolve(player: CardPlayer, zones: ZoneMatch, query_match = null):
 	var choices = player.game.query(player.ctx, query_match, zones)
 	# TODO: search own fields if not otherwise specified
 	var card = await player.choose("search", choices)
-	player.remove(card)
-	player.place(card, ZoneMatch.ZoneEnum.hand)
-	player.on_search()
+	await player.remove(card)
+	await player.place(card, ZoneMatch.ZoneEnum.hand)
+	await player.on_search()

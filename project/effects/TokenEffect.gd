@@ -27,4 +27,4 @@ func resolve(player: CardPlayer, card: Card, to_index: int):
 	assert(player.board.get_card(to_index) == null)  # TODO: should this be allowed?
 	var inst = player.create_card_instance(card)
 	inst.controller = player
-	player.place(inst, ZoneMatch.ZoneEnum.board, to_index)
+	await player.place(inst, ZoneMatch.ZoneEnum.board, to_index)

@@ -3,6 +3,8 @@ class_name CardGame
 
 const START_CARDS := 5
 
+signal triggered
+
 signal drawn(player: CardPlayer, amount: int)
 signal discarded(player: CardPlayer, amount: int)
 signal play(player: CardPlayer, what: CardInstance)
@@ -10,7 +12,10 @@ signal lifechanged(player: CardPlayer, value: int, source)
 signal phasechanged(player: CardPlayer, phase: Phase.PhaseEnum)
 signal entered(card: CardInstance)
 signal left(card: CardInstance)
+signal played(card: CardInstance)
 signal destroyed(card: CardInstance)
+signal activated(card: CardInstance)
+signal deactivated(card: CardInstance)
 signal healthchanged(card: CardInstance, value: int, source)
 signal countered(thing)
 
@@ -53,9 +58,9 @@ func do_turn(player: CardPlayer):
 	current_player = player
 	priority = player
 	phase = Phase.PhaseEnum.activation
-	player.start_turn()
+	await player.start_turn()
 	phase = Phase.PhaseEnum.draw
-	player.draw()
+	await player.draw()
 	phase = Phase.PhaseEnum.play
 	var done = false
 	while not done:
@@ -63,7 +68,7 @@ func do_turn(player: CardPlayer):
 		var choices = player.get_playable_cards()
 		done = await player.choose("action", choices)
 	phase = Phase.PhaseEnum.cleanup
-	player.end_turn()
+	await player.end_turn()
 
 func send(ctx: Dictionary, effects: Array, use_stack := true):
 	var ability = PlayedAbility.new()
@@ -116,3 +121,10 @@ func query(ctx: Dictionary, obj, place = null, n: int = -1) -> Array:
 	if n > 0:
 		return found.slice(0, n)
 	return found
+
+func trigger(sig: Signal, params: Array):
+	var n = len(sig.get_connections())
+	print(sig.get_name(), " ", n)
+	emit_signal.bindv([sig.get_name()] + params).call_deferred()
+	for _i in n:
+		await triggered

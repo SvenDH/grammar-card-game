@@ -11,10 +11,10 @@ class_name CardPlayer
 @export var pile_path: NodePath
 @export var hand_path: NodePath
 
-var game = null
 var turnsafterthis: int = 0
 var essence := []
 
+@onready var game = get_parent()
 @onready var board: CardFields = get_node(board_path)
 @onready var deck: CardPile = get_node(deck_path)
 @onready var pile: CardPile = get_node(pile_path)
@@ -39,6 +39,7 @@ func create_card_instance(card):
 	var inst = card_scene.instantiate()
 	inst.player_owner = self
 	inst.card = card
+	inst.game = game
 	return inst
 
 func get_playable_cards():
@@ -71,9 +72,9 @@ func pay_costs(card: CardInstance, costs: Array):
 	for symbol in costs:
 		if symbol is String:
 			if symbol == "T":
-				card.deactivate()
+				await card.deactivate()
 			elif symbol == "Q":
-				card.activate()
+				await card.activate()
 			elif symbol in Card.COLORS:
 				remove_essence(symbol)
 	for symbol in costs:
@@ -127,11 +128,11 @@ func start_turn():
 	_start()
 	clear_essence()
 	for card in board.cards():
-		card.activate()
-	on_startturn()
+		await card.activate()
+	await on_startturn()
 
 func end_turn():
-	on_endturn()
+	await on_endturn()
 	clear_essence()
 	_end()
 
@@ -146,7 +147,7 @@ func remove_essence(color):
 
 func draw(amount: int = 1, side_: bool = false):
 	var card: CardInstance
-	game.drawn.emit(self, amount)
+	await game.trigger(game.drawn, [self, amount])
 	for _i in amount:
 		if side_:
 			card = CardInstance.new()
@@ -156,8 +157,8 @@ func draw(amount: int = 1, side_: bool = false):
 		else:
 			card = deck.pop()
 		if card:
-			place(card, ZoneMatch.ZoneEnum.hand)
-			card.on_draw()
+			await place(card, ZoneMatch.ZoneEnum.hand)
+			await card.on_draw()
 		else:
 			# TODO: Lose the game
 			pass
@@ -199,7 +200,7 @@ func place(card: CardInstance, place: ZoneMatch.ZoneEnum, to_index = null, relat
 		card.location = ZoneMatch.ZoneEnum.board
 		card.field_index = to_index
 		card.controller = self
-		card.on_enter()
+		await card.on_enter()
 
 func remove(card: CardInstance):
 	card.reset()
@@ -215,7 +216,7 @@ func remove(card: CardInstance):
 	elif card.location == ZoneMatch.ZoneEnum.board:
 		assert(card in board.cards())
 		board.remove(board.index(card))
-		card.on_exit()
+		await card.on_exit()
 
 func query(ctx: Dictionary, obj = null, place = null) -> Array:
 	var found = []

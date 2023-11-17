@@ -13,7 +13,6 @@ func _start():
 func choose(command: String, choices := []):
 	var index = current_actions.get(command, []).pop_front()
 	if index == null: index = -1
-	print(command, index)
 	if command == "action":
 		if len(choices) == 0:
 			return true

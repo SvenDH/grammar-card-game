@@ -28,8 +28,9 @@ func resolve(player: CardPlayer, card: CardInstance, to_index: int):
 	# TODO: add 'token' and 'copy' modifier
 	# TODO: check if card is valid target?
 	var inst = CardInstance.new()
+	inst.game = player.game
 	inst.card = card.card
 	inst.controller = self
 	inst.player_owner = self
 	inst.field_index = to_index
-	player.place(inst, ZoneMatch.ZoneEnum.board, to_index)
+	await player.place(inst, ZoneMatch.ZoneEnum.board, to_index)

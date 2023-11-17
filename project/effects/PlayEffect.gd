@@ -27,5 +27,6 @@ func activate(ctx: Dictionary):
 	return results
 
 func resolve(player: CardPlayer, card: CardInstance, to_index: int):
-	player.remove(card)
-	player.place(card, ZoneMatch.ZoneEnum.board, to_index)
+	await player.remove(card)
+	await player.place(card, ZoneMatch.ZoneEnum.board, to_index)
+	await card.on_play()

@@ -95,26 +95,24 @@ func add_status(new_status: CardStatus):
 
 func play() -> bool:
 	# Check if playable
-	var game = player_owner.game
 	var player = game.priority
 	var to_index = await player.pick_free_field(self)
 	if to_index == -1:
 		return false
-	player.remove(self)
-	player.place(self, ZoneMatch.ZoneEnum.board, to_index)
+	await player.remove(self)
+	await player.place(self, ZoneMatch.ZoneEnum.board, to_index)
 	return true
 
 func cast() -> bool:
 	if not can_cast():
 		return false
 	
-	var game = player_owner.game
 	var player = game.priority
 	var to_index = await player.pick_free_field(self)
 	if to_index == -1:
 		return false
 
-	player.remove(self)
+	await player.remove(self)
 	location = ZoneMatch.ZoneEnum.stack
 	
 	var ctx = {
@@ -126,28 +124,27 @@ func cast() -> bool:
 	}
 	# TODO: add additional costs (from status etc)
 	await player.pay_costs(self, card.costs)
-	player.game.send(ctx, [[player, self, [self, to_index]]])
-	on_cast()
+	await game.send(ctx, [[player, self, [self, to_index]]])
+	await on_play()
 	return true
 
 func resolve(player: CardPlayer, card: CardInstance, to_index: int):
 	var ctx = {
-		'game': player_owner.game,
+		'game': game,
 		'self': self,
 		'controller': player
 	}
-	player.remove(card)
+	await player.remove(card)
 	for ability in triggered_abilities:
 		ctx.ability = ability
 		ctx.targets = []
 		await ability.activate(ctx)
-	player.place(card, ZoneMatch.ZoneEnum.board, to_index)
+	await player.place(card, ZoneMatch.ZoneEnum.board, to_index)
 
 func activate_ability(ability):
 	if not ability.can_activate(self):
 		return false
 	
-	var game = player_owner.game
 	var player = game.priority
 	var ctx = {
 		'game': game,
@@ -183,16 +180,14 @@ func can_cast():
 		# TODO: check castable from other locations
 		return false
 	var react = can_react()
-	var game = player_owner.game
 	if game.current_player != player_owner and not react:
 		return false
 	if game.reaction and not react:
 		return false
 	
-	return player_owner.can_pay(self, card.costs)
+	return game.priority.can_pay(self, card.costs)
 
 func can_activate():
-	var game = player_owner.game
 	for ability in activated_abilities:
 		if ability.can_activate(self):
 			if not ability.is_essence_ability() or not game.reaction:
@@ -200,31 +195,31 @@ func can_activate():
 	return false
 
 func on_activate():
-	pass
+	await game.trigger(game.activated, [self])
 
 func on_deactivate():
-	pass
+	await game.trigger(game.deactivated, [self])
 
 func on_enter():
-	player_owner.game.entered.emit(self)
+	await game.trigger(game.entered, [self])
 
 func on_exit():
-	player_owner.game.left.emit(self)
+	await game.trigger(game.left, [self])
+
+func on_play():
+	await game.trigger(game.played, [self])
+
+func on_destroy():
+	await game.trigger(game.destroyed, [self])
+
+func on_counter():
+	await game.trigger(game.countered, [self])
 
 func on_draw():
 	pass
 
 func on_discard():
 	pass
-
-func on_cast():
-	pass
-
-func on_destroy():
-	player_owner.game.destroyed.emit(self)
-
-func on_counter():
-	player_owner.game.countered.emit(self)
 
 func _get_types() -> Array:
 	return card.types  # TODO: add modified types

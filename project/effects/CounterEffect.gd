@@ -19,5 +19,5 @@ func activate(ctx: Dictionary):
 
 func resolve(player: CardPlayer, obj):
 	if obj in player.game.stack:
-		obj.on_counter()
+		await obj.on_counter()
 		player.game.stack.remove(obj)
