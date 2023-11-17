@@ -31,10 +31,14 @@ deck_path = NodePath("Deck")
 pile_path = NodePath("Discard")
 hand_path = NodePath("Control2/Hand")
 
-[node name="Deck" type="Node" parent="."]
+[node name="Deck" type="Control" parent="."]
+visible = false
+anchors_preset = 0
 script = ExtResource("8_0n5mo")
 
-[node name="Discard" type="Node" parent="."]
+[node name="Discard" type="Control" parent="."]
+visible = false
+anchors_preset = 0
 script = ExtResource("8_0n5mo")
 
 [node name="PassButton" type="Button" parent="."]

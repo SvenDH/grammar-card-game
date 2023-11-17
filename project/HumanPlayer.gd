@@ -12,24 +12,13 @@ func choose(command: String, choices := []):
 	ability_menu.hide()
 	print(command)
 	if command == "action":
-		# TODO: get castable cards and abilities from other places
-		var castable_cards = []
-		for card in hand.cards():
-			if card.can_cast():
-				castable_cards.append(card)
-		
-		var board_cards = []
-		for card in board.cards():
-			if card.can_activate():
-				board_cards.append(card)
-		
-		if len(castable_cards) == 0 and len(board_cards) == 0:
+		if len(choices) == 0:
 			if game.reaction:
 				# TODO: make auto pass optional for multiplayer
 				return true
-		
-		board.highlight(board_cards)
-		hand.highlight(castable_cards)
+		for player in game.players:
+			player.board.highlight(choices)
+		hand.highlight(choices)
 		pass_button.show()
 		hand.show()
 		var card = await action_done
@@ -58,11 +47,8 @@ func choose(command: String, choices := []):
 				await card.activate_ability(ability)
 		
 		elif card.is_source():
-			var to_index = await pick_free_field(card)
-			if to_index == -1:
-				return false
-			remove(card)
-			place(card, ZoneMatch.ZoneEnum.board, to_index)
+			# Play card
+			await card.play()
 		
 		elif card.can_cast():
 			# Cast card
@@ -81,7 +67,9 @@ func choose(command: String, choices := []):
 	elif command == "field":
 		hand.hide()
 		pass_button.show()
-		board.highlight(choices)
+		for player in game.players:
+			player.board.highlight(choices)
+		
 		var action = await action_done
 		board.reset()
 		hand.show()
@@ -93,11 +81,12 @@ func choose(command: String, choices := []):
 	
 	elif command == "target":
 		pass_button.show()
-		board.highlight(choices)
+		for player in game.players:
+			player.board.highlight(choices)
+		
 		var card = await action_done
 		board.reset()
 		pass_button.hide()
-		
 		if card is String and card == "pass":
 			return null
 		

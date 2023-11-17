@@ -89,6 +89,17 @@ func add_status(new_status: CardStatus):
 	status.append(new_status)
 	new_status.apply(self)
 
+func play() -> bool:
+	# Check if playable
+	var game = player_owner.game
+	var player = game.priority
+	var to_index = await player.pick_free_field(self)
+	if to_index == -1:
+		return false
+	player.remove(self)
+	player.place(self, ZoneMatch.ZoneEnum.board, to_index)
+	return true
+
 func cast() -> bool:
 	if not can_cast():
 		return false
@@ -243,7 +254,7 @@ func _get_keyword_abilities() -> Array:
 func _get_color() -> Array:
 	var colors = []
 	if card:
-		for c in card.cost:
+		for c in card.costs:
 			if not c is int:
 				var color_id = card.convert_color(c)
 				if color_id not in colors:
