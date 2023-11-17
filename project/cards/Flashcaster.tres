@@ -1,0 +1,77 @@
+[gd_resource type="Resource" script_class="Card" load_steps=20 format=3 uid="uid://biv212ic14gcg"]
+
+[ext_resource type="Script" path="res://Card.gd" id="1"]
+[ext_resource type="Script" path="res://ir/TriggeredAbility.gd" id="3"]
+[ext_resource type="Script" path="res://ir/Trigger.gd" id="5"]
+[ext_resource type="Script" path="res://ir/ObjectCondition.gd" id="7"]
+[ext_resource type="Script" path="res://ir/Object.gd" id="9"]
+[ext_resource type="Script" path="res://ir/Card.gd" id="11"]
+[ext_resource type="Script" path="res://ir/Effect.gd" id="13"]
+[ext_resource type="Script" path="res://ir/SubjectEffect.gd" id="15"]
+[ext_resource type="Script" path="res://effects/DrawEffect.gd" id="17"]
+[ext_resource type="Script" path="res://ir/Player.gd" id="19"]
+
+[sub_resource type="Resource" id="16"]
+script = ExtResource("17")
+number = 1
+side = false
+
+[sub_resource type="Resource" id="18"]
+script = ExtResource("19")
+player = 3
+ref = 0
+extra = 0
+who_cant = false
+
+[sub_resource type="Resource" id="14"]
+script = ExtResource("15")
+effects = [SubResource("16")]
+subject = SubResource("18")
+
+[sub_resource type="Resource" id="12"]
+script = ExtResource("13")
+effects = Array[Resource("res://BaseEffect.gd")]([SubResource("14")])
+optional = false
+
+[sub_resource type="Resource" id="10"]
+script = ExtResource("11")
+ref = 1
+type = 0
+extra = 0
+prefixes = []
+suffixes = []
+without = 0
+copies = false
+
+[sub_resource type="Resource" id="8"]
+script = ExtResource("9")
+objects = Array[Resource("res://ir/Match.gd")]([SubResource("10")])
+each = false
+
+[sub_resource type="Resource" id="6"]
+script = ExtResource("7")
+phrase = 6
+subject = SubResource("8")
+condition = 5
+until = false
+
+[sub_resource type="Resource" id="4"]
+script = ExtResource("5")
+trigger = 6
+condition = SubResource("6")
+
+[sub_resource type="Resource" id="2"]
+script = ExtResource("3")
+trigger = SubResource("4")
+effect = SubResource("12")
+text = "When ~ enters the field, draw a card."
+
+[resource]
+script = ExtResource("1")
+name = "Flashcaster"
+costs = [1, "R"]
+types = [1]
+subtypes = []
+abilities = [SubResource("2")]
+power = 1
+health = 1

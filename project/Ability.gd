@@ -7,7 +7,7 @@ class_name Ability
 @export var effects: Array
 
 func resolve(ctx: Dictionary):
-	ctx.controller.game.ctx = ctx
+	ctx.game.ctx = ctx
 	for eff in effects:
 		ctx.subject = eff[0]
 		var params = [eff[0]]

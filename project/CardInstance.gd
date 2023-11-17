@@ -23,6 +23,7 @@ var can_focus := false
 var types: get = _get_types
 var abilities: get = _get_abilities
 var activated_abilities: get = _get_activated_abilities
+var triggered_abilities: get = _get_triggered_abilities
 var keyword_abilities: get = _get_keyword_abilities
 var color: get = _get_color
 
@@ -102,9 +103,11 @@ func cast() -> bool:
 	location = ZoneMatch.ZoneEnum.stack
 	
 	var ctx = {
+		'game': game,
 		'self': self,
 		'controller': player,
 		'ability': card,
+		'targets': []
 	}
 	# TODO: add additional costs (from status etc)
 	await player.pay_costs(self, card.costs)
@@ -113,15 +116,26 @@ func cast() -> bool:
 	return true
 
 func resolve(player: CardPlayer, card: CardInstance, to_index: int):
+	var ctx = {
+		'game': player_owner.game,
+		'self': self,
+		'controller': player
+	}
 	player.remove(card)
+	for ability in triggered_abilities:
+		ctx.ability = ability
+		ctx.targets = []
+		await ability.activate(ctx)
 	player.place(card, ZoneMatch.ZoneEnum.board, to_index)
 
 func activate_ability(ability):
 	if not ability.can_activate(self):
 		return false
+	
 	var game = player_owner.game
 	var player = game.priority
 	var ctx = {
+		'game': game,
 		'self': self,
 		'controller': player,
 		'ability': ability,
@@ -192,7 +206,7 @@ func on_cast():
 	pass
 
 func on_destroy():
-	pass
+	player_owner.game.destroyed.emit(self)
 
 func on_counter():
 	player_owner.game.countered.emit(self)
@@ -208,6 +222,14 @@ func _get_activated_abilities() -> Array:
 	var results = []
 	for c in _get_abilities():
 		if c is ActivatedAbility:
+			results.append(c)
+	return results
+
+func _get_triggered_abilities() -> Array:
+	# TODO: add modifiers
+	var results = []
+	for c in _get_abilities():
+		if c is TriggeredAbility:
 			results.append(c)
 	return results
 

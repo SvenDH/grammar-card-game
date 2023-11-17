@@ -10,6 +10,7 @@ signal lifechanged(player: CardPlayer, value: int, source)
 signal phasechanged(player: CardPlayer, phase: Phase.PhaseEnum)
 signal entered(card: CardInstance)
 signal left(card: CardInstance)
+signal destroyed(card: CardInstance)
 signal healthchanged(card: CardInstance, value: int, source)
 signal countered(thing)
 

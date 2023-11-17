@@ -365,7 +365,7 @@ class ConditionMixin:
             return items[0]
         return Condition(condition=ConditonEnum.thisturn)
     def condition(self, item):
-        return item
+        return item[0]
     def duration(self, item):
         return item
     def playedwhen(self, object, duration):
@@ -501,6 +501,23 @@ class ObjectMixin:
 
 @v_args(inline=True)
 class ObjectTransformer(PrefixMixin, SuffixMixin, ZoneMixin, PlayerMixin, ObjectMixin, ConditionMixin, Transformer):
+    def blocked(self):
+        return (ObjectPhraseEnum.blocked,)
+    def attacked(self):
+        return (ObjectPhraseEnum.attacked,)
+    def leaves(self):
+        return (ObjectPhraseEnum.leaves,)
+    def dies(self):
+        return (ObjectPhraseEnum.dies,)
+    def whenenters(self, *args):
+        return (ObjectPhraseEnum.whenenters, args[0] if args else None)
+    def dealsdamage(self, item):
+        return (ObjectPhraseEnum.dealsdamage, item)
+    def moveszone(self, into, *args):
+        return (ObjectPhraseEnum.moveszone, into, args[0] if args else None)
+    def targets(self, item):
+        return (ObjectActionEnum.targets, item)
+
     def numberdefinition(self, items):
         o = [c for c in items if isinstance(c, ObjectMatch)]
         n = [c for c in items if isinstance(c, NumbericalEnum)]
@@ -527,10 +544,7 @@ class ObjectTransformer(PrefixMixin, SuffixMixin, ZoneMixin, PlayerMixin, Object
         elif t == Reference.the:
             return (TurnQualifierEnum.the, len(items) > 1)
         return (t, len(items) > 1)
-
-
-@v_args(inline=True)
-class EffectTransformer(Transformer):
+    
     def createtoken(self, number, stats, *args):
         return CreateTokenEffect(number=number, stats=stats, abilities=args[0] if args else [])
     def destroy(self, objects):
@@ -712,7 +726,20 @@ class EffectTransformer(Transformer):
     def playercondition(self, player, phrase):
         return PlayerCondition(condition=ConditonEnum.playercond, subject=player, phrase=phrase)
     def objectcondition(self, object, phrase):
-        return ObjectCondition(condition=ConditonEnum.objectcond, subject=object, phrase=phrase)
+        kwargs = {'phrase': phrase}
+        if isinstance(phrase, tuple):
+            t = phrase[0]
+            kwargs['phrase'] = t
+            if t == ObjectPhraseEnum.blocked or t == ObjectPhraseEnum.targets:
+                kwargs['object'] = phrase[1]
+            elif t == ObjectPhraseEnum.whenenters:
+                kwargs['possesion'] = phrase[1]
+            elif t == ObjectPhraseEnum.moveszone:
+                kwargs['into_zone'] = phrase[1]
+                kwargs['from_zone'] = phrase[2]
+            elif t == ObjectPhraseEnum.dealsdamage:
+                kwargs['damagerecipients'] = phrase[1]
+        return ObjectCondition(condition=ConditonEnum.objectcond, subject=object, **kwargs)
     def pc(self, item):
         return item
     def oc(self, item):

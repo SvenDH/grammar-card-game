@@ -53,3 +53,8 @@ Flying, Siege
 {T}: Draw a card, then you discard a card for each unit card.
 {Q}: Destroy target card.
 1/1
+
+Flashcaster {1}{R}
+Unit
+When Flashcaster enters the field, draw a card.
+1/1

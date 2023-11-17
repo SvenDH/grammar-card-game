@@ -57,25 +57,6 @@ class NumbericalEnum(str, GrammarEnum):
     level = "level"
 
 
-class ObjectActionEnum(str, GrammarEnum):
-    attack = "attack"
-    block = "block"
-    attackorblock = "attack or block"
-    beblocked = "be blocked"
-    becountered = "be countered"
-    activateability = "activate abilities"
-
-
-class ConditonEnum(str, GrammarEnum):
-    playedwhen = "played when"
-    yourturn = "your turn"
-    notyourturn = "not your turn"
-    compare = "number compare"
-    playercond = "player condition"
-    objectcond = "object condition"
-    thisturn = "this turn"
-
-
 class Reference(str, GrammarEnum):
     none = ""
     self = "~"
@@ -198,6 +179,26 @@ class TriggerEnum(str, GrammarEnum):
     endofturn = "end of turn"
     beginningofphase = "beginning of phase"
     condition = "condition"
+
+
+class ObjectActionEnum(str, GrammarEnum):
+    attack = "attack"
+    block = "block"
+    attackorblock = "attack or block"
+    beblocked = "be blocked"
+    becountered = "be countered"
+    activateability = "activate abilities"
+    targets = "targets"
+
+
+class ConditonEnum(str, GrammarEnum):
+    playedwhen = "played when"
+    yourturn = "your turn"
+    notyourturn = "not your turn"
+    compare = "number compare"
+    playercond = "player condition"
+    objectcond = "object condition"
+    thisturn = "this turn"
 
 
 class ObjectPhraseEnum(str, GrammarEnum):

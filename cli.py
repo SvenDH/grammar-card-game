@@ -9,29 +9,10 @@ from parse import (
     KeywordTransformer,
     ReferenceTransformer,
     ObjectTransformer,
-    EffectTransformer,
     CardTransformer
 )
+
 #from generator import Generator
-
-
-parser = Parser([
-    DropLetters(),
-    NumberTransformer(),
-    OperatorTransformer(),
-    BaseTransformer(),
-    KeywordTransformer(),
-    ReferenceTransformer(),
-    ObjectTransformer(),
-    EffectTransformer(),
-    CardTransformer()
-])
-text = open("cards/cards.txt").read().strip()
-
-cards = []
-for t in text.split("\n\n"):
-    card = parser.parse(t)
-    cards.append(card)
 
 """
 llm = Generator(
@@ -44,13 +25,27 @@ print(parser.parse(output))
 """
 
 
-def main():
+def main(path: str = "cards/cards.txt"):
+    parser = Parser([
+        DropLetters(),
+        NumberTransformer(),
+        OperatorTransformer(),
+        BaseTransformer(),
+        KeywordTransformer(),
+        ReferenceTransformer(),
+        ObjectTransformer(),
+        CardTransformer()
+    ])
+
+    cards = []
+    for t in open(path).read().strip().split("\n\n"):
+        card = parser.parse(t)
+        cards.append(card)
     for card in cards:
-        print(card.name)
         try:
             card.to_godot(f"project/cards/{card.name}.tres")
-        except Exception as e:
-            print(e)
+        except:
+            print(f"{card.name} failed")
 
 if __name__ == "__main__":
     typer.run(main)

@@ -241,7 +241,9 @@ class TriggeredAbility(BaseModel):
     def to_godot(self, resource: GDResource):
         ability = resource.add_sub_resource("Resource")
         ability["script"] = resource.add_ext_resource("res://ir/TriggeredAbility.gd", "Script").reference
-
+        ability["trigger"] = self.trigger.to_godot(resource)
+        ability["effect"] = self.effect.to_godot(resource)
+        ability["condition"] = self.condition.to_godot(resource) if self.condition else None
         return ability.reference
 
 
