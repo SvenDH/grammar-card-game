@@ -4,10 +4,10 @@ extends BaseEffect
 @export var stats: Array = [1, 1]
 @export var abilities: Array = []
 
-func activate(ctx: Dictionary):
-	var player = ctx.subject
+func activate(ability: Ability):
+	var player = ability.subject
 	var results = []
-	for _i in getnumber(number, ctx):
+	for _i in getnumber(number, ability):
 		var card = Card.new()
 		card.name = "Token"
 		card.power = stats[0]
@@ -22,7 +22,7 @@ func activate(ctx: Dictionary):
 		results.append([card, index])
 	return results
 
-func resolve(player: CardPlayer, card: Card, to_index: int):
+func resolve(_ability: Ability, player: CardPlayer, card: Card, to_index: int):
 	assert(to_index >= 0 and to_index < player.board.num_fields)
 	assert(player.board.get_card(to_index) == null)  # TODO: should this be allowed?
 	var inst = player.create_card_instance(card)

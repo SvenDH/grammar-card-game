@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="Card" load_steps=44 format=3 uid="uid://b60bmoeeiw087"]
+[gd_resource type="Resource" script_class="Card" load_steps=39 format=3 uid="uid://b60bmoeeiw087"]
 
 [ext_resource type="Script" path="res://Card.gd" id="1"]
 [ext_resource type="Script" path="res://effects/TokenEffect.gd" id="9"]
@@ -10,7 +10,6 @@
 [ext_resource type="Script" path="res://ir/SubjectEffect.gd" id="55"]
 [ext_resource type="Script" path="res://effects/DestroyEffect.gd" id="57"]
 [ext_resource type="Script" path="res://ir/Object.gd" id="59"]
-[ext_resource type="Script" path="res://ir/Card.gd" id="61"]
 [ext_resource type="Script" path="res://ir/Player.gd" id="63"]
 
 [sub_resource type="Resource" id="8"]
@@ -42,19 +41,9 @@ costs = [0]
 effect = SubResource("4")
 text = "{0}: Create a 2/2 token with \"Flying\" and \"Siege\"."
 
-[sub_resource type="Resource" id="22"]
-script = ExtResource("61")
-ref = 0
-type = 0
-extra = 0
-prefixes = []
-suffixes = []
-without = 0
-copies = false
-
 [sub_resource type="Resource" id="20"]
 script = ExtResource("59")
-objects = Array[Resource("res://ir/Match.gd")]([SubResource("22")])
+objects = Array[Resource("res://ir/Match.gd")]([])
 each = false
 
 [sub_resource type="Resource" id="18"]
@@ -102,19 +91,9 @@ script = ExtResource("55")
 effects = [SubResource("32")]
 subject = SubResource("34")
 
-[sub_resource type="Resource" id="42"]
-script = ExtResource("61")
-ref = 0
-type = 0
-extra = 0
-prefixes = []
-suffixes = []
-without = 0
-copies = false
-
 [sub_resource type="Resource" id="40"]
 script = ExtResource("59")
-objects = Array[Resource("res://ir/Match.gd")]([SubResource("42")])
+objects = Array[Resource("res://ir/Match.gd")]([])
 each = false
 
 [sub_resource type="Resource" id="38"]
@@ -122,19 +101,9 @@ script = ExtResource("39")
 number = 1
 objects = SubResource("40")
 
-[sub_resource type="Resource" id="48"]
-script = ExtResource("61")
-ref = 0
-type = 0
-extra = 0
-prefixes = []
-suffixes = []
-without = 0
-copies = false
-
 [sub_resource type="Resource" id="46"]
 script = ExtResource("59")
-objects = Array[Resource("res://ir/Match.gd")]([SubResource("48")])
+objects = Array[Resource("res://ir/Match.gd")]([])
 each = false
 
 [sub_resource type="Resource" id="44"]
@@ -161,19 +130,9 @@ costs = ["T"]
 effect = SubResource("28")
 text = "{T}: Draw a card, then you discard a card for each unit card."
 
-[sub_resource type="Resource" id="60"]
-script = ExtResource("61")
-ref = 14
-type = 0
-extra = 0
-prefixes = []
-suffixes = []
-without = 0
-copies = false
-
 [sub_resource type="Resource" id="58"]
 script = ExtResource("59")
-objects = Array[Resource("res://ir/Match.gd")]([SubResource("60")])
+objects = Array[Resource("res://ir/Match.gd")]([])
 each = false
 
 [sub_resource type="Resource" id="56"]

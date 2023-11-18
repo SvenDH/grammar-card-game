@@ -24,5 +24,10 @@ func can_activate(card: CardInstance):
 	return controller.can_pay(card, costs)
 
 func activate(ctx: Dictionary):
-	await effect.activate(ctx)
-	return true
+	var ability = Ability.new()
+	ability.ctx = ctx
+	ability.game = ctx.game
+	ability.source = ctx.self
+	ability.controller = ctx.controller
+	ability.ability = ctx.get("ability")
+	await effect.activate(ability)

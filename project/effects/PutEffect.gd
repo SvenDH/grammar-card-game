@@ -12,10 +12,10 @@ func targets(ctx):
 func has_target():
 	return objects.has_target()
 
-func activate(ctx: Dictionary):
-	var player = ctx.subject
+func activate(ability: Ability):
+	var player = ability.subject
 	var results = []
-	var res = await ctx.game.pick(ctx, objects)
+	var res = await ability.game.pick(ability, objects)
 	if res == null:
 		return null
 	for d in res:
@@ -36,6 +36,7 @@ func activate(ctx: Dictionary):
 	return results
 
 func resolve(
+	_ability: Ability, 
 	player: CardPlayer,
 	card: CardInstance,
 	zone: ZoneMatch.ZoneEnum,

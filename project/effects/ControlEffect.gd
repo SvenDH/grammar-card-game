@@ -9,9 +9,9 @@ func targets(ctx):
 func has_target():
 	return objects.has_target()
 
-func activate(ctx: Dictionary):
+func activate(ability: Ability):
 	var results = []
-	var res = await ctx.game.pick(ctx, objects)
+	var res = await ability.game.pick(ability, objects)
 	if res == null:
 		return null
 	for d in res:

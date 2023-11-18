@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="Card" load_steps=16 format=3 uid="uid://bf74wibopcom4"]
+[gd_resource type="Resource" script_class="Card" load_steps=14 format=3 uid="uid://bf74wibopcom4"]
 
 [ext_resource type="Script" path="res://Card.gd" id="1"]
 [ext_resource type="Script" path="res://ir/ActivatedAbility.gd" id="3"]
@@ -6,22 +6,11 @@
 [ext_resource type="Script" path="res://ir/SubjectEffect.gd" id="7"]
 [ext_resource type="Script" path="res://effects/ActivationEffect.gd" id="9"]
 [ext_resource type="Script" path="res://ir/Object.gd" id="11"]
-[ext_resource type="Script" path="res://ir/Card.gd" id="13"]
 [ext_resource type="Script" path="res://ir/Player.gd" id="15"]
-
-[sub_resource type="Resource" id="12"]
-script = ExtResource("13")
-ref = 14
-type = 0
-extra = 0
-prefixes = []
-suffixes = []
-without = 0
-copies = false
 
 [sub_resource type="Resource" id="10"]
 script = ExtResource("11")
-objects = Array[Resource("res://ir/Match.gd")]([SubResource("12")])
+objects = Array[Resource("res://ir/Match.gd")]([])
 each = false
 
 [sub_resource type="Resource" id="8"]

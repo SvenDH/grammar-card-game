@@ -17,12 +17,12 @@ const THATNUM := 8888888888888888
 
 const COLORS := ["Y", "R", "G", "B"]
 
-func getnumber(n, ctx: Dictionary):
+func getnumber(n, ability: Ability):
 	if n is int:
 		if n == XNUM:
 			# TODO: find value of X
 			# TODO: ask player for X
-			return ctx["X"]
+			return ability.ctx["X"]
 		return n
 	else:
 		assert(false, "n can't be " + str(n))

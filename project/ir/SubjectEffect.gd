@@ -32,20 +32,20 @@ func has_target() -> bool:
 			return true
 	return false
 
-func activate(ctx: Dictionary):
-	var game = ctx.controller.game
-	var subj = await game.pick(ctx, subject)
+func activate(ability: Ability):
+	var game = ability.game
+	var subj = await game.pick(ability, subject)
 	if subj == null:
 		return null
 	var n = 1
 	if foreach != null:
-		n = len(await game.pick(ctx, foreach, ZoneMatch.ZoneEnum.board))
+		n = len(await game.pick(ability, foreach, ZoneMatch.ZoneEnum.board))
 	var played = []
 	for _i in n:
 		for player in subj:
-			ctx.subject = player
+			ability.subject = player
 			for e in effects:
-				var res = await e.activate(ctx)
+				var res = await e.activate(ability)
 				if res == null:
 					return null
 				

@@ -17,8 +17,8 @@ func has_target() -> bool:
 			return true
 	return false
 
-func match_query(ctx: Dictionary, other) -> bool:
+func match_query(ability: Ability, other) -> bool:
 	for o in objects:
-		if not o.match_query(ctx, other):
+		if not o.match_query(ability, other):
 			return false
 	return true

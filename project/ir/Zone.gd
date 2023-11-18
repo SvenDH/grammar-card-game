@@ -23,8 +23,8 @@ enum PlaceEnum {
 @export var place: PlaceEnum
 @export var random: bool = false
 
-func match_query(ctx: Dictionary, field: ZoneEnum, player = null):
+func match_query(ability: Ability, field: ZoneEnum, player = null):
 	if ref is PlayerMatch:
-		if not ref.match_query(ctx, player):
+		if not ref.match_query(ability, player):
 			return false
 	return field in zones

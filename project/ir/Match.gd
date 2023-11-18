@@ -44,5 +44,5 @@ func targets(_ctx: Dictionary) -> int:
 func has_target() -> bool:
 	return false
 
-func match_query(_ctx: Dictionary, _other) -> bool:
+func match_query(_ability: Ability, _other) -> bool:
 	return false

@@ -10,14 +10,14 @@ func targets(ctx):
 func has_target():
 	return objects.has_target()
 
-func activate(ctx: Dictionary):
+func activate(ability: Ability):
 	var results = []
-	for _i in getnumber(number, ctx):
+	for _i in getnumber(number, ability):
 		results.append([zones, objects])
 	return results
 
-func resolve(player: CardPlayer, zones: ZoneMatch, query_match = null):
-	var choices = player.game.query(player.ctx, query_match, zones)
+func resolve(ability: Ability, player: CardPlayer, zones: ZoneMatch, query_match = null):
+	var choices = ability.game.query(ability, query_match, zones)
 	# TODO: search own fields if not otherwise specified
 	var card = await player.choose("search", choices)
 	await player.remove(card)

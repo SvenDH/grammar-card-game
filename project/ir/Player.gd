@@ -27,18 +27,18 @@ func targets(_ctx: Dictionary) -> int:
 		return 1
 	return -1
 
-func match_query(ctx: Dictionary, other) -> bool:
+func match_query(ability: Ability, other) -> bool:
 	if not other is CardPlayer:
 		return false
-	elif player == PlayerEnum.you and ctx["controller"] != other:
+	elif player == PlayerEnum.you and ability.ctx.controller != other:
 		return false
-	elif player == PlayerEnum.opponent and ctx["controller"] == other:
+	elif player == PlayerEnum.opponent and ability.ctx.controller == other:
 		return false
 	# TODO: add owner and controller checks
 	elif player == PlayerEnum.attacking:
-		if "attacking" not in ctx or ctx["attacking"] != other:
+		if "attacking" not in ability.ctx or ability.ctx.attacking != other:
 			return false
 	elif player == PlayerEnum.defending:
-		if "defending" not in ctx or ctx["defending"] != other:
+		if "defending" not in ability.ctx or ability.ctx.defending != other:
 			return false
 	return true

@@ -9,10 +9,10 @@ func targets(ctx):
 func has_target():
 	return objects.has_target()
 
-func activate(ctx: Dictionary):
-	return [[getnumber(number, ctx), objects]]
+func activate(ability: Ability):
+	return [[getnumber(number, ability), objects]]
 
-func resolve(player: CardPlayer, n: int = 1, query_match = null):
+func resolve(ability: Ability, player: CardPlayer, n: int = 1, query_match = null):
 	await player.game.trigger(player.game.discarded, [player, n])
 	for _i in n:
 		if not player.hand.cards():
@@ -20,7 +20,7 @@ func resolve(player: CardPlayer, n: int = 1, query_match = null):
 			
 		var choices
 		if query_match:
-			choices = player.query(player.game.ctx, query_match, ZoneMatch.ZoneEnum.hand)
+			choices = player.query(ability, query_match, ZoneMatch.ZoneEnum.hand)
 		else:
 			choices = player.hand.cards()
 		if choices:

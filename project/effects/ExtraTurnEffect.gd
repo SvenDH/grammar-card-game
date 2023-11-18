@@ -2,8 +2,8 @@ extends BaseEffect
 
 @export var number: int = 1
 
-func activate(ctx: Dictionary):
-	return [[getnumber(number, ctx)]]
+func activate(ability: Ability):
+	return [[getnumber(number, ability)]]
 
-func resolve(player: CardPlayer, n: int = 1):
+func resolve(_ability: Ability, player: CardPlayer, n: int = 1):
 	player.turnsafterthis += n

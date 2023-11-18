@@ -1,11 +1,10 @@
-[gd_resource type="Resource" script_class="Card" load_steps=20 format=3 uid="uid://biv212ic14gcg"]
+[gd_resource type="Resource" script_class="Card" load_steps=18 format=3 uid="uid://biv212ic14gcg"]
 
 [ext_resource type="Script" path="res://Card.gd" id="1"]
 [ext_resource type="Script" path="res://ir/TriggeredAbility.gd" id="3"]
 [ext_resource type="Script" path="res://ir/Trigger.gd" id="5"]
 [ext_resource type="Script" path="res://ir/ObjectCondition.gd" id="7"]
 [ext_resource type="Script" path="res://ir/Object.gd" id="9"]
-[ext_resource type="Script" path="res://ir/Card.gd" id="11"]
 [ext_resource type="Script" path="res://ir/Effect.gd" id="13"]
 [ext_resource type="Script" path="res://ir/SubjectEffect.gd" id="15"]
 [ext_resource type="Script" path="res://effects/DrawEffect.gd" id="17"]
@@ -33,19 +32,9 @@ script = ExtResource("13")
 effects = Array[Resource("res://BaseEffect.gd")]([SubResource("14")])
 optional = false
 
-[sub_resource type="Resource" id="10"]
-script = ExtResource("11")
-ref = 1
-type = 0
-extra = 0
-prefixes = []
-suffixes = []
-without = 0
-copies = false
-
 [sub_resource type="Resource" id="8"]
 script = ExtResource("9")
-objects = Array[Resource("res://ir/Match.gd")]([SubResource("10")])
+objects = Array[Resource("res://ir/Match.gd")]([])
 each = false
 
 [sub_resource type="Resource" id="6"]

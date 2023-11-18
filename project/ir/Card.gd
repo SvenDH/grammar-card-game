@@ -20,48 +20,48 @@ func targets(ctx: Dictionary) -> int:
 func has_target() -> bool:
 	return ref == Reference.target
 
-func match_query(ctx: Dictionary, other) -> bool:
+func match_query(ability: Ability, other) -> bool:
 	if not other is CardInstance:
 		return false
 	
 	if type and type not in other.card.types:
 		return false
 	
-	if ref == Reference.selfref and ctx.self != other:
+	if ref == Reference.selfref and ability.ctx.self != other:
 		return false
 	elif ref in [Reference.it, Reference.this, Reference.that]:
-		if ctx["this"] != other:
+		if ability.ctx.this != other:
 			return false
 	elif ref in [Reference.rest, Reference.another]:
-		if ctx["this"] == other:
+		if ability.ctx.this == other:
 			return false
-		elif "these" in ctx and other not in ctx["these"]:
+		elif "these" in ability.ctx and other not in ability.ctx.these:
 			return false
 	elif ref == Reference.any:
-		if other not in ctx["these"]:
+		if other not in ability.ctx.these:
 			return false
 	elif ref == Reference.sac:
-		if other not in ctx["sacrificed"]:
+		if other not in ability.ctx.sacrificed:
 			return false
 	if ref in [Reference.each, Reference.all]:
-		if "these" in ctx and other not in ctx["these"]:
+		if "these" in ability.ctx and other not in ability.ctx.these:
 			return false
 	elif ref == Reference.chosen:
-		if other in ctx["chosen"]:
+		if other in ability.ctx.chosen:
 			# TODO: add choose action
 			return false
 	elif ref == Reference.target:
-		if other in ctx["targets"]:
+		if other in ability.ctx.targets:
 			# TODO: add test for "another"
 			return false
-	elif ref in Countables and other in ctx["selected"]:
+	elif ref in Countables and other in ability.ctx.selected:
 		return false
 	
 	for prefix in prefixes:
-		if not prefix.match_query(ctx, other.card):
+		if not prefix.match_query(ability, other.card):
 			return false
 	for suffix in suffixes:
-		if not suffix.match_query(ctx, other.card):
+		if not suffix.match_query(ability, other.card):
 			return false
 	
 	if withwhat != null:

@@ -122,24 +122,31 @@ func cast() -> bool:
 		'ability': card,
 		'targets': []
 	}
+	var ability = Ability.new()
+	ability.ctx = ctx
+	ability.game = game
+	ability.source = self
+	ability.controller = player
+	ability.ability = card
 	# TODO: add additional costs (from status etc)
 	await player.pay_costs(self, card.costs)
-	await game.send(ctx, [[player, self, [self, to_index]]])
+	await game.send(ability, [[player, self, [self, to_index]]])
 	await on_play()
 	return true
 
-func resolve(player: CardPlayer, card: CardInstance, to_index: int):
+func resolve(ability: Ability, player: CardPlayer, _card: CardInstance, to_index: int):
+	assert(ability.source == self)
 	var ctx = {
 		'game': game,
 		'self': self,
 		'controller': player
 	}
-	await player.remove(card)
-	for ability in triggered_abilities:
-		ctx.ability = ability
+	await player.remove(self)
+	for a in triggered_abilities:
+		ctx.ability = a
 		ctx.targets = []
-		await ability.activate(ctx)
-	await player.place(card, ZoneMatch.ZoneEnum.board, to_index)
+		await a.activate(ctx)
+	await player.place(self, ZoneMatch.ZoneEnum.board, to_index)
 
 func activate_ability(ability):
 	if not ability.can_activate(self):
@@ -154,7 +161,7 @@ func activate_ability(ability):
 		'targets': []
 	}
 	await player.pay_costs(self, ability.costs)
-	return await ability.activate(ctx)
+	await ability.activate(ctx)
 
 func reset():
 	power = card.power

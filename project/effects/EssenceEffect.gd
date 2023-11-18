@@ -6,14 +6,14 @@ extends BaseEffect
 func is_essence_ability():
 	return true
 
-func activate(ctx: Dictionary):
-	var player = ctx.subject
+func activate(ability: Ability):
+	var player = ability.subject
 	if len(colors) > 1:
 		return [[await player.choose("essence", colors), amount]]
 	elif len(colors) == 1:
 		return [[colors[0], amount]]
 	return [["U", amount]]
 
-func resolve(player: CardPlayer, color, amount):
+func resolve(_ability: Ability, player: CardPlayer, color, amount):
 	for _i in amount:
 		player.add_essence(color)

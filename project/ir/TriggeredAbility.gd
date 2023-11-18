@@ -7,72 +7,79 @@ class_name TriggeredAbility
 func activate(ctx: Dictionary):
 	var game: CardGame = ctx.game
 	var controller = game.priority
+	var ability = Ability.new()
+	ability.ctx = ctx
+	ability.game = ctx.game
+	ability.source = ctx.self
+	ability.controller = ctx.controller
+	ability.ability = ctx.get("ability")
+	
 	if trigger.trigger == Trigger.TriggerEnum.whenplay:
-		game.played.connect(on_play.bind(controller))
+		game.played.connect(on_play.bind(ability))
 	elif trigger.trigger == Trigger.TriggerEnum.whengainlife:
-		game.lifechanged.connect(on_lifegained.bind(controller))
+		game.lifechanged.connect(on_lifegained.bind(ability))
 	elif trigger.trigger == Trigger.TriggerEnum.whenloselife:
-		game.lifechanged.connect(on_lifelost.bind(controller))
+		game.lifechanged.connect(on_lifelost.bind(ability))
 	elif trigger.trigger == Trigger.TriggerEnum.whendamaged:
-		game.healthchanged.connect(on_damaged.bind(controller))
+		game.healthchanged.connect(on_damaged.bind(ability))
 	elif trigger.trigger == Trigger.TriggerEnum.endofturn:
-		game.phasechanged.connect(on_endofturn.bind(controller))
+		game.phasechanged.connect(on_endofturn.bind(ability))
 	elif trigger.trigger == Trigger.TriggerEnum.beginningofphase:
-		game.phasechanged.connect(on_beginningofphase.bind(controller))
+		game.phasechanged.connect(on_beginningofphase.bind(ability))
 	elif trigger.trigger == Trigger.TriggerEnum.condition:
 		if trigger.condition.condition == Condition.ConditionEnum.objectcond:
 			var objcond: ObjectCondition = trigger.condition
 			if objcond.phrase == ObjectCondition.ObjectPhraseEnum.whenenters:
-				game.entered.connect(on_entered.bind(controller))
+				game.entered.connect(on_entered.bind(ability))
 			elif objcond.phrase == ObjectCondition.ObjectPhraseEnum.leaves:
-				game.left.connect(on_left.bind(controller))
+				game.left.connect(on_left.bind(ability))
 			elif objcond.phrase == ObjectCondition.ObjectPhraseEnum.dies:
-				game.destroyed.connect(on_died.bind(controller))
+				game.destroyed.connect(on_died.bind(ability))
 
-func on_entered(card: CardInstance, controller: CardPlayer):
-	if card in controller.game.query(controller.game.ctx, trigger.condition.subject):
-		if trigger.condition.possesion and \
-			card.controller not in controller.game.query(controller.game.ctx, trigger.condition.possesion):
-			return controller.game.triggered.emit()
-		await effect.activate(controller.game.ctx)
-	controller.game.triggered.emit()
+func on_entered(card: CardInstance, ability: Ability):
+	if card in ability.game.query(ability, trigger.condition.subject):
+		if trigger.condition.possesion and card.controller not in \
+			ability.game.query(ability, trigger.condition.possesion):
+			return ability.game.triggered.emit()
+		await effect.activate(ability)
+	ability.game.triggered.emit()
 
-func on_left(card: CardInstance, controller: CardPlayer):
-	if card in controller.game.query(controller.game.ctx, trigger.condition.subject):
-		await effect.activate(controller.game.ctx)
-	controller.game.triggered.emit()
+func on_left(card: CardInstance, ability: Ability):
+	if card in ability.game.query(ability, trigger.condition.subject):
+		await effect.activate(ability)
+	ability.game.triggered.emit()
 
-func on_died(card: CardInstance, controller: CardPlayer):
-	if card in controller.game.query(controller.game.ctx, trigger.condition.subject):
-		await effect.activate(controller.game.ctx)
-	controller.game.triggered.emit()
+func on_died(card: CardInstance, ability: Ability):
+	if card in ability.game.query(ability, trigger.condition.subject):
+		await effect.activate(ability)
+	ability.game.triggered.emit()
 
-func on_play(player: CardPlayer, card: CardInstance, controller: CardPlayer):
-	if controller == player and card in player.query(controller.game.ctx, trigger.objects):
-		await effect.activate(controller.game.ctx)
-	controller.game.triggered.emit()
+func on_play(player: CardPlayer, card: CardInstance, ability: Ability):
+	if ability.controller == player and card in player.query(ability, trigger.objects):
+		await effect.activate(ability)
+	ability.game.triggered.emit()
 
-func on_lifegained(player: CardPlayer, value: int, source, controller: CardPlayer):
-	if value > 0 and player in player.game.query(controller.game.ctx, trigger.players):
-		await effect.activate(controller.game.ctx)
-	controller.game.triggered.emit()
+func on_lifegained(player: CardPlayer, value: int, source, ability: Ability):
+	if value > 0 and player in ability.game.query(ability, trigger.players):
+		await effect.activate(ability)
+	ability.game.triggered.emit()
 
-func on_lifelost(player: CardPlayer, value: int, source, controller: CardPlayer):
-	if value < 0 and player in player.game.query(controller.game.ctx, trigger.players):
-		await effect.activate(controller.game.ctx)
-	controller.game.triggered.emit()
+func on_lifelost(player: CardPlayer, value: int, source, ability: Ability):
+	if value < 0 and player in ability.game.query(ability, trigger.players):
+		await effect.activate(ability)
+	ability.game.triggered.emit()
 
-func on_damaged(card: CardInstance, value: int, source, controller: CardPlayer):
-	if value < 0 and card in card.game.query(controller.game.ctx, trigger.objects):
-		await effect.activate(controller.game.ctx)
-	controller.game.triggered.emit()
+func on_damaged(card: CardInstance, value: int, source, ability: Ability):
+	if value < 0 and card in card.game.query(ability, trigger.objects):
+		await effect.activate(ability)
+	ability.game.triggered.emit()
 
-func on_endofturn(player: CardPlayer, phase: Phase.PhaseEnum, controller: CardPlayer):
+func on_endofturn(player: CardPlayer, phase: Phase.PhaseEnum, ability: Ability):
 	if phase == Phase.PhaseEnum.cleanup:
-		await effect.activate(controller.game.ctx)
-	controller.game.triggered.emit()
+		await effect.activate(ability)
+	ability.game.triggered.emit()
 
-func on_beginningofphase(player: CardPlayer, phase: Phase.PhaseEnum, controller: CardPlayer):
+func on_beginningofphase(player: CardPlayer, phase: Phase.PhaseEnum, ability: Ability):
 	if phase == Phase.PhaseEnum.cleanup:
-		await effect.activate(controller.game.ctx)
-	controller.game.triggered.emit()
+		await effect.activate(ability)
+	ability.game.triggered.emit()

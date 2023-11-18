@@ -10,5 +10,5 @@ func has_target():
 func is_essence_ability():
 	return false
 
-func activate(_ctx: Dictionary):
+func activate(_ability: Ability):
 	pass

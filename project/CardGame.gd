@@ -26,7 +26,6 @@ var stack := []
 var current_player = null
 var priority = null
 var reaction := false
-var ctx
 
 func _ready():
 	for child in get_children():
@@ -70,14 +69,12 @@ func do_turn(player: CardPlayer):
 	phase = Phase.PhaseEnum.cleanup
 	await player.end_turn()
 
-func send(ctx: Dictionary, effects: Array, use_stack := true):
-	var ability = PlayedAbility.new()
-	ability.source = ctx.self
-	ability.controller = ctx.controller
-	ability.ability = ctx.get("ability")
-	ability.effects = effects
+func send(ability: Ability, effects: Array, use_stack := true):
+	var new_ability := Ability.new()
+	ability.copy(new_ability)
+	new_ability.effects = effects
 	if use_stack:
-		stack.append(ability)
+		stack.append(new_ability)
 		reaction = true
 		
 		while len(stack) > 0:
@@ -88,43 +85,42 @@ func send(ctx: Dictionary, effects: Array, use_stack := true):
 				while not done:
 					var choices = player.get_playable_cards()
 					done = await player.choose("action", choices)
-			ability = stack.pop_back()
-			if ability:
-				await ability.resolve(ctx)
+			var other_ability = stack.pop_back()
+			if other_ability:
+				await other_ability.resolve()
 		
 		reaction = false
 	else:
-		await ability.resolve(ctx)
+		await new_ability.resolve()
 
-func pick(ctx: Dictionary, obj, place = null):
-	var n = obj.targets(ctx)
+func pick(ability: Ability, obj, place = null):
+	var n = obj.targets(ability.ctx)
 	if n > 0:
 		var player: CardPlayer = priority
 		for _i in n:
-			var found = query(ctx, obj, place)
+			var found = query(ability, obj, place)
 			if len(found) == 0:
-				return ctx.targets
+				return ability.targets
 			var choice = await player.choose("target", found)
 			if choice == null:
 				return null
-			ctx.targets.append(choice)
-		return ctx.targets
+			ability.targets.append(choice)
+		return ability.targets
 	
-	return query(ctx, obj, place)
+	return query(ability, obj, place)
 
-func query(ctx: Dictionary, obj, place = null, n: int = -1) -> Array:
+func query(ability: Ability, obj, place = null, n: int = -1) -> Array:
 	var found := []
 	for player in players:
-		if obj.match_query(ctx, player):
+		if obj.match_query(ability, player):
 			found.append(player)
-		found.append_array(player.query(ctx, obj, place))
+		found.append_array(player.query(ability, obj, place))
 	if n > 0:
 		return found.slice(0, n)
 	return found
 
 func trigger(sig: Signal, params: Array):
 	var n = len(sig.get_connections())
-	print(sig.get_name(), " ", n)
 	emit_signal.bindv([sig.get_name()] + params).call_deferred()
 	for _i in n:
 		await triggered

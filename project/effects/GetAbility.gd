@@ -3,16 +3,16 @@ extends BaseEffect
 @export var abilities: Array
 @export var until: Condition
 
-func activate(ctx: Dictionary):
+func activate(ability: Ability):
 	var status = AbilitiesAdded.new()
 	status.until = until
 	status.abilities = []
-	for ability in abilities:
-		if ability is ModAbility:
-			status.abilities.append(ability.get_stats(ctx))
+	for a in abilities:
+		if a is ModAbility:
+			status.abilities.append(a.get_stats(ability))
 		else:
-			status.abilities.append(ability)
+			status.abilities.append(a)
 	return [[status]]
 
-func resolve(card: CardInstance, status):
+func resolve(_ability: Ability, card: CardInstance, status):
 	card.add_status(status)

@@ -218,36 +218,36 @@ func remove(card: CardInstance):
 		board.remove(board.index(card))
 		await card.on_exit()
 
-func query(ctx: Dictionary, obj = null, place = null) -> Array:
+func query(ability: Ability, obj = null, place = null) -> Array:
 	var found = []
-	if _match_field(ctx, ZoneMatch.ZoneEnum.board, place):
+	if _match_field(ability, ZoneMatch.ZoneEnum.board, place):
 		for card in board.cards():
-			if card and (obj == null or obj.match_query(ctx, card)):
+			if card and (obj == null or obj.match_query(ability, card)):
 				found.append(card)
-	if _match_field(ctx, ZoneMatch.ZoneEnum.hand, place):
+	if _match_field(ability, ZoneMatch.ZoneEnum.hand, place):
 		for card in hand.cards():
-			if obj == null or obj.match_query(ctx, card):
+			if obj == null or obj.match_query(ability, card):
 				found.append(card)
-	if _match_field(ctx, ZoneMatch.ZoneEnum.pile, place):
+	if _match_field(ability, ZoneMatch.ZoneEnum.pile, place):
 		for card in pile.cards():
-			if obj == null or obj.match_query(ctx, card):
+			if obj == null or obj.match_query(ability, card):
 				found.append(card)
-	if _match_field(ctx, ZoneMatch.ZoneEnum.deck, place):
+	if _match_field(ability, ZoneMatch.ZoneEnum.deck, place):
 		for card in deck.cards():
-			if obj == null or obj.match_query(ctx, card):
+			if obj == null or obj.match_query(ability, card):
 				found.append(card)
-	if _match_field(ctx, ZoneMatch.ZoneEnum.stack, place):
-		for card in game.stack:
-			if card.controller == self:
-				if obj == null or obj.match_query(ctx, card):
-					found.append(card)
+	if _match_field(ability, ZoneMatch.ZoneEnum.stack, place):
+		for item in game.stack:
+			if item.controller == self:
+				if obj == null or obj.match_query(ability, item):
+					found.append(item)
 	return found
 
-func _match_field(ctx: Dictionary, place: ZoneMatch.ZoneEnum, match_query) -> bool:
+func _match_field(ability: Ability, place: ZoneMatch.ZoneEnum, match_query) -> bool:
 	if match_query == null:
 		return true
 	if match_query is ZoneMatch:
-		return match_query.match_query(ctx, place, self)
+		return match_query.match_query(ability, place, self)
 	return place == match_query
 
 func on_startturn():

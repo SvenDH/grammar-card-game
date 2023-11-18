@@ -8,10 +8,10 @@ func targets(ctx):
 func has_target():
 	return objects.has_target()
 
-func activate(ctx: Dictionary):
-	var player = ctx.subject
+func activate(ability: Ability):
+	var player = ability.subject
 	var results = []
-	var res = await ctx.game.pick(ctx, objects, ZoneMatch.ZoneEnum.board)
+	var res = await ability.game.pick(ability, objects, ZoneMatch.ZoneEnum.board)
 	if res == null:
 		return null
 	for d in res:
@@ -24,7 +24,7 @@ func activate(ctx: Dictionary):
 		results.append([d])
 	return results
 
-func resolve(player: CardPlayer, card: CardInstance, to_index: int):
+func resolve(_ability: Ability, player: CardPlayer, card: CardInstance, to_index: int):
 	# TODO: add 'token' and 'copy' modifier
 	# TODO: check if card is valid target?
 	var inst = CardInstance.new()

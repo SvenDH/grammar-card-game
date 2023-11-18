@@ -30,12 +30,12 @@ func has_target() -> bool:
 			return true
 	return false
 
-func activate(ctx: Dictionary):
+func activate(ability: Ability):
 	# TODO: add optional check
 	var played = []
 	for e in effects:
-		var res = await e.activate(ctx)
+		var res = await e.activate(ability)
 		if res == null:
 			return null
 		played.append_array(res)
-	return await ctx.controller.game.send(ctx, played, not is_essence_ability())
+	await ability.game.send(ability, played, not is_essence_ability())

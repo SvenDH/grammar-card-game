@@ -15,7 +15,7 @@ enum PrefixEnum {
 @export var stats: Array
 @export var non: bool = false
 
-func match_query(ctx: Dictionary, other) -> bool:
+func match_query(ability: Ability, other) -> bool:
 	if non:
 		if type and other.type == type:
 			return false
