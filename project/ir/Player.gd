@@ -19,7 +19,7 @@ enum PlayerEnum {
 @export var extra: int  # TODO: implement player extra (target count etc)
 @export var who_cant: bool = false
 
-func targets(_ctx: Dictionary) -> int:
+func targets(_ability: Ability):
 	if ref == Reference.target:
 		if extra != null:
 			# TODO: implement get X

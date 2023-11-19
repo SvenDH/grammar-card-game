@@ -237,7 +237,7 @@ func query(ability: Ability, obj = null, place = null) -> Array:
 			if obj == null or obj.match_query(ability, card):
 				found.append(card)
 	if _match_field(ability, ZoneMatch.ZoneEnum.stack, place):
-		for item in game.stack:
+		for item in game.stack.cards():
 			if item.controller == self:
 				if obj == null or obj.match_query(ability, item):
 					found.append(item)

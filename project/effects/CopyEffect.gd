@@ -2,8 +2,8 @@ extends BaseEffect
 
 @export var objects: ObjectMatch
 
-func targets(ctx):
-	return objects.targets(ctx)
+func targets(ability: Ability):
+	return objects.targets(ability)
 
 func has_target():
 	return objects.has_target()
@@ -32,5 +32,4 @@ func resolve(_ability: Ability, player: CardPlayer, card: CardInstance, to_index
 	inst.card = card.card
 	inst.controller = self
 	inst.player_owner = self
-	inst.field_index = to_index
 	await player.place(inst, ZoneMatch.ZoneEnum.board, to_index)

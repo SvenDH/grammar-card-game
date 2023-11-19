@@ -6,8 +6,8 @@ extends BaseEffect
 @export var second_objects: ObjectMatch
 @export var second_into: ZoneMatch
 
-func targets(ctx):
-	return objects.targets(ctx)
+func targets(ability: Ability):
+	return objects.targets(ability)
 
 func has_target():
 	return objects.has_target()

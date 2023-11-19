@@ -1,12 +1,12 @@
 extends Match
 class_name ObjectMatch
 
-@export var objects: Array[Match] = []
+@export var objects: Array = []
 @export var each: bool = false
 
-func targets(ctx: Dictionary) -> int:
+func targets(ability: Ability):
 	for o in objects:
-		var n = o.targets(ctx)
+		var n = o.targets(ability)
 		if n > 0:
 			return n
 	return -1

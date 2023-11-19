@@ -38,7 +38,7 @@ enum NumbericalEnum {
 
 const Countables = [Reference.exactly, Reference.atleast, Reference.ormore, Reference.fewerthan, Reference.upto, Reference.oneof, Reference.anynumberof]
 
-func targets(_ctx: Dictionary) -> int:
+func targets(_ability: Ability) -> int:
 	return -1
 
 func has_target() -> bool:

@@ -42,7 +42,6 @@ offset_bottom = 317.0
 
 [node name="Board" type="HBoxContainer" parent="Control"]
 layout_mode = 2
-focus_neighbor_bottom = NodePath("../../Hand")
 theme_override_constants/separation = 5
 script = ExtResource("3_ornyf")
 max_card_size = Vector2(150, 164)

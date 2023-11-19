@@ -3,8 +3,8 @@ extends BaseEffect
 @export var objects: ObjectMatch
 @export var free: bool = false
 
-func targets(ctx):
-	return objects.targets(ctx)
+func targets(ability: Ability):
+	return objects.targets(ability)
 
 func has_target():
 	return objects.has_target()

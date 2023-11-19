@@ -29,5 +29,5 @@ func activate(ctx: Dictionary):
 	ability.game = ctx.game
 	ability.source = ctx.self
 	ability.controller = ctx.controller
-	ability.ability = ctx.get("ability")
+	ability.ability = ctx.ability
 	await effect.activate(ability)

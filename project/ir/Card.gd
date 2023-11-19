@@ -10,10 +10,10 @@ class_name CardMatch
 @export var without: Card.KeywordEnum
 @export var copies: bool = false
 
-func targets(ctx: Dictionary) -> int:
+func targets(ability: Ability) -> int:
 	if ref == Reference.target:
 		if extra != 0:
-			return getnumber(extra, ctx)
+			return getnumber(extra, ability)
 		return 1
 	return -1
 	

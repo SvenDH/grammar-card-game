@@ -56,12 +56,12 @@ func match_query(ability: Ability, other) -> bool:
 			return false
 		if len(ability.targets) != 1:
 			return false
-		return subj.match_query(ability, ctx.targets[0])
+		return subj.match_query(ability, ability.ctx.targets[0])
 	elif suffix == SuffixEnum.activatedthisway:
-		if "activated" not in ctx or other not in ability.ctx.activated:
+		if "activated" not in ability.ctx or other not in ability.ctx.activated:
 			return false
 	elif suffix == SuffixEnum.deactivatedthisway:
-		if "deactivated" not in ctx or other not in ability.ctx.deactivated:
+		if "deactivated" not in ability.ctx or other not in ability.ctx.deactivated:
 			return false
 	elif suffix == SuffixEnum.couldtarget:
 		# TODO: implement couldtarget

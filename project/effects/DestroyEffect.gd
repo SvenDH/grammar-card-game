@@ -2,8 +2,8 @@ extends BaseEffect
 
 @export var objects: ObjectMatch
 
-func targets(ctx):
-	return objects.targets(ctx)
+func targets(ability: Ability):
+	return objects.targets(ability)
 
 func has_target():
 	return objects.has_target()

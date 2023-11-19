@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=3 uid="uid://oer7ytplr5eq"]
+[gd_scene load_steps=12 format=3 uid="uid://oer7ytplr5eq"]
 
 [ext_resource type="Script" path="res://CardGame.gd" id="1_cwwvb"]
 [ext_resource type="PackedScene" uid="uid://fchwnecoto3j" path="res://CardPlayer.tscn" id="2_3quxd"]
@@ -10,6 +10,7 @@
 [ext_resource type="Resource" uid="uid://cat6c0fxqp8sy" path="res://cards/Land.tres" id="8_6k7is"]
 [ext_resource type="Resource" uid="uid://biv212ic14gcg" path="res://cards/Flashcaster.tres" id="9_ruy6u"]
 [ext_resource type="PackedScene" uid="uid://5lnisp7xta8e" path="res://CardBot.tscn" id="10_rfjup"]
+[ext_resource type="Script" path="res://CardPile.gd" id="11_eynfs"]
 
 [node name="World" type="Node3D"]
 
@@ -21,5 +22,18 @@ script = ExtResource("1_cwwvb")
 [node name="CardPlayer" parent="CardGame" instance=ExtResource("2_3quxd")]
 cards = Array[Resource("res://Card.gd")]([ExtResource("4_8hmlc"), ExtResource("6_nrx2b"), ExtResource("5_jul0h"), ExtResource("3_4rxfn"), ExtResource("6_nrx2b"), ExtResource("7_1f7se"), ExtResource("4_8hmlc"), ExtResource("8_6k7is"), ExtResource("8_6k7is"), ExtResource("9_ruy6u")])
 
+[node name="Board" parent="CardGame/CardPlayer/Control" index="0"]
+focus_neighbor_top = NodePath("../../../CardBot/Control/Board")
+
 [node name="CardBot" parent="CardGame" instance=ExtResource("10_rfjup")]
 cards = Array[Resource("res://Card.gd")]([ExtResource("4_8hmlc")])
+
+[node name="Stack" type="VBoxContainer" parent="CardGame"]
+offset_left = 981.0
+offset_top = 95.0
+offset_right = 1134.0
+offset_bottom = 95.0
+script = ExtResource("11_eynfs")
+
+[editable path="CardGame/CardPlayer"]
+[editable path="CardGame/CardBot"]

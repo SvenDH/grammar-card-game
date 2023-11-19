@@ -4,8 +4,8 @@ extends BaseEffect
 @export var what: ObjectMatch
 @export var zones: ZoneMatch
 
-func targets(ctx):
-	return what.targets(ctx) if what else -1
+func targets(ability: Ability):
+	return what.targets(ability) if what else -1
 
 func has_target():
 	return what.has_target()

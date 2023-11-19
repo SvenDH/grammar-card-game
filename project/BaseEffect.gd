@@ -1,7 +1,7 @@
 extends CardResource
 class_name BaseEffect
 
-func targets(_ctx: Dictionary):
+func targets(_ability: Ability):
 	return -1
 
 func has_target():

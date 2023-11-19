@@ -4,9 +4,13 @@
 
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_uhkgb"]
 texture = ExtResource("1_v1uq3")
-region_rect = Rect2(0, 0, 74, 82)
+region_rect = Rect2(0, 0, 75, 82)
 
 [resource]
 Label/colors/font_color = Color(1, 1, 0.627451, 1)
+MarginContainer/constants/margin_bottom = 0
+MarginContainer/constants/margin_left = 0
+MarginContainer/constants/margin_right = 0
+MarginContainer/constants/margin_top = 0
 PanelContainer/styles/panel = SubResource("StyleBoxTexture_uhkgb")
 RichTextLabel/colors/default_color = Color(1, 1, 0.627451, 1)

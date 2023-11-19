@@ -10,8 +10,6 @@ signal click
 
 var game = null
 var card: Card
-var power := 1
-var health := 1
 var player_owner
 var controller
 var status: Array[CardStatus] = []
@@ -25,6 +23,8 @@ var highlighted := false
 var selected := false
 var can_focus := false
 var types: get = _get_types
+var power: get = _get_power, set = _set_power
+var health: get = _get_health, set = _set_health
 var abilities: get = _get_abilities
 var activated_abilities: get = _get_activated_abilities
 var triggered_abilities: get = _get_triggered_abilities
@@ -32,19 +32,21 @@ var keyword_abilities: get = _get_keyword_abilities
 var color: get = _get_color
 
 @onready var panel = $Panel
-@onready var picture = $Panel/Control/Picture
-@onready var ability_text = $Panel/Control/Scroll/Abilities
-@onready var name_label = $Panel/Control/Name
-@onready var cost_label = $Panel/Control/Essence
+@onready var picture = $Panel/Margin/Parts/Picture
+@onready var ability_text = $Panel/Margin/Parts/Scroll/Abilities
+@onready var name_label = $Panel/Margin/Parts/Header/Name
+@onready var cost_label = $Panel/Margin/Parts/Header/Essence
+@onready var power_label = $Panel/Margin/Parts/Footer/Power
+@onready var health_label = $Panel/Margin/Parts/Footer/Health
 
 func _ready():
 	if card:
+		power = self.power
+		health = self.health
 		name_label.text = card.name
-		for c in card.costs:
-			if c in Card.COLORS:
-				cost_label.add_icon(c)
-			else:
-				cost_label.append_text(str(c))
+		for i in len(card.costs):
+			var c = card.costs[len(card.costs)-1-i]
+			cost_label.add_format_text("{"+str(c)+"}")
 		var text = null
 		for ability in card.abilities:
 			if ability is String:
@@ -227,6 +229,20 @@ func on_draw():
 
 func on_discard():
 	pass
+
+func _set_power(new_power):
+	power = new_power
+	power_label.text = str(power)
+
+func _set_health(new_health):
+	health = new_health
+	health_label.text = str(health)
+
+func _get_power():
+	return card.power  # TODO: add modified types
+
+func _get_health():
+	return card.health  # TODO: add modified types
 
 func _get_types() -> Array:
 	return card.types  # TODO: add modified types

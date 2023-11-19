@@ -2,6 +2,7 @@ extends Node
 class_name CardGame
 
 const START_CARDS := 5
+const ability_scene := preload("res://AbilityInstance.tscn")
 
 signal triggered
 
@@ -22,10 +23,11 @@ signal countered(thing)
 var players: Array[CardPlayer] = []
 var turn := 0
 var phase: Phase.PhaseEnum = Phase.PhaseEnum.activation
-var stack := []
 var current_player = null
 var priority = null
 var reaction := false
+
+@onready var stack := $Stack
 
 func _ready():
 	for child in get_children():
@@ -70,14 +72,14 @@ func do_turn(player: CardPlayer):
 	await player.end_turn()
 
 func send(ability: Ability, effects: Array, use_stack := true):
-	var new_ability := Ability.new()
+	var new_ability := ability_scene.instantiate()
 	ability.copy(new_ability)
 	new_ability.effects = effects
 	if use_stack:
-		stack.append(new_ability)
+		stack.add(new_ability)
 		reaction = true
 		
-		while len(stack) > 0:
+		while len(stack.cards()) > 0:
 			for i in len(players):
 				var player = players[(turn + i) % len(players)]
 				priority = player
@@ -85,7 +87,7 @@ func send(ability: Ability, effects: Array, use_stack := true):
 				while not done:
 					var choices = player.get_playable_cards()
 					done = await player.choose("action", choices)
-			var other_ability = stack.pop_back()
+			var other_ability = stack.pop()
 			if other_ability:
 				await other_ability.resolve()
 		
@@ -94,7 +96,7 @@ func send(ability: Ability, effects: Array, use_stack := true):
 		await new_ability.resolve()
 
 func pick(ability: Ability, obj, place = null):
-	var n = obj.targets(ability.ctx)
+	var n = obj.targets(ability)
 	if n > 0:
 		var player: CardPlayer = priority
 		for _i in n:
