@@ -13,6 +13,7 @@ var card: Card
 var player_owner
 var controller
 var status: Array[CardStatus] = []
+var triggers: Array[Ability] = []
 var activated: bool = true
 var attacking: bool = false
 var blocking: bool = false
@@ -20,7 +21,6 @@ var side: bool = false
 var location: ZoneMatch.ZoneEnum = ZoneMatch.ZoneEnum.deck
 var field_index: int = -1
 var highlighted := false
-var selected := false
 var can_focus := false
 var types: get = _get_types
 var power: get = _get_power, set = _set_power
@@ -32,6 +32,7 @@ var keyword_abilities: get = _get_keyword_abilities
 var color: get = _get_color
 
 @onready var panel = $Panel
+@onready var outline = $Outline
 @onready var picture = $Panel/Margin/Parts/Picture
 @onready var ability_text = $Panel/Margin/Parts/Scroll/Abilities
 @onready var name_label = $Panel/Margin/Parts/Header/Name
@@ -93,7 +94,24 @@ func deactivate():
 func add_status(new_status: CardStatus):
 	# TODO: subscribe for 'until' condition check
 	status.append(new_status)
-	new_status.apply(self)
+	await new_status.apply(self)
+	await _check_dead()
+
+func attack():
+	assert(location == ZoneMatch.ZoneEnum.board and field_index != -1)
+	var opponents = game.get_opponents(controller)
+	# TODO: choose opponentn is there are multiple
+	assert(len(opponents) > 0)
+	# TODO: choose field if card has reach
+	var card = game.get_field(opponents[0], field_index)
+	if card:
+		await card.damage(power)
+	else:
+		await opponents[0].damage(power)
+
+func damage(amount: int):
+	health -= amount
+	await _check_dead()
 
 func play() -> bool:
 	# Check if playable
@@ -103,6 +121,7 @@ func play() -> bool:
 		return false
 	await player.remove(self)
 	await player.place(self, ZoneMatch.ZoneEnum.board, to_index)
+	await _check_dead()
 	return true
 
 func cast() -> bool:
@@ -116,16 +135,7 @@ func cast() -> bool:
 
 	await player.remove(self)
 	location = ZoneMatch.ZoneEnum.stack
-	
-	var ctx = {
-		'game': game,
-		'self': self,
-		'controller': player,
-		'ability': card,
-		'targets': []
-	}
 	var ability = Ability.new()
-	ability.ctx = ctx
 	ability.game = game
 	ability.source = self
 	ability.controller = player
@@ -138,37 +148,26 @@ func cast() -> bool:
 
 func resolve(ability: Ability, player: CardPlayer, _card: CardInstance, to_index: int):
 	assert(ability.source == self)
-	var ctx = {
-		'game': game,
-		'self': self,
-		'controller': player
-	}
 	await player.remove(self)
 	for a in triggered_abilities:
-		ctx.ability = a
-		ctx.targets = []
-		await a.activate(ctx)
+		triggers.append(await a.activate(player, self))
+	
 	await player.place(self, ZoneMatch.ZoneEnum.board, to_index)
+	await _check_dead()
 
 func activate_ability(ability):
 	if not ability.can_activate(self):
 		return false
 	
 	var player = game.priority
-	var ctx = {
-		'game': game,
-		'self': self,
-		'controller': player,
-		'ability': ability,
-		'targets': []
-	}
 	await player.pay_costs(self, ability.costs)
-	await ability.activate(ctx)
+	await ability.activate(player, self)
 
 func reset():
 	power = card.power
 	health = card.health
 	status = []
+	triggers = []
 	activated = true
 	attacking = false
 	blocking = false
@@ -291,25 +290,38 @@ func _get_color() -> Array:
 	return colors
 
 func _input(event):
-	if highlighted and selected and event.is_action_pressed("ui_accept"):
+	if highlighted and has_focus() and event.is_action_pressed("ui_accept"):
 		click.emit()
 
+func select():
+	outline.show()
+
+func deselect():
+	outline.hide()
+
+func _check_dead():
+	if location == ZoneMatch.ZoneEnum.board and health <= 0:
+		await controller.remove(self)
+		await player_owner.place(self, ZoneMatch.ZoneEnum.pile)
+		await on_destroy()
+
 func _on_focus_entered():
-	selected = true
 	z_index = 1
 	var container = get_parent()
 	if container.can_focus:
 		if container is VBoxContainer:
 			panel.position.x = 20
+			outline.position.x = 20
 		elif container is HBoxContainer:
 			panel.position.y = -20
+			outline.position.y = -20
 
 func _on_focus_exited():
-	selected = false
 	z_index = 0
 	var container = get_parent()
 	if container.can_focus:
 		panel.position = Vector2.ZERO
+		outline.position = Vector2.ZERO
 
 func _on_panel_mouse_entered():
 	grab_focus()

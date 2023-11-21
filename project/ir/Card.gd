@@ -16,7 +16,7 @@ func targets(ability: Ability) -> int:
 			return getnumber(extra, ability)
 		return 1
 	return -1
-	
+
 func has_target() -> bool:
 	return ref == Reference.target
 
@@ -27,7 +27,7 @@ func match_query(ability: Ability, other) -> bool:
 	if type and type not in other.card.types:
 		return false
 	
-	if ref == Reference.selfref and ability.ctx.self != other:
+	if ref == Reference.selfref and ability.source != other:
 		return false
 	elif ref in [Reference.it, Reference.this, Reference.that]:
 		if ability.ctx.this != other:
@@ -51,7 +51,7 @@ func match_query(ability: Ability, other) -> bool:
 			# TODO: add choose action
 			return false
 	elif ref == Reference.target:
-		if other in ability.ctx.targets:
+		if other in ability.targets:
 			# TODO: add test for "another"
 			return false
 	elif ref in Countables and other in ability.ctx.selected:

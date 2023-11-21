@@ -10,21 +10,20 @@ func has_target():
 	return objects.has_target()
 
 func activate(ability: Ability):
-	return [[getnumber(number, ability), objects]]
+	return [[getnumber(number, ability)]]
 
-func resolve(ability: Ability, player: CardPlayer, n: int = 1, query_match = null):
+func resolve(ability: Ability, player: CardPlayer, n: int = 1):
 	await player.game.trigger(player.game.discarded, [player, n])
-	for _i in n:
-		if not player.hand.cards():
-			return
-			
-		var choices
-		if query_match:
-			choices = player.query(ability, query_match, ZoneMatch.ZoneEnum.hand)
-		else:
-			choices = player.hand.cards()
-		if choices:
-			var card = await player.choose("discard", choices)
+	if not player.hand.cards():
+		return
+		
+	var choices
+	if objects:
+		choices = player.query(ability, objects, ZoneMatch.ZoneEnum.hand)
+	else:
+		choices = player.hand.cards()
+	if choices:
+		for card in await player.choose("discard", choices, n):
 			await player.remove(card)
 			await player.place(card, ZoneMatch.ZoneEnum.pile)
 			await card.on_discard()

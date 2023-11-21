@@ -30,6 +30,11 @@ func insert(card, index: int):
 	add_child(card)
 	move_child(card, index)
 	_add_card(card)
+	
+func index(i: int):
+	if i >= get_child_count():
+		return null
+	return get_child(i)
 
 func pop():
 	var num = get_child_count()

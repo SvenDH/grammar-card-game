@@ -14,7 +14,7 @@ enum ZoneEnum {
 enum PlaceEnum {
 	none,
 	top,
-	bottom,
+	bottom
 }
 
 @export var zones: Array[ZoneEnum] = []

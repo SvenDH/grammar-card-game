@@ -19,6 +19,6 @@ func has_target() -> bool:
 
 func match_query(ability: Ability, other) -> bool:
 	for o in objects:
-		if not o.match_query(ability, other):
-			return false
-	return true
+		if o.match_query(ability, other):
+			return true
+	return false

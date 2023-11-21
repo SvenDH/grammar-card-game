@@ -10,7 +10,7 @@ func _start():
 	if current_actions == null:
 		current_actions = {}
 
-func choose(command: String, choices := []):
+func choose(command: String, choices := [], n := 1):
 	var index = current_actions.get(command, []).pop_front()
 	if index == null: index = -1
 	if command == "action":

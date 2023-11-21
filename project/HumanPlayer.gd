@@ -3,12 +3,14 @@ extends CardPlayer
 signal action_done(param)
 
 @onready var pass_button := $PassButton
+@onready var submit_button := $SubmitButton
 @onready var essence_pool := $Control3/EssencePool
 @onready var ability_menu := $Control4/AbilityMenu
 
-func choose(command: String, choices := []):
+func choose(command: String, choices := [], n := 1):
 	get_viewport().set_input_as_handled()
 	pass_button.hide()
+	submit_button.hide()
 	ability_menu.hide()
 	print(command)
 	if command == "action":
@@ -58,11 +60,29 @@ func choose(command: String, choices := []):
 	
 	elif command == "discard":
 		board.reset()
-		hand.highlight(choices)
 		hand.show()
-		pass_button.hide()
-		var card = await action_done
-		return card
+		var selected := []
+		print(n)
+		while true:
+			if len(selected) == n:
+				submit_button.show()
+				hand.highlight(selected)
+				var card = await action_done
+				if card is String and card == "submit":
+					print(card)
+					return selected
+				selected.erase(card)
+				card.deselect()
+			else:
+				submit_button.hide()
+				hand.highlight(choices)
+				var card = await action_done
+				if card in selected:
+					selected.erase(card)
+					card.deselect()
+				else:
+					selected.append(card)
+					card.select()
 	
 	elif command == "field":
 		hand.hide()
@@ -119,6 +139,9 @@ func remove_essence(color):
 
 func _on_pass_button_pressed():
 	action_done.emit("pass")
+
+func _on_submit_button_pressed():
+	action_done.emit("submit")
 
 func _on_hand_click(card: CardInstance):
 	action_done.emit(card)

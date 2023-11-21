@@ -4,15 +4,13 @@ class_name TriggeredAbility
 @export var trigger: Trigger
 @export var effect: Effect
 
-func activate(ctx: Dictionary):
-	var game: CardGame = ctx.game
-	var controller = game.priority
+func activate(player, card):
+	var game: CardGame = player.game
 	var ability = Ability.new()
-	ability.ctx = ctx
-	ability.game = ctx.game
-	ability.source = ctx.self
-	ability.controller = ctx.controller
-	ability.ability = ctx.ability
+	ability.game = game
+	ability.source = card
+	ability.controller = player
+	ability.ability = self
 	
 	if trigger.trigger == Trigger.TriggerEnum.whenplay:
 		game.played.connect(on_play.bind(ability))
@@ -35,6 +33,8 @@ func activate(ctx: Dictionary):
 				game.left.connect(on_left.bind(ability))
 			elif objcond.phrase == ObjectCondition.ObjectPhraseEnum.dies:
 				game.destroyed.connect(on_died.bind(ability))
+				
+	return ability
 
 func on_entered(card: CardInstance, ability: Ability):
 	if card in ability.game.query(ability, trigger.condition.subject):

@@ -9,8 +9,8 @@ func is_essence_ability() -> bool:
 		return false
 	return effect.is_essence_ability()
 
-func targets(ctx: Dictionary) -> int:
-	return effect.targets(ctx)
+func targets(ability: Ability) -> int:
+	return effect.targets(ability)
 
 func has_target() -> bool:
 	return effect.has_target()
@@ -23,11 +23,11 @@ func can_activate(card: CardInstance):
 	var controller = card.controller
 	return controller.can_pay(card, costs)
 
-func activate(ctx: Dictionary):
+func activate(player, card):
 	var ability = Ability.new()
-	ability.ctx = ctx
-	ability.game = ctx.game
-	ability.source = ctx.self
-	ability.controller = ctx.controller
-	ability.ability = ctx.ability
+	ability.game = player.game
+	ability.source = card
+	ability.controller = player
+	ability.ability = self
 	await effect.activate(ability)
+	return ability

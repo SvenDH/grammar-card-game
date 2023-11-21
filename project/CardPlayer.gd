@@ -54,11 +54,11 @@ func get_playable_cards():
 			board_cards.append(card)
 	return castable_cards + board_cards
 
-func choose(command: String, choices := []):
+func choose(command: String, choices := [], n := 1):
 	if command == "action":
 		return true
 	# Overwrite with something smarter/ controlled by the player
-	return choices[len(choices)-1]
+	return choices.slice(len(choices)-n-1, len(choices)-1)
 
 func pick_free_field(card) -> int:
 	var fields = board.free_fields(card)

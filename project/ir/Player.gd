@@ -30,9 +30,9 @@ func targets(_ability: Ability):
 func match_query(ability: Ability, other) -> bool:
 	if not other is CardPlayer:
 		return false
-	elif player == PlayerEnum.you and ability.ctx.controller != other:
+	elif player == PlayerEnum.you and ability.controller != other:
 		return false
-	elif player == PlayerEnum.opponent and ability.ctx.controller == other:
+	elif player == PlayerEnum.opponent and ability.controller == other:
 		return false
 	# TODO: add owner and controller checks
 	elif player == PlayerEnum.attacking:

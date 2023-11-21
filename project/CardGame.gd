@@ -53,7 +53,17 @@ func start():
 			player = players[(idx + 1) % len(players)]
 		else:
 			player.turnsafterthis -= 1
-	
+
+func get_opponents(player: CardPlayer) -> Array:
+	# TODO: use teams
+	for p in players:
+		if p != player:
+			return [p]
+	return []
+
+func get_field(player: CardPlayer, index: int):
+	return player.board.get_card(index)
+
 func do_turn(player: CardPlayer):
 	reaction = false
 	current_player = player
@@ -87,8 +97,9 @@ func send(ability: Ability, effects: Array, use_stack := true):
 				while not done:
 					var choices = player.get_playable_cards()
 					done = await player.choose("action", choices)
-			var other_ability = stack.pop()
+			var other_ability = stack.index(-1)
 			if other_ability:
+				stack.remove(other_ability)
 				await other_ability.resolve()
 		
 		reaction = false
@@ -96,19 +107,27 @@ func send(ability: Ability, effects: Array, use_stack := true):
 		await new_ability.resolve()
 
 func pick(ability: Ability, obj, place = null):
-	var n = obj.targets(ability)
-	if n > 0:
-		var player: CardPlayer = priority
-		for _i in n:
+	if obj:
+		var n = obj.targets(ability)
+		if n > 0:
+			for _i in n:
+				var found = query(ability, obj, place)
+				if len(found) == 0:
+					return ability.targets
+				var choice = await priority.choose("target", found)
+				if choice == null:
+					return null
+				ability.targets.append(choice)
+			return ability.targets
+	else:
+		while true:
 			var found = query(ability, obj, place)
 			if len(found) == 0:
 				return ability.targets
-			var choice = await player.choose("target", found)
+			var choice = await priority.choose("target", found)
 			if choice == null:
 				return null
 			ability.targets.append(choice)
-		return ability.targets
-	
 	return query(ability, obj, place)
 
 func query(ability: Ability, obj, place = null, n: int = -1) -> Array:
