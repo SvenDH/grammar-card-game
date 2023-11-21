@@ -52,7 +52,7 @@ optional = false
 script = ExtResource( 3 )
 costs = [ "T" ]
 effect = SubResource( 4 )
-text = "{T}: ~ deals 1 damage to any target."
+text = "{T}: Wizard deals 1 damage to any target."
 
 [resource]
 script = ExtResource( 1 )

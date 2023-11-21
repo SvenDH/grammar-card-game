@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=3 uid="uid://fchwnecoto3j"]
+[gd_scene load_steps=14 format=3 uid="uid://fchwnecoto3j"]
 
 [ext_resource type="Script" path="res://HumanPlayer.gd" id="1_51yit"]
 [ext_resource type="Resource" uid="uid://bf74wibopcom4" path="res://cards/Advisor.tres" id="2_5g2gu"]
@@ -12,6 +12,7 @@
 [ext_resource type="PackedScene" uid="uid://dojm7b3or6gun" path="res://Field.tscn" id="10_iw6yk"]
 [ext_resource type="Script" path="res://EssencePool.gd" id="11_mux16"]
 [ext_resource type="Script" path="res://AbilityMenu.gd" id="11_yr25d"]
+[ext_resource type="Theme" uid="uid://b21veaaftvef5" path="res://cardstyle.tres" id="13_c5fv4"]
 
 [node name="CardPlayer" type="Control"]
 layout_mode = 3
@@ -30,6 +31,7 @@ board_path = NodePath("Control/Board")
 deck_path = NodePath("Deck")
 pile_path = NodePath("Discard")
 hand_path = NodePath("Control2/Hand")
+life_path = NodePath("Control5/Life")
 
 [node name="Deck" type="Control" parent="."]
 visible = false
@@ -156,6 +158,20 @@ script = ExtResource("11_yr25d")
 [node name="List" type="VBoxContainer" parent="Control4/AbilityMenu"]
 layout_mode = 2
 theme_override_constants/separation = 2
+
+[node name="Control5" type="Control" parent="."]
+anchors_preset = 0
+offset_left = 50.0
+offset_top = 543.0
+offset_right = 90.0
+offset_bottom = 583.0
+
+[node name="Life" type="Label" parent="Control5"]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 23.0
+theme = ExtResource("13_c5fv4")
+theme_override_colors/font_color = Color(0, 0, 0, 1)
 
 [connection signal="pressed" from="PassButton" to="." method="_on_pass_button_pressed"]
 [connection signal="pressed" from="SubmitButton" to="." method="_on_submit_button_pressed"]

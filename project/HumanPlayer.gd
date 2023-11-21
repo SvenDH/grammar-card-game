@@ -12,6 +12,7 @@ func choose(command: String, choices := [], n := 1):
 	pass_button.hide()
 	submit_button.hide()
 	ability_menu.hide()
+	ability_menu.reset()
 	print(command)
 	if command == "action":
 		if len(choices) == 0:
@@ -34,6 +35,8 @@ func choose(command: String, choices := [], n := 1):
 		# Can cast and can activate add another menu
 		if card.can_activate():
 			var activatable = []
+			if card.can_attack():
+				activatable.append("{T}: Attack")
 			for ab in card.activated_abilities:
 				if ab.can_activate(card):
 					activatable.append(ab)
@@ -46,7 +49,10 @@ func choose(command: String, choices := [], n := 1):
 					ability = activatable[0]
 				if ability == null:
 					return false
-				await card.activate_ability(ability)
+				if ability is String and ability == "{T}: Attack":
+					await card.attack()
+				else:
+					await card.activate_ability(ability)
 		
 		elif card.is_source():
 			# Play card
@@ -116,12 +122,10 @@ func choose(command: String, choices := [], n := 1):
 		ability_menu.show()
 		ability_menu.set_abilities(choices)
 		var ability = await action_done
-		ability_menu.reset()
-		ability_menu.hide()
-		if ability is ActivatedAbility:
-			return ability
+		if ability is String and ability == "pass":
+			return null
 		
-		return null
+		return ability
 	
 	return choices[len(choices)-1]
 

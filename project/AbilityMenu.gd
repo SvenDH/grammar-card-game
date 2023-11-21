@@ -12,7 +12,10 @@ func set_abilities(activated_abilities: Array):
 	var first = false
 	for ability in activated_abilities:
 		var text = card_text_scene.instantiate()
-		text.add_format_text(ability.text)
+		if ability is String:
+			text.add_format_text(ability)
+		else:
+			text.add_format_text(ability.text)
 		list.add_child(text)
 		text.highlight(true)
 		if not first:

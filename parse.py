@@ -781,7 +781,7 @@ class CardTransformer(Transformer):
             subtypes=[t.lower() for t in types[1]],
             abilities=abilities,
             power=items[0].power if items else 0,
-            health=items[0].health if items else 0,
+            health=items[0].health if items else 1,
         )
 
 
@@ -813,6 +813,6 @@ class Parser:
                 for l in line.split(", "):
                     rule_texts.append(l)
             else:
-                rule_texts.append(line)
+                rule_texts.append(line.replace("~", name))
         t.rule_texts = rule_texts
         return t

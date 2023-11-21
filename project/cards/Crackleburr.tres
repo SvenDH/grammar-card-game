@@ -121,7 +121,7 @@ optional = false
 script = ExtResource( 3 )
 costs = [ "R", "B", "T", SubResource( 4 ) ]
 effect = SubResource( 14 )
-text = "{R}{B}, {T}, Deactivate two activated red units you control: ~ deals 3 damage to any target."
+text = "{R}{B}, {T}, Deactivate two activated red units you control: Crackleburr deals 3 damage to any target."
 
 [sub_resource type="Resource" id=32]
 script = ExtResource( 33 )

@@ -1,10 +1,11 @@
-[gd_scene load_steps=6 format=3 uid="uid://5lnisp7xta8e"]
+[gd_scene load_steps=7 format=3 uid="uid://5lnisp7xta8e"]
 
 [ext_resource type="Script" path="res://CardBot.gd" id="1_4mwl4"]
 [ext_resource type="PackedScene" uid="uid://cnakiw5fb25w4" path="res://CardInstance.tscn" id="2_6cyq3"]
 [ext_resource type="Script" path="res://CardPile.gd" id="2_a27qd"]
 [ext_resource type="Script" path="res://CardFields.gd" id="3_ornyf"]
 [ext_resource type="PackedScene" uid="uid://dojm7b3or6gun" path="res://Field.tscn" id="4_syh88"]
+[ext_resource type="Theme" uid="uid://b21veaaftvef5" path="res://cardstyle.tres" id="6_l6ut6"]
 
 [node name="CardBot" type="Control"]
 layout_mode = 3
@@ -22,6 +23,7 @@ board_path = NodePath("Control/Board")
 deck_path = NodePath("Deck")
 pile_path = NodePath("Discard")
 hand_path = NodePath("Hand")
+life_path = NodePath("Control2/Life")
 
 [node name="Deck" type="Control" parent="."]
 visible = false
@@ -55,5 +57,20 @@ script = ExtResource("2_a27qd")
 max_card_size = Vector2(150, 164)
 can_focus = true
 spread = true
+
+[node name="Control2" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 0
+offset_left = 50.0
+offset_top = 38.0
+offset_right = 90.0
+offset_bottom = 78.0
+
+[node name="Life" type="Label" parent="Control2"]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 23.0
+theme = ExtResource("6_l6ut6")
+theme_override_colors/font_color = Color(0, 0, 0, 1)
 
 [connection signal="click" from="Control/Board" to="." method="_on_board_click" flags=18]

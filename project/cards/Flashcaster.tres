@@ -64,7 +64,7 @@ condition = SubResource("6")
 script = ExtResource("3")
 trigger = SubResource("4")
 effect = SubResource("12")
-text = "When ~ enters the field, draw a card."
+text = "When Flashcaster enters the field, draw a card."
 
 [resource]
 script = ExtResource("1")

@@ -104,6 +104,7 @@ func attack():
 	assert(len(opponents) > 0)
 	# TODO: choose field if card has reach
 	var card = game.get_field(opponents[0], field_index)
+	await deactivate()
 	if card:
 		await card.damage(power)
 	else:
@@ -179,6 +180,15 @@ func is_source():
 			return true
 	return false
 
+func can_attack():
+	if location != ZoneMatch.ZoneEnum.board:
+		return false
+	if game.current_player != player_owner:
+		return false
+	if game.reaction:
+		return false
+	return activated
+
 func can_react():
 	# TODO: Check if card has flash or is an instant
 	return false
@@ -238,10 +248,10 @@ func _set_health(new_health):
 	health_label.text = str(health)
 
 func _get_power():
-	return card.power  # TODO: add modified types
+	return power  # TODO: add modified types
 
 func _get_health():
-	return card.health  # TODO: add modified types
+	return health  # TODO: add modified types
 
 func _get_types() -> Array:
 	return card.types  # TODO: add modified types

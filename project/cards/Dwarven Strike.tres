@@ -47,4 +47,4 @@ types = [ 4 ]
 subtypes = [  ]
 abilities = [ SubResource( 2 ) ]
 power = 2
-health = 0
+health = 1

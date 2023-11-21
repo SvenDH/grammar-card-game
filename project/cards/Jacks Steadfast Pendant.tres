@@ -253,7 +253,7 @@ optional = false
 script = ExtResource( 39 )
 costs = [ 1, SubResource( 40 ) ]
 effect = SubResource( 46 )
-text = "{1}, Sacrifice ~: Draw two cards, then each player discards two cards."
+text = "{1}, Sacrifice Jacks Steadfast Pendant: Draw two cards, then each player discards two cards."
 
 [resource]
 script = ExtResource( 1 )
@@ -263,4 +263,4 @@ types = [ 1 ]
 subtypes = [  ]
 abilities = [ SubResource( 2 ), SubResource( 20 ), SubResource( 38 ) ]
 power = 2
-health = 0
+health = 1

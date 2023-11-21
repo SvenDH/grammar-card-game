@@ -2,7 +2,7 @@ extends Node
 class_name CardPlayer
 
 @export var player_name: String
-@export var life: int = 20
+@export var life: int = 20 : set = _set_life
 @export var cards: Array[Card] = []
 @export var side: Array[Card] = []
 @export var card_scene: PackedScene
@@ -10,6 +10,7 @@ class_name CardPlayer
 @export var deck_path: NodePath
 @export var pile_path: NodePath
 @export var hand_path: NodePath
+@export var life_path: NodePath
 
 var turnsafterthis: int = 0
 var essence := []
@@ -19,12 +20,14 @@ var essence := []
 @onready var deck: CardPile = get_node(deck_path)
 @onready var pile: CardPile = get_node(pile_path)
 @onready var hand: CardPile = get_node(hand_path)
+@onready var life_display = get_node(life_path)
 
 func _ready():
 	board.player = self
 	deck.player = self
 	pile.player = self
 	hand.player = self
+	_set_life(life)
 	
 	for card in cards:
 		deck.add(create_card_instance(card))
@@ -135,6 +138,9 @@ func end_turn():
 	await on_endturn()
 	clear_essence()
 	_end()
+
+func damage(amount: int):
+	life -= amount
 
 func clear_essence():
 	essence = []
@@ -249,6 +255,10 @@ func _match_field(ability: Ability, place: ZoneMatch.ZoneEnum, match_query) -> b
 	if match_query is ZoneMatch:
 		return match_query.match_query(ability, place, self)
 	return place == match_query
+
+func _set_life(new_life):
+	life = new_life
+	life_display.text = str(life)
 
 func on_startturn():
 	pass
