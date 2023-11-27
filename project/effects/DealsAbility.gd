@@ -15,8 +15,10 @@ func activate(ability: Ability):
 		if res == null:
 			return null
 		for d in res:
+			print(d, amount)
 			results.append([d, getnumber(amount, ability)])
 	return results
 
-func resolve(_ability: Ability, obj, amount: int):
-	obj.damage(amount)
+func resolve(_ability: Ability, source: CardInstance, obj, damage: int):
+	print(obj, damage)
+	obj.damage(damage, source)

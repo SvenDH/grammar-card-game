@@ -13,6 +13,8 @@ func choose(command: String, choices := [], n := 1):
 	submit_button.hide()
 	ability_menu.hide()
 	ability_menu.reset()
+	hand.reset()
+	board.reset()
 	print(command)
 	if command == "action":
 		if len(choices) == 0:
@@ -65,18 +67,16 @@ func choose(command: String, choices := [], n := 1):
 		return false
 	
 	elif command == "discard":
-		board.reset()
 		hand.show()
 		var selected := []
-		print(n)
 		while true:
 			if len(selected) == n:
 				submit_button.show()
 				hand.highlight(selected)
 				var card = await action_done
 				if card is String and card == "submit":
-					print(card)
 					return selected
+				
 				selected.erase(card)
 				card.deselect()
 			else:
@@ -106,21 +106,34 @@ func choose(command: String, choices := [], n := 1):
 		return action
 	
 	elif command == "target":
-		pass_button.show()
-		for player in game.players:
-			player.board.highlight(choices)
-		
-		var card = await action_done
-		board.reset()
-		pass_button.hide()
-		if card is String and card == "pass":
-			return null
-		
-		return card
+		var selected := []
+		while true:
+			if len(selected) == n:
+				submit_button.show()
+				for player in game.players:
+					player.board.highlight(selected)
+				var card = await action_done
+				if card is String and card == "submit":
+					return selected
+				
+				selected.erase(card)
+				card.deselect()
+			else:
+				submit_button.hide()
+				for player in game.players:
+					player.board.highlight(choices)
+				var card = await action_done
+				if card in selected:
+					selected.erase(card)
+					card.deselect()
+				else:
+					selected.append(card)
+					card.select()
 		
 	elif command == "ability":
 		ability_menu.show()
 		ability_menu.set_abilities(choices)
+		
 		var ability = await action_done
 		if ability is String and ability == "pass":
 			return null

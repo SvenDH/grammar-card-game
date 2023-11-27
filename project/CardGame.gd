@@ -107,20 +107,19 @@ func send(ability: Ability, effects: Array, use_stack := true):
 		await new_ability.resolve()
 
 func pick(ability: Ability, obj, place = null):
-	if obj:
-		var n = obj.targets(ability)
-		if n > 0:
-			for _i in n:
-				var found = query(ability, obj, place)
-				if len(found) == 0:
-					return ability.targets
-				var choice = await priority.choose("target", found)
-				if choice == null:
-					return null
-				ability.targets.append(choice)
-			return ability.targets
-	else:
+	if obj == null:
 		while true:
+			var found = query(ability, obj, place)
+			if len(found) == 0:
+				return ability.targets
+			var choices = await priority.choose("target", found)
+			if choices == null:
+				return null
+			ability.targets.append_array(choices)
+			return choices
+	var n = obj.targets(ability)
+	if n > 0:
+		for _i in n:
 			var found = query(ability, obj, place)
 			if len(found) == 0:
 				return ability.targets
@@ -128,12 +127,13 @@ func pick(ability: Ability, obj, place = null):
 			if choice == null:
 				return null
 			ability.targets.append(choice)
+		return ability.targets
 	return query(ability, obj, place)
 
 func query(ability: Ability, obj, place = null, n: int = -1) -> Array:
 	var found := []
 	for player in players:
-		if obj.match_query(ability, player):
+		if obj == null or obj.match_query(ability, player):
 			found.append(player)
 		found.append_array(player.query(ability, obj, place))
 	if n > 0:

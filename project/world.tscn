@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3 uid="uid://oer7ytplr5eq"]
+[gd_scene load_steps=13 format=3 uid="uid://oer7ytplr5eq"]
 
 [ext_resource type="Script" path="res://CardGame.gd" id="1_cwwvb"]
 [ext_resource type="PackedScene" uid="uid://fchwnecoto3j" path="res://CardPlayer.tscn" id="2_3quxd"]
@@ -9,6 +9,7 @@
 [ext_resource type="Resource" uid="uid://cf2jh85iihy7" path="res://cards/Super Soldier.tres" id="7_1f7se"]
 [ext_resource type="Resource" uid="uid://cat6c0fxqp8sy" path="res://cards/Land.tres" id="8_6k7is"]
 [ext_resource type="Resource" uid="uid://biv212ic14gcg" path="res://cards/Flashcaster.tres" id="9_ruy6u"]
+[ext_resource type="Resource" uid="uid://dq007udvisihi" path="res://cards/Wizard.tres" id="10_cvpjb"]
 [ext_resource type="PackedScene" uid="uid://5lnisp7xta8e" path="res://CardBot.tscn" id="10_rfjup"]
 [ext_resource type="Script" path="res://CardPile.gd" id="11_eynfs"]
 
@@ -20,7 +21,7 @@
 script = ExtResource("1_cwwvb")
 
 [node name="CardPlayer" parent="CardGame" instance=ExtResource("2_3quxd")]
-cards = Array[Resource("res://Card.gd")]([ExtResource("4_8hmlc"), ExtResource("6_nrx2b"), ExtResource("5_jul0h"), ExtResource("3_4rxfn"), ExtResource("6_nrx2b"), ExtResource("7_1f7se"), ExtResource("4_8hmlc"), ExtResource("8_6k7is"), ExtResource("8_6k7is"), ExtResource("9_ruy6u")])
+cards = Array[Resource("res://Card.gd")]([ExtResource("4_8hmlc"), ExtResource("6_nrx2b"), ExtResource("5_jul0h"), ExtResource("3_4rxfn"), ExtResource("6_nrx2b"), ExtResource("7_1f7se"), ExtResource("4_8hmlc"), ExtResource("8_6k7is"), ExtResource("8_6k7is"), ExtResource("9_ruy6u"), ExtResource("10_cvpjb")])
 
 [node name="Board" parent="CardGame/CardPlayer/Control" index="0"]
 focus_neighbor_top = NodePath("../../../CardBot/Control/Board")

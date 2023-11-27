@@ -139,7 +139,8 @@ func end_turn():
 	clear_essence()
 	_end()
 
-func damage(amount: int):
+func damage(amount: int, source: CardInstance):
+	# TODO: Check dead and invurnability
 	life -= amount
 
 func clear_essence():

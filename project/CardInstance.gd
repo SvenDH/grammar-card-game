@@ -42,8 +42,8 @@ var color: get = _get_color
 
 func _ready():
 	if card:
-		power = self.power
-		health = self.health
+		power = card.power
+		health = card.health
 		name_label.text = card.name
 		for i in len(card.costs):
 			var c = card.costs[len(card.costs)-1-i]
@@ -106,11 +106,12 @@ func attack():
 	var card = game.get_field(opponents[0], field_index)
 	await deactivate()
 	if card:
-		await card.damage(power)
+		await card.damage(power, self)
 	else:
-		await opponents[0].damage(power)
+		await opponents[0].damage(power, self)
 
-func damage(amount: int):
+func damage(amount: int, source: CardInstance):
+	# TODO: Check invurnability (and for source)
 	health -= amount
 	await _check_dead()
 

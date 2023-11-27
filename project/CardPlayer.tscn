@@ -145,9 +145,10 @@ offset_right = 9.0
 offset_bottom = 638.0
 
 [node name="AbilityMenu" type="PanelContainer" parent="Control4"]
+visible = false
 layout_mode = 2
 offset_left = 4.0
-offset_top = -2.0
+offset_top = -64.0
 offset_right = 227.0
 offset_bottom = -2.0
 grow_vertical = 0

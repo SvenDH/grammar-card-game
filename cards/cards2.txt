@@ -2,11 +2,11 @@ Land
 Source
 {T}: Add {R}.
 
-Soldier {1}{R}
+Soldier {R}
 Unit - Human
 1/1
 
-Super Soldier {1}{R}
+Super Soldier {R}
 Unit
 Flying, Siege
 {Q}: Destroy target card.
@@ -14,22 +14,22 @@ Flying, Siege
 
 Jacks Steadfast Pendant {Y}{B}
 Unit
-{2}: Attacking unit cards in your hand get -3/-3 until end of turn.
-{B}: Attacking unit cards in your deck get -2/-2 until end of turn.
+{2}: Attacking unit cards your opponent controls get -3/-3 until end of turn.
+{B}: Attacking unit cards get -2/-2 until end of turn.
 {1}, Sacrifice Jacks Steadfast Pendant: Draw two cards, then each player discards two cards.
-2/0
+2/1
 
-Dwarven Strike {1}{R}
+Dwarven Strike {R}
 Spell
 Unit cards without flying have this ability.
-2/0
+2/1
 
 Wizard {2}{B}
 Unit
 {T}: Wizard deals 1 damage to any target.
 1/2
 
-Knight {2}{R}
+Knight {R}
 Unit
 Siege
 2/2
@@ -40,16 +40,21 @@ Unit - Elemental
 {R}{B}, {Q}, Activate two deactivated blue units you control: Return target unit to its owner's hand.
 2/2
 
-Advisor {1}{Y}
+Advisor {R}
 Unit
 {T}: Activate target unit.
 0/2
 
-Dark Council {3}{B}
+Dark Council
 Unit
 Flying, Siege
-{2}: Create a 2/2 token with "Flying" and "Siege".
-{1}: Play unit cards without paying essence.
+{0}: Create a 2/2 token with "Flying" and "Siege".
+{0}: Play unit cards without paying essence.
 {T}: Draw a card, then you discard a card for each unit card.
 {Q}: Destroy target card.
+1/1
+
+Flashcaster {1}{R}
+Unit
+When Flashcaster enters the field, draw a card.
 1/1
