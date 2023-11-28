@@ -1,11 +1,16 @@
-extends Node
+extends BaseEffect
 
+@export var costs: Array
 
-# Called when the node enters the scene tree for the first time.
-func _ready():
-	pass # Replace with function body.
+func activate(ability: Ability):
+	var objects = ObjectMatch.new()
+	objects.
+	var res = await ability.game.pick(ability, objects)
+	if res == null:
+		return null
+	for d in res:
+		await d[0].activate_ability(d[1])
+	return []
 
-
-# Called every frame. 'delta' is the elapsed time since the previous frame.
-func _process(delta):
+func resolve(_ability: Ability, player: CardPlayer):
 	pass
